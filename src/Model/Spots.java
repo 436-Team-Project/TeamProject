@@ -1,4 +1,4 @@
-package Objects;
+package Model;
 
 
 public class Spots extends UIObjects{

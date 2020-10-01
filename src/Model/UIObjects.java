@@ -1,4 +1,4 @@
-package Objects;
+package Model;
 
 /*
  * main class for all objects
