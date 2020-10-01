@@ -16,6 +16,6 @@ public class Tables extends UIObjects{
 	public void draw() {
 		// draw a square, circle, or table img in this spot
 		
-	}
+	} 
 
 }

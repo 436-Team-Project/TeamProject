@@ -7,7 +7,7 @@ public abstract class UIObjects {
 	int x, x2;
 	int y, y2;
 	int ID;
-	
+	 
 	public UIObjects(int ID, int x, int y, int x2,int y2) {
 		this.x=x;
 		this.y=y;

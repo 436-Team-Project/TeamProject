@@ -12,6 +12,6 @@ public class Spots extends UIObjects{
 	public void draw() {
 		//draw a circle or chair in this spot.
 		
-	}
+	} 
 
 }
