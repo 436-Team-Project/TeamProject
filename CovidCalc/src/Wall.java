@@ -8,6 +8,10 @@ public class Wall extends UIObjects{
 		super(ID, x, y,x2,y2);
 		// TODO Auto-generated constructor stub
 	}
+	
+	public void addConnection(Wall connector) {
+		this.connections.add(connector);
+	}
  
 	@Override
 	public void draw() {
