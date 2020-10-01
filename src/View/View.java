@@ -96,7 +96,7 @@ public class View extends Application implements Observer {
 	@Override
 	public void update(Observable observable, Object object) {
 		ArrayList<UIObjects> itemList = model.getObjects();		// items to be placed
-		// TODO - clear central panel 
+		// TODO - clear central panel
 		drawPane.getChildren().clear();
 		// TODO - redraw all items
 		for(UIObjects obj : itemList)
@@ -105,7 +105,7 @@ public class View extends Application implements Observer {
 				System.out.println("Drawing wall");
 				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
 				drawPane.getChildren().add(wall);
-			} 
+			}
 			/*else if(obj instanceof Chair) {
 				System.out.println("Drawing chair");
 			}*/
@@ -160,7 +160,7 @@ public class View extends Application implements Observer {
 			
 		placeWall.setOnMouseReleased(event3 -> {
 			//if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
-			boolean inDrawPane = drawPane.getBoundsInParent().intersects(event3.getSceneX() - LEFT_WIDTH, 
+			boolean inDrawPane = drawPane.getBoundsInParent().intersects(event3.getSceneX() - LEFT_WIDTH,
 																		event3.getSceneY() - TOP_HEIGHT, 1, 1);
 			if (!inDrawPane) {
 				System.out.println("Outside of central panel");
