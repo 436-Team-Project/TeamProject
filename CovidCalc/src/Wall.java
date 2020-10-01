@@ -13,7 +13,7 @@ public class Wall extends UIObjects{
 	public void draw() {
 		// draw wither a line or a filled rectangle in this spot.
 		
-	}
+	} 
 	
 	
 	
