@@ -31,7 +31,7 @@ public class Model extends Observable {
 		System.out.println("updated");
 	}
 
-	public ArrayList<UIObjects> getObjects() {}
+	public ArrayList<UIObjects> getObjects() {
 		return itemList;
 	}
 	
