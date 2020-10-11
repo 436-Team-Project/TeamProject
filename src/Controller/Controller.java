@@ -16,7 +16,7 @@ public class Controller {
 
 
 	/*
-	 * param: wall, seat, or table string. this adds to the object to the model
+	 * param: "wall, seat, or table" string. this adds to the object to the model
 	 */
 	public void createNewObject(String type, double x, double y, double width, double height) {
 		UIObjects newObj = null;
@@ -46,6 +46,10 @@ public class Controller {
 	 */
 	public void updateCurrentObject(int x, int y, int ID) {
 		model.updateObject(x, y, ID);
+	}
+	
+	public UIObjects getObject(int x, int y) {
+		return model.getObject(x,y);
 	}
 }
 
