@@ -3,11 +3,14 @@ package View;
 import Controller.Controller;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.util.Observable;
@@ -35,6 +38,12 @@ public class View extends Application implements Observer {
 	final int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT+BOT_HEIGHT));
 	
 	BorderPane root; // Main pane
+	
+	// Default dimensions for objects created from buttons
+	final double WALL_WIDTH = 25;
+	final double WALL_HEIGHT = 25;
+	final double CHAIR_WIDTH = 25;
+	final double CHAIR_HEIGHT = 25;
 	
 	/**
 	 * Initialize
@@ -98,19 +107,71 @@ public class View extends Application implements Observer {
 		Button placeChair = new Button("Place Chair");
 		Button placeObject = new Button("Place Object"); // Place holder button
 		
-		placeWall.setOnMouseClicked(event -> {
-			System.out.println("Place Wall button clicked");
-			// TODO: Notify controller that user wants to place a wall
+		Rectangle wallBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
+		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
+		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT); // Temporarily using default wall dimensions
+		
+		// --- Event handling "Place Wall" button ---
+		placeWall.setOnMousePressed(event -> {
+			updateBound(event, wallBounds);
+			root.getChildren().add(wallBounds);
+		});
+			
+		placeWall.setOnMouseDragged(event2 -> {
+			updateBound(event2, wallBounds);
+		});
+			
+		placeWall.setOnMouseReleased(event3 -> {
+			if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+				System.out.println("Outside of central panel");
+			} else {
+				System.out.println("Inside of central panel");
+				// TODO: Notify controller that user wants to place wall at (mouseX, mouseY) position with WALL_WIDTH and WALL_HEIGHT.
+				// controller.addWall(mouseX, mouseY, WALL_WIDTH, WALL_HEIGHT);
+			}
+			root.getChildren().remove(wallBounds);
+		});
+			
+		// --- Event handling "Place Chair" button ---
+		placeChair.setOnMousePressed(event -> {
+			updateBound(event, chairBounds);
+			root.getChildren().add(chairBounds);
+		});
+			
+		placeChair.setOnMouseDragged(event2 -> {
+			updateBound(event2, chairBounds);
+		});
+			
+		placeChair.setOnMouseReleased(event3 -> {
+			if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+				System.out.println("Outside of central panel");
+			} else {
+				System.out.println("Inside of central panel");
+				// TODO: Notify controller that user wants to place chair at (mouseX, mouseY) position with CHAIR_WIDTH and CHAIR_HEIGHT.
+				// controller.addChair(mouseX, mouseY, CHAIR_WIDTH, CHAIR_HEIGHT);
+			}
+			root.getChildren().remove(chairBounds);
 		});
 		
-		placeChair.setOnMouseClicked(event -> {
-			System.out.println("Place Chair button clicked");
-			// TODO: Notify controller that user wants to place a chair
+		// --- Event handling "Place Object" button ---
+		placeObject.setOnMousePressed(event -> {
+			updateBound(event, objectBounds);
+			root.getChildren().add(objectBounds);
+		});
+			
+		placeObject.setOnMouseDragged(event2 -> {
+			updateBound(event2, objectBounds);
 		});
 		
-		placeObject.setOnMouseClicked(event -> {
-			System.out.println("Place Object button clicked");
-			// TODO: Notify controller that user wants to place a object
+		placeObject.setOnMouseReleased(event3 -> {
+			if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+				System.out.println("Outside of central panel");
+			} else {
+				System.out.println("Inside of central panel");
+				// TODO: Notify controller that user wants to place object at (mouseX, mouseY) position with the default width and height.
+				// controller.addObject(mouseX, mouseY, width, height);
+			}
+			root.getChildren().remove(objectBounds);
 		});
 		
 		buttonBox.getChildren().addAll(placeWall, placeChair, placeObject);
@@ -160,5 +221,44 @@ public class View extends Application implements Observer {
 		result.setPrefHeight(BOT_HEIGHT);
 		
 		return result;
+	}
+	
+	/**
+	 * Initializes a dashed rectangle representing the bounds of the object being placed.
+	 * @param width
+	 * @param height
+	 * @return
+	 */
+	private Rectangle initObjectBounds(double width, double height) {
+		Rectangle r = new Rectangle();
+		r.setWidth(width);
+		r.setHeight(height);
+		r.setStroke(Color.BLACK);
+		r.setStrokeWidth(1);
+		r.getStrokeDashArray().addAll(5.0);
+		r.setFill(Color.TRANSPARENT);
+		
+		return r;
+	}
+	
+	/**
+	 * Returns true if mouse is in the center panel defined at initialization.
+	 * @param mouseX
+	 * @param mouseY
+	 * @return
+	 */
+	private boolean isInCenter(double mouseX, double mouseY) {
+		return !(mouseX < LEFT_WIDTH || mouseX > APP_WIDTH || 
+				mouseY < TOP_HEIGHT || mouseY > (TOP_HEIGHT + CENTER_HEIGHT));
+	}
+	
+	/**
+	 * Updates position of object to mouse's position.
+	 * @param event
+	 * @param objectBounds
+	 */
+	private void updateBound(MouseEvent event, Node objectBounds) {
+		objectBounds.setTranslateX(event.getSceneX());
+		objectBounds.setTranslateY(event.getSceneY());
 	}
 }
