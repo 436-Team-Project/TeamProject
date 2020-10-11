@@ -21,6 +21,15 @@ public class Model extends Observable {
 	/**
 	 * Template method (ignore)
 	 */
+  
+	public void addObject(UIObjects newObj) {
+		itemList.add(newObj);
+    setChanged();
+		notifyObservers();
+		System.out.format("new object added. %d items exist\n", itemList.size());
+}
+
+  
 	public void createObject(String type, int x, int y){
 		//create the object that is asked for.
 		if (type.equals("wall")) {
@@ -37,8 +46,6 @@ public class Model extends Observable {
 			Tables obj = new Tables(x,y,x+SIZE,y+SIZE,itemList.size());
 			itemList.add(obj);
 		}
-		
-		
 		setChanged();
 		notifyObservers();
 		System.out.format("new object added. %d items exist\n", itemList.size());
@@ -49,6 +56,8 @@ public class Model extends Observable {
 		notifyObservers();
 		System.out.println("updated");
 	}
+  
+  
 	/*
 	 * returns the list of the objects
 	 */

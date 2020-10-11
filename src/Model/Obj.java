@@ -1,12 +1,8 @@
 package Model;
 
-import java.util.ArrayList;
-
-public class Wall extends UIObjects{
+public class Obj extends UIObjects{
 	
-	ArrayList<Wall> connections=new ArrayList<Wall>();
-	
-	public Wall(int ID, double x, double y, double x2, double y2) {
+	public Obj(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y,x2,y2);
 		// TODO Auto-generated constructor stub
 	}

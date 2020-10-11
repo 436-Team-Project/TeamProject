@@ -1,7 +1,6 @@
 package Controller;
 
-import Model.Model;
-import Model.UIObjects;
+import Model.*;
 import View.View;
 
 /**
@@ -10,18 +9,38 @@ import View.View;
 public class Controller {
 	
 	private Model model;
-	private View view;
 	
-	public Controller() {
-		model = new Model();
-		view = new View();
+	public Controller(Model model) {
+		this.model = model;
 	}
+
+
 	/*
 	 * param: "wall, seat, or table" string. this adds to the object to the model
 	 */
-	public void createNewObject(String type, int x, int y) {
-		model.createObject(type, x, y);
+	public void createNewObject(String type, double x, double y, double width, double height) {
+		UIObjects newObj = null;
+		double x2 = x + width;
+		double y2 = y + height;
+		switch(type)
+		{
+			case "wall":
+				newObj = new Wall(0, x, y, x2, y2);
+				break;
+			case "chair":
+				//newObj = new Chair();
+				break;
+			case "object":
+				newObj = new Obj(1, x, y, x2, y2);
+				break;
+			default:
+				System.out.println("invalid object type");
+				return;
+		}
+		model.addObject(newObj);
 	}
+
+
 	/*
 	 * param: the x and y coords and the ID.
 	 */
