@@ -20,7 +20,8 @@ public class Model extends Observable {
 	/**
 	 * Template method (ignore)
 	 */
-	public void createObject(String type){
+	public void addObject(UIObjects newObj) {
+		itemList.add(newObj);
 		setChanged();
 		notifyObservers();
 		System.out.format("new object added. %d items exist", itemList.size());
@@ -28,6 +29,10 @@ public class Model extends Observable {
 	
 	public void updateObject(int x, int y, int ID) {
 		System.out.println("updated");
+	}
+
+	public ArrayList<UIObjects> getObjects() {}
+		return itemList;
 	}
 	
 }
