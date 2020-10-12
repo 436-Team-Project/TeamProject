@@ -72,8 +72,8 @@ public class View extends Application implements Observer {
 
 		root = new BorderPane();
 		
-		root.setLeft(initLeftPanel());
 		root.setCenter(initCenterPanel());
+		root.setLeft(initLeftPanel());
 		root.setTop(initTopPanel());
 		root.setBottom(initBottomPanel());
 		
@@ -222,10 +222,36 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterPanel(){
 		Pane result = new Pane();
+		Pane child = initCenterInnerPanel();
 		result.setBackground(new Background(
 				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH);
 		result.setPrefHeight(CENTER_HEIGHT);
+		result.getChildren().add(child);
+		
+		// Allows right mouse drag to pan the child.
+		result.setOnMousePressed((event) -> {
+			if (event.isPrimaryButtonDown()) return;
+			double mouseX = event.getSceneX();
+			double mouseY = event.getSceneY();
+			double paneX = child.getTranslateX();
+			double paneY = child.getTranslateY();
+			
+			result.setOnMouseDragged((event2) -> {
+				child.setTranslateX(paneX + (event2.getSceneX() - mouseX));
+				child.setTranslateY(paneY + (event2.getSceneY() - mouseY));
+			});
+		});
+		
+		return result;
+	}
+	
+	private Pane initCenterInnerPanel() {
+		Pane result = new Pane();
+		result.setBackground(new Background(
+				new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+		result.setPrefWidth(CENTER_WIDTH/2);
+		result.setPrefHeight(CENTER_HEIGHT/2);
 		return result;
 	}
 	
