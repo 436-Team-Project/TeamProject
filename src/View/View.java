@@ -1,5 +1,6 @@
 package View;
 
+import Model.*;
 import Controller.Controller;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -13,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -24,6 +26,7 @@ import java.util.Observer;
  */
 public class View extends Application implements Observer {
 	
+	Model 	   model;	   // model of MVC
 	Controller controller; // Controller of MVC
 	
 	// The dimensions of the entire application
@@ -50,7 +53,7 @@ public class View extends Application implements Observer {
 	 */
 	@Override
 	public void init() {
-		controller = new Controller();
+		//controller = new Controller();
 	}
 	
 	/**
@@ -61,6 +64,12 @@ public class View extends Application implements Observer {
 	 */
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+
+		model = new Model();
+		model.addObserver(this);
+
+		controller = new Controller(model);
+
 		root = new BorderPane();
 		
 		root.setLeft(initLeftPanel());
@@ -82,7 +91,24 @@ public class View extends Application implements Observer {
 	 */
 	@Override
 	public void update(Observable observable, Object object) {
-	
+		ArrayList<UIObjects> itemList = model.getObjects();		// items to be placed
+		
+		// TODO - clear central panel 
+
+
+		// TODO - redraw all items
+		for(UIObjects obj : itemList)
+		{
+			if(obj instanceof Wall) {
+				System.out.println("Drawing wall");
+			} 
+			/*else if(obj instanceof Chair) {
+				System.out.println("Drawing chair");
+			}*/
+			else {
+				System.out.println("Drawing object");
+			}
+		}
 	}
 	
 	/**
@@ -127,7 +153,8 @@ public class View extends Application implements Observer {
 			} else {
 				System.out.println("Inside of central panel");
 				// TODO: Notify controller that user wants to place wall at (mouseX, mouseY) position with WALL_WIDTH and WALL_HEIGHT.
-				// controller.addWall(mouseX, mouseY, WALL_WIDTH, WALL_HEIGHT);
+				// TODO: might consider user input for width and height
+				controller.createNewObject("wall", event3.getX(), event3.getY(), 20, 5);
 			}
 			root.getChildren().remove(wallBounds);
 		});
@@ -169,7 +196,8 @@ public class View extends Application implements Observer {
 			} else {
 				System.out.println("Inside of central panel");
 				// TODO: Notify controller that user wants to place object at (mouseX, mouseY) position with the default width and height.
-				// controller.addObject(mouseX, mouseY, width, height);
+				// TODO: might consider user input for width and height
+				controller.createNewObject("object", event3.getX(), event3.getY(), 10, 10);
 			}
 			root.getChildren().remove(objectBounds);
 		});

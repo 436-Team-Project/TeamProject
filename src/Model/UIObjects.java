@@ -6,11 +6,11 @@ package Model;
  */
 public abstract class UIObjects {
 	//initial starting points of the object we can assume 0,0 or wherever we want them to exist
-	int x, x2;
-	int y, y2;
+	double x, x2;
+	double y, y2;
 	int ID;
 	
-	public UIObjects(int ID, int x, int y, int x2,int y2) {
+	public UIObjects(int ID, double x, double y, double x2, double y2) {
 		this.x=x;
 		this.y=y;
 		this.x2=x2;
@@ -20,7 +20,7 @@ public abstract class UIObjects {
 	/*
 	 * when the shape is moved or altered the x and y values will be altered for storage
 	 */
-	public void update(int x,int y,int x2,int y2) {
+	public void update(double x,double y,double x2,double y2) {
 		this.x=x;
 		this.y=y;
 		this.x2=x2;
