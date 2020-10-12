@@ -27,6 +27,22 @@ public abstract class UIObjects {
 		this.y2=y2;
 	}
 	
+	public double getX() {
+		return x;
+	}
+	
+	public double getY() {
+		return y;
+	}
+	
+	public double getWidth() {
+		return Math.abs(x2 - x);
+	}
+	
+	public double getHeight() {
+		return Math.abs(y2 - y);
+	}
+	
 	//abstract classes that will need to be used. Things can be added or removed based on needs
 	public abstract void draw();
 }
