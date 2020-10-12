@@ -1,8 +1,10 @@
 package View;
 
+import Model.*;
 import Controller.Controller;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -13,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -20,11 +23,8 @@ import java.util.Observer;
  * Displays what the user sees
  * <p>
  * CuCurrent colors of the panels inside the main border pane are temporary.
- *
  */
 public class View extends Application implements Observer {
-	
-	Controller controller; // Controller of MVC
 	
 	// The dimensions of the entire application
 	final int APP_HEIGHT = 800;
@@ -35,36 +35,46 @@ public class View extends Application implements Observer {
 	final int TOP_HEIGHT = 50;
 	final int BOT_HEIGHT = 50;
 	final int CENTER_WIDTH = (APP_WIDTH - LEFT_WIDTH);
-	final int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT+BOT_HEIGHT));
-	
-	BorderPane root; // Main pane
+	final int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
 	
 	// Default dimensions for objects created from buttons
 	final double WALL_WIDTH = 25;
 	final double WALL_HEIGHT = 25;
 	final double CHAIR_WIDTH = 25;
 	final double CHAIR_HEIGHT = 25;
+	boolean inDrawPane = false;
+	
+	Controller controller; // Controller of MVC
+	Model model; // model of MVC
+	
+	BorderPane root; // Main pane
+	Pane drawPane;
 	
 	/**
 	 * Initialize
 	 */
 	@Override
 	public void init() {
-		controller = new Controller();
+		//controller = new Controller();
 	}
 	
 	/**
 	 * Call this once
 	 *
-	 * @param  primaryStage Stage
-	 * @throws Exception ex
+	 * @param primaryStage Stage
 	 */
 	@Override
-	public void start(Stage primaryStage) throws Exception {
+	public void start(Stage primaryStage) {
+		
+		model = new Model();
+		model.addObserver(this);
+		
+		controller = new Controller(model);
+		
 		root = new BorderPane();
 		
-		root.setLeft(initLeftPanel());
 		root.setCenter(initCenterPanel());
+		root.setLeft(initLeftPanel());
 		root.setTop(initTopPanel());
 		root.setBottom(initBottomPanel());
 		
@@ -78,11 +88,27 @@ public class View extends Application implements Observer {
 	 * Update the view
 	 *
 	 * @param observable Observable
-	 * @param object Object
+	 * @param object     Object
 	 */
 	@Override
 	public void update(Observable observable, Object object) {
-	
+		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
+		// TODO - clear central panel
+		drawPane.getChildren().clear();
+		// TODO - redraw all items
+		for(UIObjects obj : itemList) {
+			if(obj instanceof Wall) {
+				System.out.println("Drawing wall");
+				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				drawPane.getChildren().add(wall);
+			}
+			/*else if(obj instanceof Chair) {
+				System.out.println("Drawing chair");
+			}*/
+			else {
+				System.out.println("Drawing object");
+			}
+		}
 	}
 	
 	/**
@@ -92,10 +118,10 @@ public class View extends Application implements Observer {
 	 *
 	 * @return Pane
 	 */
-	private Pane initLeftPanel(){
+	private Pane initLeftPanel() {
 		Pane result = new Pane();
 		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(110,161,141,1), CornerRadii.EMPTY, Insets.EMPTY)));
+				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
 		
 		VBox vbox = new VBox();
@@ -109,8 +135,17 @@ public class View extends Application implements Observer {
 		
 		Rectangle wallBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
-		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT); // Temporarily using default wall dimensions
+		// Temporarily using default wall dimensions
+		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		
+		/*TODO:
+			- Change the model via controller (addWall, addChair, addObject)
+			- Show that the object has been placed in view
+			
+			--- Add event-handling to allow the placed object to be changed (widgets on sides of
+			      wall to allow change in width, height, and rotation)
+			--- Change the model via controller (updateWall, updateChair, updateObject)
+		 */
 		// --- Event handling "Place Wall" button ---
 		placeWall.setOnMousePressed(event -> {
 			updateBound(event, wallBounds);
@@ -122,12 +157,22 @@ public class View extends Application implements Observer {
 		});
 		
 		placeWall.setOnMouseReleased(event3 -> {
-			if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+			//if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+			boolean inDrawPane = drawPane.getBoundsInParent()
+					.intersects(
+							event3.getSceneX() - LEFT_WIDTH,
+							event3.getSceneY() - TOP_HEIGHT,
+							1,
+							1);
+			
+			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
-				System.out.println("Inside of central panel");
-				// TODO: Notify controller that user wants to place wall at (mouseX, mouseY) position with WALL_WIDTH and WALL_HEIGHT.
-				// controller.addWall(mouseX, mouseY, WALL_WIDTH, WALL_HEIGHT);
+				// TODO: Notify controller that user wants to place wall at (mouseX, mouseY)
+				//         position with WALL_WIDTH and WALL_HEIGHT.
+				// TODO: might consider user input for width and height
+				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+				controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
 			}
 			root.getChildren().remove(wallBounds);
 		});
@@ -143,11 +188,20 @@ public class View extends Application implements Observer {
 		});
 		
 		placeChair.setOnMouseReleased(event3 -> {
-			if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+			boolean inDrawPane = drawPane.getBoundsInParent()
+					.intersects(
+							event3.getSceneX() - LEFT_WIDTH,
+							event3.getSceneY() - TOP_HEIGHT,
+							1,
+							1);
+			
+			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
 				System.out.println("Inside of central panel");
-				// TODO: Notify controller that user wants to place chair at (mouseX, mouseY) position with CHAIR_WIDTH and CHAIR_HEIGHT.
+				// TODO: Notify controller that user wants to place chair at (mouseX, mouseY)
+				//         position with CHAIR_WIDTH and CHAIR_HEIGHT.
+				
 				// controller.addChair(mouseX, mouseY, CHAIR_WIDTH, CHAIR_HEIGHT);
 			}
 			root.getChildren().remove(chairBounds);
@@ -164,12 +218,21 @@ public class View extends Application implements Observer {
 		});
 		
 		placeObject.setOnMouseReleased(event3 -> {
-			if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
+			boolean inDrawPane = drawPane.getBoundsInParent()
+					.intersects(
+							event3.getSceneX() - LEFT_WIDTH,
+							event3.getSceneY() - TOP_HEIGHT,
+							1,
+							1);
+			
+			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
 				System.out.println("Inside of central panel");
-				// TODO: Notify controller that user wants to place object at (mouseX, mouseY) position with the default width and height.
-				// controller.addObject(mouseX, mouseY, width, height);
+				// TODO: Notify controller that user wants to place object at (mouseX, mouseY)
+				//         position with the default width and height.
+				// TODO: might consider user input for width and height
+				controller.createNewObject("object", event3.getX(), event3.getY(), 10, 10);
 			}
 			root.getChildren().remove(objectBounds);
 		});
@@ -185,25 +248,67 @@ public class View extends Application implements Observer {
 	 *
 	 * @return Pane
 	 */
-	private Pane initCenterPanel(){
+	private Pane initCenterPanel() {
 		Pane result = new Pane();
+		Pane child = initCenterInnerPanel();
 		result.setBackground(new Background(
 				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH);
 		result.setPrefHeight(CENTER_HEIGHT);
+		result.getChildren().add(child);
+		
+		// Allows right mouse drag to pan the child.
+		result.setOnMousePressed((event) -> {
+			if(event.isPrimaryButtonDown()) return;
+			double mouseX = event.getSceneX();
+			double mouseY = event.getSceneY();
+			double paneX = child.getTranslateX();
+			double paneY = child.getTranslateY();
+			
+			result.setOnMouseDragged((event2) -> {
+				if(event2.isPrimaryButtonDown()) return;
+				child.setTranslateX(paneX + (event2.getSceneX() - mouseX));
+				child.setTranslateY(paneY + (event2.getSceneY() - mouseY));
+			});
+		});
+		
+		result.setOnScroll((event) -> {
+			if(event.getDeltaY() < 0) {
+				child.setScaleX(child.getScaleX() / 1.1);
+				child.setScaleY(child.getScaleY() / 1.1);
+			} else {
+				child.setScaleX(child.getScaleX() * 1.1);
+				child.setScaleY(child.getScaleY() * 1.1);
+			}
+		});
+		
 		return result;
 	}
 	
+	/**
+	 * Initializes the inner panel for the center panel of the root border pane
+	 *
+	 * @return pane
+	 */
+	private Pane initCenterInnerPanel() {
+		Pane result = new Pane();
+		result.setBackground(new Background(
+				new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+		result.setPrefWidth(CENTER_WIDTH / 2.0);
+		result.setPrefHeight(CENTER_HEIGHT / 2.0);
+		drawPane = result;
+		return result;
+	}
 	
 	/**
 	 * Initializes the top panel in the root border pane
 	 *
 	 * @return Pane
 	 */
-	private Pane initTopPanel(){
+	private Pane initTopPanel() {
 		Pane result = new Pane();
 		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196,153,143,1), CornerRadii.EMPTY, Insets.EMPTY)));
+				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(TOP_HEIGHT);
 		
 		VBox vbox = new VBox();
@@ -219,10 +324,10 @@ public class View extends Application implements Observer {
 	 *
 	 * @return Pane
 	 */
-	private Pane initBottomPanel(){
+	private Pane initBottomPanel() {
 		Pane result = new Pane();
 		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196,153,143,1), CornerRadii.EMPTY, Insets.EMPTY)));
+				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(BOT_HEIGHT);
 		
 		return result;
@@ -230,9 +335,10 @@ public class View extends Application implements Observer {
 	
 	/**
 	 * Initializes a dashed rectangle representing the bounds of the object being placed.
-	 * @param width
-	 * @param height
-	 * @return
+	 *
+	 * @param width  the new's object bound's width in pixels
+	 * @param height the new's object bound's height in pixels
+	 * @return rectangle
 	 */
 	private Rectangle initObjectBounds(double width, double height) {
 		Rectangle r = new Rectangle();
@@ -247,23 +353,33 @@ public class View extends Application implements Observer {
 	}
 	
 	/**
-	 * Returns true if mouse is in the center panel defined at initialization.
-	 * @param mouseX
-	 * @param mouseY
-	 * @return
+	 * Initializes a new UI object at the given coordinates and with the given dimensions
+	 *
+	 * @param x      vertical position
+	 * @param y      horizontal position
+	 * @param width  the new's object width in pixels
+	 * @param height the new's object height in pixels
+	 * @return rectangle
 	 */
-	private boolean isInCenter(double mouseX, double mouseY) {
-		return !(mouseX < LEFT_WIDTH || mouseX > APP_WIDTH ||
-				mouseY < TOP_HEIGHT || mouseY > (TOP_HEIGHT + CENTER_HEIGHT));
+	private Rectangle initObject(double x, double y, double width, double height) {
+		Rectangle r = new Rectangle(x, y, width, height);
+		// TODO: EventHandler for selecting, moving, and editing rectangles
+		return r;
 	}
 	
 	/**
 	 * Updates position of object to mouse's position.
-	 * @param event
-	 * @param objectBounds
+	 *
+	 * @param event        mouse event
+	 * @param objectBounds node
 	 */
 	private void updateBound(MouseEvent event, Node objectBounds) {
-		objectBounds.setTranslateX(event.getSceneX());
-		objectBounds.setTranslateY(event.getSceneY());
+		objectBounds.setScaleX(drawPane.getScaleX());
+		objectBounds.setScaleY(drawPane.getScaleY());
+		
+		objectBounds.setTranslateX(event.getSceneX() +
+				(objectBounds.getBoundsInLocal().getWidth() / 2 * (objectBounds.getScaleX() - 1)));
+		objectBounds.setTranslateY(event.getSceneY() +
+				(objectBounds.getBoundsInLocal().getHeight() / 2 * (objectBounds.getScaleY() - 1)));
 	}
 }
