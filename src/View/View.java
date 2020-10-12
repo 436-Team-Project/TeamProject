@@ -137,6 +137,13 @@ public class View extends Application implements Observer {
 		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
 		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT); // Temporarily using default wall dimensions
 		
+		/*TODO:
+			- Change the model via controller (addWall, addChair, addObject)
+			- Show that the object has been placed in view
+			
+			--- Add event-handling to allow the placed object to be changed (widgets on sides of wall to allow change in width, height, and rotation)
+			--- Change the model via controller (updateWall, updateChair, updateObject)
+		 */
 		// --- Event handling "Place Wall" button ---
 		placeWall.setOnMousePressed(event -> {
 			updateBound(event, wallBounds);
