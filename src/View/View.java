@@ -7,8 +7,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -93,13 +93,23 @@ public class View extends Application implements Observer {
 	@Override
 	public void update(Observable observable, Object object) {
 		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
+		
 		// TODO - clear central panel
+		
 		drawPane.getChildren().clear();
+		
 		// TODO - redraw all items
+		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 				System.out.println("Drawing wall");
-				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				
+				Rectangle wall = initObject(
+						obj.getX(),
+						obj.getY(),
+						obj.getWidth(),
+						obj.getHeight());
+				
 				drawPane.getChildren().add(wall);
 			}
 			/*else if(obj instanceof Chair) {
@@ -128,10 +138,20 @@ public class View extends Application implements Observer {
 		VBox buttonBox = new VBox();
 		
 		Label leftPanelHeader = new Label("User Options");
+
 		
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
 		Button placeObject = new Button("Place Object"); // Place holder button
+		
+		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
+				"-fx-padding: 10px 50px 20px 50px;");
+		buttonBox.setStyle("-fx-alignment: center;-fx-spacing: 5px");
+		placeWall.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
+		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
+		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
+		
+		
 		
 		Rectangle wallBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
@@ -146,30 +166,26 @@ public class View extends Application implements Observer {
 			      wall to allow change in width, height, and rotation)
 			--- Change the model via controller (updateWall, updateChair, updateObject)
 		 */
+		
 		// --- Event handling "Place Wall" button ---
 		placeWall.setOnMousePressed(event -> {
 			updateBound(event, wallBounds);
 			root.getChildren().add(wallBounds);
 		});
 		
-		placeWall.setOnMouseDragged(event2 -> {
-			updateBound(event2, wallBounds);
-		});
+		placeWall.setOnMouseDragged(event2 -> { updateBound(event2, wallBounds); });
 		
 		placeWall.setOnMouseReleased(event3 -> {
 			//if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
-			boolean inDrawPane = drawPane.getBoundsInParent()
-					.intersects(
-							event3.getSceneX() - LEFT_WIDTH,
-							event3.getSceneY() - TOP_HEIGHT,
-							1,
-							1);
+			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
+					event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
 			
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
 				// TODO: Notify controller that user wants to place wall at (mouseX, mouseY)
-				//         position with WALL_WIDTH and WALL_HEIGHT.
+				//  position with WALL_WIDTH and WALL_HEIGHT.
+				
 				// TODO: might consider user input for width and height
 				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 				controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
@@ -177,30 +193,25 @@ public class View extends Application implements Observer {
 			root.getChildren().remove(wallBounds);
 		});
 		
+		
 		// --- Event handling "Place Chair" button ---
 		placeChair.setOnMousePressed(event -> {
 			updateBound(event, chairBounds);
 			root.getChildren().add(chairBounds);
 		});
 		
-		placeChair.setOnMouseDragged(event2 -> {
-			updateBound(event2, chairBounds);
-		});
+		placeChair.setOnMouseDragged(event2 -> { updateBound(event2, chairBounds); });
 		
 		placeChair.setOnMouseReleased(event3 -> {
-			boolean inDrawPane = drawPane.getBoundsInParent()
-					.intersects(
-							event3.getSceneX() - LEFT_WIDTH,
-							event3.getSceneY() - TOP_HEIGHT,
-							1,
-							1);
+			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
+					event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
 			
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
 				System.out.println("Inside of central panel");
 				// TODO: Notify controller that user wants to place chair at (mouseX, mouseY)
-				//         position with CHAIR_WIDTH and CHAIR_HEIGHT.
+				//  position with CHAIR_WIDTH and CHAIR_HEIGHT.
 				
 				// controller.addChair(mouseX, mouseY, CHAIR_WIDTH, CHAIR_HEIGHT);
 			}
@@ -213,24 +224,19 @@ public class View extends Application implements Observer {
 			root.getChildren().add(objectBounds);
 		});
 		
-		placeObject.setOnMouseDragged(event2 -> {
-			updateBound(event2, objectBounds);
-		});
+		placeObject.setOnMouseDragged(event2 -> { updateBound(event2, objectBounds); });
 		
 		placeObject.setOnMouseReleased(event3 -> {
-			boolean inDrawPane = drawPane.getBoundsInParent()
-					.intersects(
-							event3.getSceneX() - LEFT_WIDTH,
-							event3.getSceneY() - TOP_HEIGHT,
-							1,
-							1);
+			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
+					event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
 			
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
 				System.out.println("Inside of central panel");
 				// TODO: Notify controller that user wants to place object at (mouseX, mouseY)
-				//         position with the default width and height.
+				//  position with the default width and height.
+				
 				// TODO: might consider user input for width and height
 				controller.createNewObject("object", event3.getX(), event3.getY(), 10, 10);
 			}
@@ -250,7 +256,8 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterPanel() {
 		Pane result = new Pane();
-		Pane child = initCenterInnerPanel();
+		Pane child = initCenterInnerPanel(); // Draw panel
+		
 		result.setBackground(new Background(
 				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH);
@@ -272,6 +279,7 @@ public class View extends Application implements Observer {
 			});
 		});
 		
+		// Allows mouse scroll wheel to zoom in and out the child
 		result.setOnScroll((event) -> {
 			if(event.getDeltaY() < 0) {
 				child.setScaleX(child.getScaleX() / 1.1);
@@ -296,6 +304,8 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH / 2.0);
 		result.setPrefHeight(CENTER_HEIGHT / 2.0);
+		result.setTranslateX((CENTER_WIDTH/2.0)/2);
+		result.setTranslateY((CENTER_HEIGHT/2.0)/2);
 		drawPane = result;
 		return result;
 	}
@@ -311,11 +321,111 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(TOP_HEIGHT);
 		
-		VBox vbox = new VBox();
+		HBox hBox = new HBox();
 		Label topHeader = new Label("Floor Plan Creator");
+		topHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 30px;" +
+				"-fx-padding: 0px 0px 0px 100px;");
 		
-		vbox.getChildren().addAll(topHeader);
-		result.getChildren().add(vbox);
+		HBox menuBar = initTopControls();
+		hBox.getChildren().addAll(menuBar,topHeader);
+		result.getChildren().add(hBox);
+		return result;
+	}
+	
+	private HBox initTopControls(){
+		HBox result = new HBox();
+		HBox undoRedoBox = new HBox();
+		HBox zoomBox = new HBox();
+		MenuBar menuBar = new MenuBar();
+		
+		Menu menu = new Menu("File");
+		Menu subMenu = new Menu("Submenu");
+		MenuItem menuItemNew = new MenuItem("New");
+		MenuItem menuItemOpen = new MenuItem("Open");
+		MenuItem menuItemSave = new MenuItem("Save");
+		MenuItem menuItemSaveAs = new MenuItem("Save As");
+		MenuItem menuItemHelp = new MenuItem("Help");
+		MenuItem menuItemClose = new MenuItem("Close");
+		MenuItem subMenuItem1 = new MenuItem("Submenu Item");
+		subMenu.getItems().add(subMenuItem1);
+		
+		result.setStyle("-fx-spacing: 25px;");
+		undoRedoBox.setStyle("-fx-spacing: 2px;");
+		zoomBox.setStyle("-fx-spacing: 2px;");
+
+		
+
+		
+		menuItemNew.setOnAction(e -> {
+			System.out.println("Menu Item \"New\" Selected");
+			// TODO: Implement creating a new floor plan layout
+		});
+		menuItemOpen.setOnAction(e -> {
+			System.out.println("Menu Item \"Open\" Selected");
+			// TODO: Implement loading a preexisting floor plan layout
+		});
+		menuItemSave.setOnAction(e -> {
+			System.out.println("Menu Item \"Save\" Selected");
+			// TODO: Implement the save feature
+		});
+		menuItemSaveAs.setOnAction(e -> {
+			System.out.println("Menu Item \"Save As\" Selected");
+			// TODO: Implement the "Save As" feature
+		});
+		menuItemHelp.setOnAction(e -> {
+			System.out.println("Menu Item \"Help\" Selected");
+			// TODO: Implement the help info for the user
+		});
+		menuItemClose.setOnAction(e -> {
+			System.out.println("Menu Item \"Close\" Selected");
+			// TODO: Implement closing out of the application
+		});
+		
+		menu.getItems().add(menuItemNew);
+		menu.getItems().add(menuItemOpen);
+		menu.getItems().add(menuItemSave);
+		menu.getItems().add(menuItemSaveAs);
+		menu.getItems().add(subMenu);
+		menu.getItems().add(menuItemHelp);
+		menu.getItems().add(menuItemClose);
+		menuBar.getMenus().add(menu);
+		
+		Button undoButton = new Button();
+		Button redoButton = new Button();
+		Button resetZoomButton = new Button();
+		Button zoomInButton = new Button();
+		Button zoomOutButton = new Button();
+		
+		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
+		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));
+		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
+		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
+		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
+		
+		undoButton.setOnMouseClicked(e -> {
+			System.out.println("\"Undo\" button clicked");
+			// TODO: Implement the undo feature
+		});
+		redoButton.setOnMouseClicked(e -> {
+			System.out.println("\"Redo\" button clicked");
+			// TODO: Implement the redo feature
+		});
+		resetZoomButton.setOnMouseClicked(e -> {
+			System.out.println("\"Reset Zoom\" button clicked");
+			// TODO: Implement the "Reset Zoom" feature
+		});
+		zoomInButton.setOnMouseClicked(e -> {
+			System.out.println("\"Zoom In\" button clicked");
+			// TODO: Implement the zooming in like with the mouse wheel
+		});
+		zoomOutButton.setOnMouseClicked(e -> {
+			System.out.println("\"Zoom Out\" button clicked");
+			// TODO: Implement the zooming out like with the mouse wheel
+		});
+		undoRedoBox.getChildren().addAll(undoButton, redoButton);
+		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
+		result.getChildren().addAll(menuBar, undoRedoBox, zoomBox);
+		
 		return result;
 	}
 	

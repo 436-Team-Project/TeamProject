@@ -2,6 +2,9 @@ package Model;
 
 import java.util.ArrayList;
 
+/**
+ * Table class
+ */
 public class Tables extends UIObjects {
 	
 	boolean available = true;
@@ -20,7 +23,7 @@ public class Tables extends UIObjects {
 	public Tables(int ID, int x, int y, int x2, int y2) {
 		super(ID, x, y, x2, y2);
 		this.numberOfSpots = 4;
-		// TODO Auto-generated constructor stub
+
 	}
 	
 	/**
