@@ -1,6 +1,8 @@
 package Model;
 
-
+/**
+ * Spot class
+ */
 public class Spots extends UIObjects{
 	
 	boolean available= true;

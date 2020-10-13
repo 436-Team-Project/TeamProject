@@ -29,7 +29,7 @@ public class Model extends Observable {
 		System.out.format("new object added. %d items exist\n", itemList.size());
 }
 
-  
+ 
 	public void createObject(String type, int x, int y){
 		//create the object that is asked for.
 		if (type.equals("wall")) {
@@ -56,8 +56,8 @@ public class Model extends Observable {
 		notifyObservers();
 		System.out.println("updated");
 	}
-  
-  
+ 
+ 
 	/*
 	 * returns the list of the objects
 	 */
