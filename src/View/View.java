@@ -42,7 +42,9 @@ public class View extends Application implements Observer {
 	final double WALL_HEIGHT = 25;
 	final double CHAIR_WIDTH = 25;
 	final double CHAIR_HEIGHT = 25;
-	boolean inDrawPane = false;
+	boolean drawingWall = false;
+	boolean placingChair = false;
+	boolean placingObject = false;
 	
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
@@ -94,14 +96,14 @@ public class View extends Application implements Observer {
 	@Override
 	public void update(Observable observable, Object object) {
 		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
-		// TODO - clear central panel
+		// - clear central panel
 		drawPane.getChildren().clear();
-		// TODO - redraw all items
+		// - redraw all items
 		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 				System.out.println("Drawing wall");
-				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				Line wall = initLine(obj.getX(), obj.getY(), obj.getX2(), obj.getY2());
 				drawPane.getChildren().add(wall);
 			}
 			else if(obj instanceof Spots) {
@@ -155,35 +157,40 @@ public class View extends Application implements Observer {
 		// Temporarily using default wall dimensions
 		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		
-		// --- Event handling "Place Wall" button ---
-		placeWall.setOnMousePressed(event -> {
-			updateBound(event, wallBounds);
-			root.getChildren().add(wallBounds);
+		// --- Event handling "Place Wall" button ---\
+		placeWall.setOnMouseClicked(event -> {
+			drawingWall = true;
+			placingObject = false;
+			placingChair = false;
 		});
 		
-		placeWall.setOnMouseDragged(event2 -> { updateBound(event2, wallBounds); });
-		
-		placeWall.setOnMouseReleased(event3 -> {
-			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
-					event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-			
-			if(!inDrawPane) {
-				System.out.println("Outside of central panel");
-			} else {
-				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-				controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
-			}
-			root.getChildren().remove(wallBounds);
-		});
-		
+		/*
+		 * placeWall.setOnMousePressed(event -> { updateBound(event, wallBounds);
+		 * root.getChildren().add(wallBounds); });
+		 *
+		 * placeWall.setOnMouseDragged(event2 -> { updateBound(event2, wallBounds); });
+		 *
+		 * placeWall.setOnMouseReleased(event3 -> { boolean inDrawPane =
+		 * drawPane.getBoundsInParent().intersects( event3.getSceneX() - LEFT_WIDTH,
+		 * event3.getSceneY() - TOP_HEIGHT, 1, 1);
+		 *
+		 * if (!inDrawPane) { System.out.println("Outside of central panel"); } else {
+		 * Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+		 * controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH,
+		 * WALL_HEIGHT); } root.getChildren().remove(wallBounds); });
+		 */
 		
 		// --- Event handling "Place Chair" button ---
 		placeChair.setOnMousePressed(event -> {
+			drawingWall = false;
+			placingObject = false;
+			placingChair = true;
 			updateBound(event, chairBounds);
 			root.getChildren().add(chairBounds);
+
+			placeChair.setOnMouseDragged(event2 -> {
+				updateBound(event2, chairBounds);
 		});
-		
-		placeChair.setOnMouseDragged(event2 -> { updateBound(event2, chairBounds); });
 		
 		placeChair.setOnMouseReleased(event3 -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
@@ -197,14 +204,19 @@ public class View extends Application implements Observer {
 			}
 			root.getChildren().remove(chairBounds);
 		});
+		});
 		
 		// --- Event handling "Place Object" button ---
 		placeObject.setOnMousePressed(event -> {
+			drawingWall = false;
+			placingChair = false;
+			placingObject = true;
 			updateBound(event, objectBounds);
 			root.getChildren().add(objectBounds);
+
+			placeObject.setOnMouseDragged(event2 -> {
+				updateBound(event2, objectBounds);
 		});
-		
-		placeObject.setOnMouseDragged(event2 -> { updateBound(event2, objectBounds); });
 		
 		placeObject.setOnMouseReleased(event3 -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
@@ -217,6 +229,7 @@ public class View extends Application implements Observer {
 				controller.createNewObject("object", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
 			}
 			root.getChildren().remove(objectBounds);
+		});
 		});
 		
 		buttonBox.getChildren().addAll(placeWall, placeChair, placeObject);
@@ -278,11 +291,37 @@ public class View extends Application implements Observer {
 		Pane result = new Pane();
 		result.setBackground(new Background(
 				new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(CENTER_WIDTH / 2.0);
-		result.setPrefHeight(CENTER_HEIGHT / 2.0);
-		result.setTranslateX((CENTER_WIDTH/2.0)/2);
-		result.setTranslateY((CENTER_HEIGHT/2.0)/2);
+		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
+		result.setPrefHeight(CENTER_HEIGHT * 3.0 / 4.0);
+		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		drawPane = result;
+
+		// Event-handling for drawing wall.
+		result.setOnMousePressed(event -> {
+			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
+					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
+			if (drawingWall && event.isPrimaryButtonDown() && inDrawPane) {
+				System.out.println("Drawing");
+				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+				Line wallBound = initLineBounds(p.getX(), p.getY());
+				drawPane.getChildren().add(wallBound);
+
+				result.setOnMouseDragged(event2 -> {
+					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+					wallBound.setEndX(p2.getX());
+					wallBound.setEndY(p2.getY());
+
+					result.setOnMouseReleased(event3 -> {
+						if (event2.isPrimaryButtonDown() && drawingWall) {
+							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
+									p2.getY());
+							drawPane.getChildren().remove(wallBound);
+						}
+					});
+				});
+			}
+		});
 		return result;
 	}
 	
@@ -423,7 +462,8 @@ public class View extends Application implements Observer {
 	}
 	
 	/**
-	 * Initializes a dashed rectangle representing the bounds of the object being placed.
+	 * Initializes a dashed rectangle representing the bounds of the object being
+	 * placed.
 	 *
 	 * @param width  the new's object bound's width in pixels
 	 * @param height the new's object bound's height in pixels
@@ -441,8 +481,20 @@ public class View extends Application implements Observer {
 		return r;
 	}
 	
+
+	private Line initLineBounds(double x, double y) {
+		Line l = new Line(x, y, x, y);
+		l.setStroke(Color.BLACK);
+		l.setStrokeWidth(1);
+		l.getStrokeDashArray().addAll(5.0);
+		l.setFill(Color.TRANSPARENT);
+
+		return l;
+	}
+
 	/**
-	 * Initializes a new UI object at the given coordinates and with the given dimensions
+	 * Initializes a new UI object at the given coordinates and with the given
+	 * dimensions
 	 *
 	 * @param x      vertical position
 	 * @param y      horizontal position
@@ -456,6 +508,24 @@ public class View extends Application implements Observer {
 		return r;
 	}
 	
+	/**
+	 * Initializes a new UI object at the given coordinates and with the given
+	 * dimensions (For objects represented as a line)
+	 *
+	 * @param x  vertical start position
+	 * @param y  horizontal start position
+	 * @param x2 vertical end position
+	 * @param y2 horizontal end position
+	 * @return line
+	 */
+	private Line initLine(double x, double y, double x2, double y2) {
+		Line l = new Line(x, y, x2 - x, y2 - y);
+		l.setStrokeWidth(5);
+		// TODO: EventHandler for selecting, moving, and editing lines
+		return l;
+	}
+
+
 	private Circle initChair(double x, double y, double radius) {
 		Circle c = new Circle(x, y, radius);
 		c.setStroke(Color.BLACK);
@@ -467,6 +537,7 @@ public class View extends Application implements Observer {
 	
 	/**
 	 * Updates position of object to mouse's position.
+	 *
 	 * @param event
 	 * @param objectBounds
 	 */
