@@ -9,6 +9,8 @@ import java.util.Observable;
 
 public class Model extends Observable {
 	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
+	UIObjects lastObject;
+	
 	private int SIZE=20;
 	/**
 	 * Constructor
@@ -18,11 +20,25 @@ public class Model extends Observable {
 		notifyObservers();
 	}
 	
+	public void removeLastObject(){
+		itemList.remove(lastObject);
+		if(itemList.size() == 0) {
+			setChanged();
+			notifyObservers();
+			return;
+		} else {
+			lastObject = itemList.get(itemList.size()-1);
+		}
+		setChanged();
+		notifyObservers();
+	}
+	
 	/**
 	 * Template method (ignore)
 	 */
   
 	public void addObject(UIObjects newObj) {
+		lastObject = newObj;
 		itemList.add(newObj);
 		setChanged();
 		notifyObservers();

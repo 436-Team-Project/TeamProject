@@ -3,6 +3,9 @@ package View;
 import Model.*;
 import Controller.Controller;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -13,6 +16,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -42,6 +46,10 @@ public class View extends Application implements Observer {
 	final double WALL_HEIGHT = 25;
 	final double CHAIR_WIDTH = 25;
 	final double CHAIR_HEIGHT = 25;
+	
+	final double TABLE_WIDTH = 60;
+	final double TABLE_HEIGHT = 60;
+	
 	boolean drawingWall = false;
 	boolean placingChair = false;
 	boolean placingObject = false;
@@ -137,11 +145,11 @@ public class View extends Application implements Observer {
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
 		
-		Label leftPanelHeader = new Label("User Options");
+		Label leftPanelHeader = new Label("Canvas Elements");
 		
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
-		Button placeObject = new Button("Place Object"); // Place holder button
+		Button placeObject = new Button("Place Table"); // Place holder button
 		
 		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
 				"-fx-padding: 10px 50px 20px 50px;");
@@ -226,7 +234,7 @@ public class View extends Application implements Observer {
 				System.out.println("Outside of central panel");
 			} else {
 				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-				controller.createNewObject("object", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
+				controller.createNewObject("object", p.getX(), p.getY(), TABLE_WIDTH, TABLE_HEIGHT);
 			}
 			root.getChildren().remove(objectBounds);
 		});
@@ -393,7 +401,7 @@ public class View extends Application implements Observer {
 		});
 		menuItemClose.setOnAction(e -> {
 			System.out.println("Menu Item \"Close\" Selected");
-			// TODO: Implement closing out of the application
+			Platform.exit();
 		});
 		
 		menu.getItems().add(menuItemNew);
@@ -420,10 +428,12 @@ public class View extends Application implements Observer {
 		undoButton.setOnMouseClicked(e -> {
 			System.out.println("\"Undo\" button clicked");
 			// TODO: Implement the undo feature
+			controller.undo();
 		});
 		redoButton.setOnMouseClicked(e -> {
 			System.out.println("\"Redo\" button clicked");
 			// TODO: Implement the redo feature
+			
 		});
 		resetZoomButton.setOnMouseClicked(e -> {
 			System.out.println("\"Reset Zoom\" button clicked");
@@ -458,6 +468,15 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(BOT_HEIGHT);
 		
+		HBox hBox = new HBox();
+		Button hostButton = new Button("Host");
+		
+		result.setStyle("-fx-alignment: center; -fx-padding: 0px 25px 0px 0px;");
+		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
+		hBox.setStyle(" -fx-padding: 0px 25px 0px 0px;");
+		
+		hBox.getChildren().add(hostButton);
+		result.getChildren().add(hBox);
 		return result;
 	}
 	
@@ -498,8 +517,8 @@ public class View extends Application implements Observer {
 	 *
 	 * @param x      vertical position
 	 * @param y      horizontal position
-	 * @param width  the new's object width in pixels
-	 * @param height the new's object height in pixels
+	 * @param width  the new object's radius
+	 * @param height  the new object's radius
 	 * @return rectangle
 	 */
 	private Rectangle initObject(double x, double y, double width, double height) {
@@ -538,8 +557,8 @@ public class View extends Application implements Observer {
 	/**
 	 * Updates position of object to mouse's position.
 	 *
-	 * @param event
-	 * @param objectBounds
+	 * @param event event
+	 * @param objectBounds node
 	 */
 	private void updateBound(MouseEvent event, Node objectBounds) {
 		objectBounds.setScaleX(drawPane.getScaleX());

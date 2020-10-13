@@ -41,7 +41,10 @@ public class Controller {
 		model.addObject(newObj);
 	}
 
-
+	public void undo(){
+		model.removeLastObject();
+	}
+	
 	/*
 	 * param: the x and y coords and the ID the ID is the position it holds in the arraylist.
 	 */
