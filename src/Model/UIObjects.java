@@ -35,6 +35,15 @@ public abstract class UIObjects {
 		return y;
 	}
 	
+
+	public double getX2() {
+		return x2;
+	}
+	
+	public double getY2() {
+		return y2;
+	}
+	
 	public double getWidth() {
 		return Math.abs(x2 - x);
 	}
