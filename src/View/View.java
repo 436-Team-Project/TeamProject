@@ -12,7 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -103,14 +103,128 @@ public class View extends Application implements Observer {
 		{
 			if(obj instanceof Wall) {
 				System.out.println("Drawing wall");
-				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				//Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				Line wall = new Line(obj.getX(), obj.getY(), obj.getX2(), obj.getY2());
+				wall.setStrokeWidth(5);
+
+				// These are invisible circular regions acting as endpoints of the line
+				// to allow dragging of on end.
+				Circle leftEnd  = new Circle(obj.getX(), obj.getY(), 10);
+				Circle rightEnd = new Circle(obj.getX2(), obj.getY2(), 10);
+
+				leftEnd.setFill(Color.TRANSPARENT);
+				rightEnd.setFill(Color.TRANSPARENT);
+
+				// drag left end of wall
+				leftEnd.setOnMouseDragged(event -> {
+					wall.setStartX(event.getX());
+					wall.setStartY(event.getY());
+
+					leftEnd.setCenterX(event.getX());
+					leftEnd.setCenterY(event.getY());
+				});
+
+				leftEnd.setOnMouseReleased(event -> {
+
+					// TODO - Check if in the draw pane
+					controller.updateObject(obj.getId(), event.getX(), event.getY(), obj.getX2(), obj.getY2());
+				});
+
+				// drag right end wall
+				rightEnd.setOnMouseDragged(event -> {
+					wall.setEndX(event.getX());
+					wall.setEndY(event.getY());
+
+					rightEnd.setCenterX(event.getX());
+					rightEnd.setCenterY(event.getY());
+				});
+
+				rightEnd.setOnMouseReleased(event -> {
+
+					// TODO - Check if in the draw pane
+					controller.updateObject(obj.getId(), obj.getX(), obj.getY(), event.getX(), event.getY());
+				});
+
+				wall.setOnMousePressed(event -> {
+					Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+
+					double mouseX = p.getX();
+					double mouseY = p.getY();
+					double wallX = wall.getTranslateX();
+					double wallY = wall.getTranslateY();
+
+					wall.setOnMouseDragged(event2 -> {
+						Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+						wall.setTranslateX(wallX + (p2.getX() - mouseX));
+						wall.setTranslateY(wallY + (p2.getY() - mouseY));
+					});
+				});
+
+				wall.setOnMouseReleased(event -> {
+					
+
+					// TODO - check if placed within the draw pane
+					/*
+					if(<not_in_draw_pane>) {
+						  // Rest the wall to original place
+						wall.setStartX(obj.getX()); wall.setStartY(obj.getY());
+						wall.setEndX(obj.getX2()); wall.setEndY(obj.getY());
+						return;
+					}*/
+
+					double transX = wall.getTranslateX();
+					double transY = wall.getTranslateY();
+
+					controller.updateObject(obj.getId(), obj.getX() + transX, obj.getY() + transY,
+											obj.getX2() + transX, obj.getY2() + transY);
+				});
+
 				drawPane.getChildren().add(wall);
+				drawPane.getChildren().add(leftEnd);
+				drawPane.getChildren().add(rightEnd);
 			} 
 			/*else if(obj instanceof Chair) {
 				System.out.println("Drawing chair");
 			}*/
 			else {
 				System.out.println("Drawing object");
+
+				Rectangle newObj = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				newObj.setOnMousePressed(event -> {
+					Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+
+					double mouseX = p.getX();
+					double mouseY = p.getY();
+					double newObjX = newObj.getTranslateX();
+					double newObjY = newObj.getTranslateY();
+
+					newObj.setOnMouseDragged(event2 -> {
+						Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+						newObj.setTranslateX(newObjX + (p2.getX() - mouseX));
+						newObj.setTranslateY(newObjY + (p2.getY() - mouseY));
+					});
+				});
+
+				newObj.setOnMouseReleased(event -> {
+					
+
+					// TODO - check if placed within the draw pane
+					/*
+					if(<not_in_draw_pane>) {
+						  // Rest the wall to original place
+						wall.setStartX(obj.getX()); wall.setStartY(obj.getY());
+						wall.setEndX(obj.getX2()); wall.setEndY(obj.getY());
+						return;
+					}*/
+
+					double transX = newObj.getTranslateX();
+					double transY = newObj.getTranslateY();
+
+					controller.updateObject(obj.getId(), obj.getX() + transX, obj.getY() + transY,
+											obj.getX2() + transX, obj.getY2() + transY);
+				});
+
+				drawPane.getChildren().add(newObj);
 			}
 		}
 	}
@@ -213,7 +327,8 @@ public class View extends Application implements Observer {
 				System.out.println("Inside of central panel");
 				// TODO: Notify controller that user wants to place object at (mouseX, mouseY) position with the default width and height.
 				// TODO: might consider user input for width and height
-				controller.createNewObject("object", event3.getX(), event3.getY(), 10, 10);
+				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+				controller.createNewObject("object", p.getX(), p.getY(), 10, 10);
 			}
 			root.getChildren().remove(objectBounds);
 		});

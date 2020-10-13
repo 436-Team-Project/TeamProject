@@ -25,13 +25,13 @@ public class Controller {
 		switch(type)
 		{
 			case "wall":
-				newObj = new Wall(0, x, y, x2, y2);
+				newObj = new Wall(model.getNewId(), x, y, x2, y2);
 				break;
 			case "chair":
 				//newObj = new Chair();
 				break;
 			case "object":
-				newObj = new Obj(1, x, y, x2, y2);
+				newObj = new Obj(model.getNewId(), x, y, x2, y2);
 				break;
 			default:
 				System.out.println("invalid object type");
@@ -44,9 +44,10 @@ public class Controller {
 	/*
 	 * param: the x and y coords and the ID.
 	 */
-	public void updateCurrentObject(int x, int y, int ID) {
-		model.updateObject(x, y, ID);
+	public void updateObject(int id, double x1, double y1, double x2, double y2) {
+		model.updateObject(id, x1, y1, x2, y2);
 	}
+
 	
 	public UIObjects getObject(int x, int y) {
 		return model.getObject(x,y);

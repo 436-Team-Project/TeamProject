@@ -26,6 +26,10 @@ public abstract class UIObjects {
 		this.x2=x2;
 		this.y2=y2;
 	}
+
+	public int getId() {
+		return ID;
+	}
 	
 	public double getX() {
 		return x;
@@ -33,6 +37,14 @@ public abstract class UIObjects {
 	
 	public double getY() {
 		return y;
+	}
+
+	public double getX2() {
+		return x2;
+	}
+	
+	public double getY2() {
+		return y2;
 	}
 	
 	public double getWidth() {

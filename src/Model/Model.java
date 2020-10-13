@@ -51,10 +51,16 @@ public class Model extends Observable {
 		System.out.format("new object added. %d items exist\n", itemList.size());
 	}
 	
-	public void updateObject(int x, int y, int ID) {
+	public void updateObject(int id, double x1, double y1, double x2, double y2) {
+		itemList.get(id).update(x1, y1, x2, y2);
 		setChanged();
 		notifyObservers();
 		System.out.println("updated");
+	}
+
+
+	public int getNewId() {
+		return itemList.size();
 	}
   
   
