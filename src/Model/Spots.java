@@ -42,4 +42,9 @@ public class Spots extends UIObjects{
 		occupied=!occupied;
 	}
 	
+	@Override
+	public String toString() {
+		return "ID: " + this.ID+ "type: chair"; 
+	}
+	
 }

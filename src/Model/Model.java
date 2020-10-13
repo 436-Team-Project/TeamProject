@@ -2,10 +2,17 @@ package Model;
 
 import java.util.ArrayList;
 import java.util.Observable;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.*;
 
 /**
  * The state of the application
+ * 
+ * @author Ben Taylor
  */
 
 public class Model extends Observable {
@@ -13,7 +20,7 @@ public class Model extends Observable {
 	private int SIZE=20;
 	private int BUFFER=60;
 	/**
-	 * Constructor
+	 * Constructor class
 	 */
 	public Model() {
 		setChanged();
@@ -21,7 +28,8 @@ public class Model extends Observable {
 	}
 	
 	/**
-	 * 
+	 * this class ads an object into the itemList
+	 * @param newObj object to be added into the list
 	 */
   
 	public void addObject(UIObjects newObj) {
@@ -53,6 +61,14 @@ public class Model extends Observable {
 		System.out.format("new object added. %d items exist\n", itemList.size());
 	}
 	*/
+	/**
+	 * updates the state and location of an object
+	 * @param x
+	 * @param y
+	 * @param x2
+	 * @param y2
+	 * @param ID
+	 */
 	public void updateObject(double x, double y, double x2, double y2, int ID) {
 		UIObjects obj=itemList.get(ID);
 		obj.update(x, y, x2, y2);
@@ -62,15 +78,20 @@ public class Model extends Observable {
 	}
  
  
-	/*
-	 * returns the list of the objects
+	/**
+	 * 
+	 * @return list of objects
 	 */
 	public ArrayList<UIObjects> getObjects(){
 		System.out.println("returning items");
 		return itemList;
 	}
-	/*
+	
+	/**
 	 * returns a single object in the list based on if the item is on the clicked area. if not it returns null.
+	 * @param x 
+	 * @param y
+	 * @returns obj
 	 */
 	public UIObjects getObject(int x, int y) {
 		UIObjects obj=null;
@@ -84,12 +105,18 @@ public class Model extends Observable {
 		
 	}
 	
+	/**
+	 * 
+	 * @return the size of the item list
+	 */
 	public int nextID() {
 		return itemList.size();
 	}
-	/*
+	
+	/**
 	 * checks the availability of every spot update which seats can be taken again or 
 	 * which seats are too close to another customer to be taken.
+	 * @param ID the id of the object
 	 */
 	public void takeCalculator(int ID) {
 		Spots nSpot = (Spots) itemList.get(ID);
@@ -121,9 +148,12 @@ public class Model extends Observable {
 		}
 	}
 	
-	/*
+	/**
 	 * unlike take we need to make give recursive. this is because unlike take all surrounding
 	 * spots need to be clear instead of just taking if 1 is within range.
+	 * @param ID
+	 * @param element
+	 * @return avail true or false of if the give availability permission is allowed
 	 */
 	public boolean giveCalculator(int ID, int element) {
 		Spots nSpot = (Spots) itemList.get(ID);
@@ -150,9 +180,10 @@ public class Model extends Observable {
 		return (true&&giveCalculator(ID,element++));
 	}
 	
-	/*
+	/**
 	 * based on the action it changes the occupancy status of the spot and then updates
 	 * the spots around it
+	 * @param ID updates the availability of the spot
 	 */
 	public void updateAvailability(int ID) {
 		if (itemList.get(ID) instanceof Spots) {
@@ -179,5 +210,49 @@ public class Model extends Observable {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * serializes the itemList into a file named layoutData
+	 */
+	public void saveState() {
+		try {
+			FileOutputStream fileout= new FileOutputStream("layoutData");
+			ObjectOutputStream objectout = new ObjectOutputStream(fileout);
+			objectout.writeObject(itemList);
+			objectout.close();
+			fileout.close();
+		}
+		catch(IOException ioe) {
+			ioe.printStackTrace();
+		}
+	}
+	
+	/**
+	 * loads a previously saved state.
+	 */
+	@SuppressWarnings("unchecked")
+	public void loadState() {
+		try {
+			FileInputStream filein = new FileInputStream("layoutData");
+			ObjectInputStream objin = new ObjectInputStream(filein);
+			
+			itemList=(ArrayList<UIObjects>) objin.readObject();
+			
+			objin.close();
+			filein.close();
+			
+		}
+		
+		catch(IOException ioe) {
+			ioe.printStackTrace();
+		}
+		
+		catch(ClassNotFoundException c) {
+			System.out.println("class not found.");
+			c.printStackTrace();
+		}
+		
+		//add in check to make sure state is correct.
 	}
 }
