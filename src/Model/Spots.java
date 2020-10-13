@@ -10,14 +10,13 @@ public class Spots extends UIObjects {
 	
 	/**
 	 * Spot constructor
-	 *
 	 * @param ID Spot ID
 	 * @param x vertical position
 	 * @param y horizontal position
 	 * @param x2 vertical position
 	 * @param y2 horizontal position
 	 */
-	public Spots(int ID, int x, int y, int x2, int y2) {
+	public Spots(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y, x2, y2);
 
 	}

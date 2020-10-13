@@ -35,10 +35,10 @@ public class Controller {
 		switch(type)
 		{
 			case "wall":
-				newObj = new Wall(0, x, y, x2, y2);
+				newObj = new Wall(model.getObjects().size(), x, y, x2, y2);
 				break;
 			case "chair":
-				//newObj = new Chair();
+				newObj = new Spots(model.getObjects().size(),x,y,x2,y2);
 				break;
 			case "object":
 //				newObj = new Obj(1, x, y, x2, y2);

@@ -20,7 +20,7 @@ public class Tables extends UIObjects {
 	 * @param x2 vertical position
 	 * @param y2 horizontal position
 	 */
-	public Tables(int ID, int x, int y, int x2, int y2) {
+	public Tables(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y, x2, y2);
 		this.numberOfSpots = 4;
 

@@ -93,23 +93,14 @@ public class View extends Application implements Observer {
 	@Override
 	public void update(Observable observable, Object object) {
 		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
-		
 		// TODO - clear central panel
-		
 		drawPane.getChildren().clear();
-		
 		// TODO - redraw all items
 		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 				System.out.println("Drawing wall");
-				
-				Rectangle wall = initObject(
-						obj.getX(),
-						obj.getY(),
-						obj.getWidth(),
-						obj.getHeight());
-				
+				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
 				drawPane.getChildren().add(wall);
 			}
 			/*else if(obj instanceof Chair) {
@@ -128,17 +119,16 @@ public class View extends Application implements Observer {
 	 *
 	 * @return Pane
 	 */
-	private Pane initLeftPanel() {
+	private Pane initLeftPanel(){
 		Pane result = new Pane();
 		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
+				new BackgroundFill(Color.rgb(110,161,141,1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
 		
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
 		
 		Label leftPanelHeader = new Label("User Options");
-
 		
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
@@ -210,10 +200,11 @@ public class View extends Application implements Observer {
 				System.out.println("Outside of central panel");
 			} else {
 				System.out.println("Inside of central panel");
+				
 				// TODO: Notify controller that user wants to place chair at (mouseX, mouseY)
 				//  position with CHAIR_WIDTH and CHAIR_HEIGHT.
-				
-				// controller.addChair(mouseX, mouseY, CHAIR_WIDTH, CHAIR_HEIGHT);
+				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+				 controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH, CHAIR_HEIGHT);
 			}
 			root.getChildren().remove(chairBounds);
 		});
