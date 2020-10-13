@@ -156,7 +156,8 @@ public class View extends Application implements Observer {
 		// --- Event handling "Place Wall" button ---\
 		placeWall.setOnMouseClicked(event -> {
 			drawingWall = true;
-			System.out.println("DrawingWall=true");
+			placingObject = false;
+			placingChair = false;
 		});
 
 		/*
