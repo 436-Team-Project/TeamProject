@@ -61,6 +61,7 @@ public class View extends Application implements Observer {
 	/**
 	 * Call this once
 	 *
+	 * @param  primaryStage Stage
 	 * @param primaryStage Stage
 	 */
 	@Override
@@ -470,9 +471,8 @@ public class View extends Application implements Observer {
 	
 	/**
 	 * Updates position of object to mouse's position.
-	 *
-	 * @param event        mouse event
-	 * @param objectBounds node
+	 * @param event
+	 * @param objectBounds
 	 */
 	private void updateBound(MouseEvent event, Node objectBounds) {
 		objectBounds.setScaleX(drawPane.getScaleX());
