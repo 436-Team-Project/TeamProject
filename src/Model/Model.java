@@ -24,7 +24,7 @@ public class Model extends Observable {
   
 	public void addObject(UIObjects newObj) {
 		itemList.add(newObj);
-    setChanged();
+		setChanged();
 		notifyObservers();
 		System.out.format("new object added. %d items exist\n", itemList.size());
 }
@@ -78,6 +78,10 @@ public class Model extends Observable {
 		}
 		return obj;
 		
+	}
+	
+	public int nextID() {
+		return itemList.size();
 	}
 	
 }

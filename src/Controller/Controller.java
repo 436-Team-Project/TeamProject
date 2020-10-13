@@ -22,16 +22,17 @@ public class Controller {
 		UIObjects newObj = null;
 		double x2 = x + width;
 		double y2 = y + height;
+		int ID = model.nextID();
 		switch(type)
 		{
 			case "wall":
-				newObj = new Wall(0, x, y, x2, y2);
+				newObj = new Wall(ID, x, y, x2, y2);
 				break;
 			case "chair":
-				//newObj = new Chair();
+				newObj = new Spots(ID,x,y,x2,y2);
 				break;
 			case "object":
-				newObj = new Obj(1, x, y, x2, y2);
+				newObj = new Tables(ID, x, y, x2, y2);
 				break;
 			default:
 				System.out.println("invalid object type");
@@ -42,7 +43,7 @@ public class Controller {
 
 
 	/*
-	 * param: the x and y coords and the ID.
+	 * param: the x and y coords and the ID the ID is the position it holds in the arraylist.
 	 */
 	public void updateCurrentObject(int x, int y, int ID) {
 		model.updateObject(x, y, ID);

@@ -8,7 +8,7 @@ public class Tables extends UIObjects{
 	int numberOfSpots;
 	ArrayList<Spots> availableSpots=new ArrayList<Spots>();
 	
-	public Tables(int ID, int x, int y, int x2, int y2) {
+	public Tables(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y, x2, y2);
 		this.numberOfSpots=4;
 		// TODO Auto-generated constructor stub
