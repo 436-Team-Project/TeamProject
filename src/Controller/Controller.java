@@ -45,8 +45,8 @@ public class Controller {
 	/*
 	 * param: the x and y coords and the ID the ID is the position it holds in the arraylist.
 	 */
-	public void updateCurrentObject(int x, int y, int ID) {
-		model.updateObject(x, y, ID);
+	public void updateCurrentObject(double x, double y, double x2, double y2,int ID) {
+		model.updateObject(x, y, x2, y2, ID);
 	}
 	
 	public UIObjects getObject(int x, int y) {
