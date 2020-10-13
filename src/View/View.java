@@ -12,7 +12,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -104,11 +104,17 @@ public class View extends Application implements Observer {
 				Rectangle wall = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
 				drawPane.getChildren().add(wall);
 			}
-			/*else if(obj instanceof Chair) {
+			else if(obj instanceof Spots) {
 				System.out.println("Drawing chair");
-			}*/
+				double radius = obj.getWidth() / 2;
+				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius);
+				drawPane.getChildren().add(chair);
+			}
 			else {
 				System.out.println("Drawing object");
+				Rectangle o = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+				o.setFill(Color.GRAY);
+				drawPane.getChildren().add(o);
 			}
 		}
 	}
@@ -149,15 +155,6 @@ public class View extends Application implements Observer {
 		// Temporarily using default wall dimensions
 		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		
-		/*TODO:
-			- Change the model via controller (addWall, addChair, addObject)
-			- Show that the object has been placed in view
-			
-			--- Add event-handling to allow the placed object to be changed (widgets on sides of
-			      wall to allow change in width, height, and rotation)
-			--- Change the model via controller (updateWall, updateChair, updateObject)
-		 */
-		
 		// --- Event handling "Place Wall" button ---
 		placeWall.setOnMousePressed(event -> {
 			updateBound(event, wallBounds);
@@ -167,17 +164,12 @@ public class View extends Application implements Observer {
 		placeWall.setOnMouseDragged(event2 -> { updateBound(event2, wallBounds); });
 		
 		placeWall.setOnMouseReleased(event3 -> {
-			//if (!isInCenter(event3.getSceneX(), event3.getSceneY())) {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
 			
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
-				// TODO: Notify controller that user wants to place wall at (mouseX, mouseY)
-				//  position with WALL_WIDTH and WALL_HEIGHT.
-				
-				// TODO: might consider user input for width and height
 				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 				controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
 			}
@@ -200,12 +192,8 @@ public class View extends Application implements Observer {
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
-				System.out.println("Inside of central panel");
-				
-				// TODO: Notify controller that user wants to place chair at (mouseX, mouseY)
-				//  position with CHAIR_WIDTH and CHAIR_HEIGHT.
 				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-				 controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH, CHAIR_HEIGHT);
+				controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH, CHAIR_HEIGHT);
 			}
 			root.getChildren().remove(chairBounds);
 		});
@@ -225,12 +213,8 @@ public class View extends Application implements Observer {
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
 			} else {
-				System.out.println("Inside of central panel");
-				// TODO: Notify controller that user wants to place object at (mouseX, mouseY)
-				//  position with the default width and height.
-				
-				// TODO: might consider user input for width and height
-				controller.createNewObject("object", event3.getX(), event3.getY(), 10, 10);
+				Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+				controller.createNewObject("object", p.getX(), p.getY(), WALL_WIDTH, WALL_HEIGHT);
 			}
 			root.getChildren().remove(objectBounds);
 		});
@@ -404,15 +388,18 @@ public class View extends Application implements Observer {
 		});
 		resetZoomButton.setOnMouseClicked(e -> {
 			System.out.println("\"Reset Zoom\" button clicked");
-			// TODO: Implement the "Reset Zoom" feature
+			drawPane.setScaleX(1);
+			drawPane.setScaleY(1);
 		});
 		zoomInButton.setOnMouseClicked(e -> {
 			System.out.println("\"Zoom In\" button clicked");
-			// TODO: Implement the zooming in like with the mouse wheel
+			drawPane.setScaleX(drawPane.getScaleX() * 1.1);
+			drawPane.setScaleY(drawPane.getScaleY() * 1.1);
 		});
 		zoomOutButton.setOnMouseClicked(e -> {
 			System.out.println("\"Zoom Out\" button clicked");
-			// TODO: Implement the zooming out like with the mouse wheel
+			drawPane.setScaleX(drawPane.getScaleX() / 1.1);
+			drawPane.setScaleY(drawPane.getScaleY() / 1.1);
 		});
 		undoRedoBox.getChildren().addAll(undoButton, redoButton);
 		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
@@ -467,6 +454,15 @@ public class View extends Application implements Observer {
 		Rectangle r = new Rectangle(x, y, width, height);
 		// TODO: EventHandler for selecting, moving, and editing rectangles
 		return r;
+	}
+	
+	private Circle initChair(double x, double y, double radius) {
+		Circle c = new Circle(x, y, radius);
+		c.setStroke(Color.BLACK);
+		c.setStrokeWidth(1);
+		c.setFill(Color.WHITE);
+		// TODO: EventHandler for selecting, moving, and editing circles
+		return c;
 	}
 	
 	/**
