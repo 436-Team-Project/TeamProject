@@ -10,38 +10,29 @@ public class Controller {
 	
 	private Model model;
 	
-	/**
-	 * Controller constructor
-	 *
-	 * @param model current state of the model
-	 */
 	public Controller(Model model) {
 		this.model = model;
 	}
-	
-	/**
-	 * Param: "wall, seat, or table" string. this adds to the object to the model
-	 *
-	 * @param type "wall, seat, or table" string
-	 * @param x vertical position
-	 * @param y horizontal position
-	 * @param width the new object's width
-	 * @param height the new object's height
+
+
+	/*
+	 * param: "wall, seat, or table" string. this adds to the object to the model
 	 */
 	public void createNewObject(String type, double x, double y, double width, double height) {
 		UIObjects newObj = null;
 		double x2 = x + width;
 		double y2 = y + height;
+		int ID = model.nextID();
 		switch(type)
 		{
 			case "wall":
-				newObj = new Wall(model.getObjects().size(), x, y, x2, y2);
+				newObj = new Wall(ID, x, y, x2, y2);
 				break;
 			case "chair":
-				newObj = new Spots(model.getObjects().size(),x,y,x2,y2);
+				newObj = new Spots(ID,x,y,x2,y2);
 				break;
 			case "object":
-//				newObj = new Obj(1, x, y, x2, y2);
+				newObj = new Tables(ID, x, y, x2, y2);
 				break;
 			default:
 				System.out.println("invalid object type");
@@ -49,25 +40,15 @@ public class Controller {
 		}
 		model.addObject(newObj);
 	}
-	
-	/**
-	 * Updates the UI object's coordinates with the given arguments
-	 *
-	 * @param x vertical position
-	 * @param y horizontal position
-	 * @param ID UI object's ID
+
+
+	/*
+	 * param: the x and y coords and the ID the ID is the position it holds in the arraylist.
 	 */
 	public void updateCurrentObject(int x, int y, int ID) {
 		model.updateObject(x, y, ID);
 	}
 	
-	/**
-	 * Gets the UI object at the given coordinate
-	 *
-	 * @param x vertical position
-	 * @param y horizontal position
-	 * @return UI object
-	 */
 	public UIObjects getObject(int x, int y) {
 		return model.getObject(x,y);
 	}
