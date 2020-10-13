@@ -26,10 +26,10 @@ public class Model extends Observable {
 		itemList.add(newObj);
 		setChanged();
 		notifyObservers();
-		System.out.format("new object added. %d items exist\n", itemList.size());
+		System.out.format("new object added. %d items exist\n",itemList.size());
 }
 
- 
+ /* 
 	public void createObject(String type, int x, int y){
 		//create the object that is asked for.
 		if (type.equals("wall")) {
@@ -50,7 +50,7 @@ public class Model extends Observable {
 		notifyObservers();
 		System.out.format("new object added. %d items exist\n", itemList.size());
 	}
-	
+	*/
 	public void updateObject(double x, double y, double x2, double y2, int ID) {
 		UIObjects obj=itemList.get(ID);
 		obj.update(x, y, x2, y2);
@@ -86,4 +86,21 @@ public class Model extends Observable {
 		return itemList.size();
 	}
 	
+	public void calculator() {
+		for (UIObjects items:itemList) {
+			;
+		}
+	}
+	
+	public void updateAvailability(int ID) {
+		if (itemList.get(ID) instanceof Spots) {
+			Spots spot = (Spots) itemList.get(ID);
+			if (!spot.occupied && spot.available) {
+				spot.updateAvailability();
+				spot.updateOccupancy();
+				calculator();
+			}
+			
+		}
+	}
 }
