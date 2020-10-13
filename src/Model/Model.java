@@ -226,6 +226,8 @@ public class Model extends Observable {
 		catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
+		
+		System.out.println("finished storing");
 	}
 	
 	/**
@@ -253,6 +255,6 @@ public class Model extends Observable {
 			c.printStackTrace();
 		}
 		
-		//add in check to make sure state is correct.
+		System.out.println("loaded list");
 	}
 }
