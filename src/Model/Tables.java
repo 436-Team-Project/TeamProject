@@ -11,7 +11,7 @@ public class Tables extends UIObjects {
 	int numberOfSpots;
 	ArrayList<Spots> availableSpots = new ArrayList<Spots>();
 	
-	public Tables(int ID, double x, double y, double x2, double y2) {
+
 	/**
 	 * Table constructor
 	 *
