@@ -16,10 +16,10 @@ import java.math.*;
  */
 
 public class Model extends Observable {
-	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
-	UIObjects lastObject;
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
+	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
+	UIObjects lastObject;
 	
 	/**
 	 * Constructor class
@@ -36,22 +36,18 @@ public class Model extends Observable {
 	 * @param x    vertical position
 	 * @param y    horizontal position
 	 */
-	public void createObject(String type, int x, int y){
+	public void createObject(String type, int x, int y) {
+		UIObjects obj;
 		//create the object that is asked for.
-		if (type.equals("wall")) {
-			Wall obj = new Wall(x,y,x+SIZE,y+SIZE,itemList.size());
-			itemList.add(obj);
+		if(type.equals("wall")) {
+			obj = new Wall(itemList.size(), x, y, x + SIZE, y + SIZE);
+		} else if(type.equals("chair")) {
+			obj = new Spots(itemList.size(), x, y, x + SIZE, y + SIZE);
+		} else {
+			obj = new Tables(itemList.size(), x, y, x + SIZE, y + SIZE);
 		}
-		
-		else if(type.equals("chair")) {
-			Spots obj = new Spots(x,y,x+SIZE,y+SIZE,itemList.size());
-			itemList.add(obj);
-		}
-		
-		else {
-			Tables obj = new Tables(x,y,x+SIZE,y+SIZE,itemList.size());
-			itemList.add(obj);
-		}
+		lastObject = obj;
+		itemList.add(obj);
 		setChanged();
 		notifyObservers();
 		System.out.format("new object added. %d items exist\n", itemList.size());
@@ -67,13 +63,13 @@ public class Model extends Observable {
 	 * @param ID int ID is the position it holds in the arraylist
 	 */
 	public void updateObject(double x1, double y1, double x2, double y2, int ID) {
-		UIObjects obj=itemList.get(ID);
+		UIObjects obj = itemList.get(ID);
 		obj.update(x1, y1, x2, y2);
 		setChanged();
 		notifyObservers();
 		System.out.println("updated");
 	}
- 
+	
 	/**
 	 * Adds a UIObject
 	 *
@@ -86,7 +82,7 @@ public class Model extends Observable {
 		notifyObservers();
 		System.out.format("new object added. %d items exist\n", itemList.size());
 	}
- 
+	
 	/**
 	 * Removes the last object
 	 * <p>
@@ -96,7 +92,7 @@ public class Model extends Observable {
 		itemList.remove(lastObject);
 		if(itemList.size() != 0) {
 			lastObject = itemList.get(itemList.size() - 1);
-	}
+		}
 		setChanged();
 		notifyObservers();
 	}
@@ -110,15 +106,14 @@ public class Model extends Observable {
 	 * @return UIObject
 	 */
 	public UIObjects getObject(int x, int y) {
-		UIObjects obj=null;
-		for (UIObjects items : itemList) {
-			if (items.x<=x && items.y<=y && items.x2>=x && items.y2>=y) {
-				obj=items;
+		UIObjects obj = null;
+		for(UIObjects item : itemList) {
+			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
+				obj = item;
 				break;
 			}
 		}
 		return obj;
-		
 	}
 	
 	/**
@@ -143,7 +138,7 @@ public class Model extends Observable {
 			if(items instanceof Spots) {
 				Spots spot = (Spots) items;
 				
-				//if it is the same spot then skip calulation on this spot
+				//if it is the same spot then skip calculation on this spot
 				if(nSpot.ID == spot.ID) {
 					continue;
 				}
