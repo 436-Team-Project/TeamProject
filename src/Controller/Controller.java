@@ -73,5 +73,12 @@ public class Controller {
 	public UIObjects getObject(int x, int y) {
 		return model.getObject(x, y);
 	}
+	
+	/**
+	 * Used when the view wants to draw the model
+	 */
+	public void displayModel(){
+		model.display();
+	}
 }
 

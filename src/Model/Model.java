@@ -128,6 +128,14 @@ public class Model extends Observable {
 	}
 	
 	/**
+	 * Used when the view wants to draw the model again
+	 */
+	public void display(){
+		setChanged();
+		notifyObservers();
+	}
+	
+	/**
 	 * checks the availability of every spot update which seats can be taken again or
 	 * which seats are too close to another customer to be taken.
 	 *
