@@ -18,8 +18,8 @@ import java.math.*;
 public class Model extends Observable {
 	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
 	UIObjects lastObject;
-	private int SIZE=20;
-	private int BUFFER=60;
+	private final int SIZE = 20;
+	private final int BUFFER = 60;
 
 	/**
 	 * Constructor class
@@ -85,7 +85,7 @@ public class Model extends Observable {
 	
 	/**
 	 * Removes the last object
-	 *
+	 * <p>
 	 * This method is used to accomplish the "undo" feature
 	 */
 	public void removeLastObject() {
@@ -133,7 +133,8 @@ public class Model extends Observable {
 	public ArrayList<UIObjects> getObjects() {
 		System.out.println("returning items");
 		return itemList;
-
+	}
+	
   /**
 	 * checks the availability of every spot update which seats can be taken again or 
 	 * which seats are too close to another customer to be taken.
