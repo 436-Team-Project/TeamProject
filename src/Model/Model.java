@@ -16,8 +16,6 @@ import java.math.*;
  */
 
 public class Model extends Observable {
-	private final int SIZE = 20;
-	private final int BUFFER = 60;
 	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
 	UIObjects lastObject;
 
