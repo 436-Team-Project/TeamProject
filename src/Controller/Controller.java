@@ -13,7 +13,7 @@ public class Controller {
 	public Controller(Model model) {
 		this.model = model;
 	}
-	
+
 	/**
 	 * This adds to the object to the model
 	 *
@@ -44,14 +44,14 @@ public class Controller {
 		}
 		model.addObject(newObj);
 	}
-	
+
 	/**
 	 * "Undo"s the last action done by the user
 	 */
 	public void undo() {
 		model.removeLastObject();
 	}
-	
+
 	/**
 	 * @param x1 first vertical position
 	 * @param y1 first horizontal position

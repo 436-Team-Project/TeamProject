@@ -16,11 +16,14 @@ import java.math.*;
  */
 
 public class Model extends Observable {
-	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
-	UIObjects lastObject;
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
-	
+	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
+	UIObjects lastObject;
+
+	private final int SIZE = 20;
+	private final int BUFFER = 60;
+
 	/**
 	 * Constructor class
 	 */
@@ -37,17 +40,17 @@ public class Model extends Observable {
 	 * @param y    horizontal position
 	 */
 	public void createObject(String type, int x, int y) {
+		UIObjects obj;
 		//create the object that is asked for.
 		if(type.equals("wall")) {
-			Wall obj = new Wall(x, y, x + SIZE, y + SIZE, itemList.size());
-			itemList.add(obj);
+			obj = new Wall(itemList.size(), x, y, x + SIZE, y + SIZE);
 		} else if(type.equals("chair")) {
-			Spots obj = new Spots(x, y, x + SIZE, y + SIZE, itemList.size());
-			itemList.add(obj);
+			obj = new Spots(itemList.size(), x, y, x + SIZE, y + SIZE);
 		} else {
-			Tables obj = new Tables(x, y, x + SIZE, y + SIZE, itemList.size());
-			itemList.add(obj);
+			obj = new Tables(itemList.size(), x, y, x + SIZE, y + SIZE);
 		}
+		lastObject = obj;
+		itemList.add(obj);
 		setChanged();
 		notifyObservers();
 		System.out.format("new object added. %d items exist\n", itemList.size());
@@ -107,9 +110,10 @@ public class Model extends Observable {
 	 */
 	public UIObjects getObject(int x, int y) {
 		UIObjects obj = null;
-		for(UIObjects items : itemList) {
-			if(items.x <= x && items.y <= y && items.x2 >= x && items.y2 >= y) {
-				obj = items;
+
+		for(UIObjects item : itemList) {
+			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
+				obj = item;
 				break;
 			}
 		}
@@ -138,7 +142,7 @@ public class Model extends Observable {
 			if(items instanceof Spots) {
 				Spots spot = (Spots) items;
 				
-				//if it is the same spot then skip calulation on this spot
+				//if it is the same spot then skip calculation on this spot
 				if(nSpot.ID == spot.ID) {
 					continue;
 				}

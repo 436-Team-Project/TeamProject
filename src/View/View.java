@@ -49,8 +49,7 @@ public class View extends Application implements Observer {
 	boolean drawingWall = false;
 	boolean placingChair = false;
 	boolean placingObject = false;
-	
-
+  
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
 
@@ -68,7 +67,7 @@ public class View extends Application implements Observer {
 	/**
 	 * Call this once
 	 *
-	 * @param primaryStage Stage
+	 * @param  primaryStage Stage
 	 */
 	@Override
 	public void start(Stage primaryStage) {
@@ -191,8 +190,9 @@ public class View extends Application implements Observer {
 
 			placeChair.setOnMouseDragged(event2 -> {
 				updateBound(event2, chairBounds);
+
 			});
-			
+		
 			placeChair.setOnMouseReleased(event3 -> {
 				boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 						event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
@@ -206,6 +206,7 @@ public class View extends Application implements Observer {
 				}
 				root.getChildren().remove(chairBounds);
 			});
+		});
 		});
 		
 		// --- Event handling "Place Object" button ---
@@ -294,7 +295,7 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
-
+    
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
@@ -353,7 +354,7 @@ public class View extends Application implements Observer {
 		result.getChildren().add(hBox);
 		return result;
 	}
-  
+
 	/**
 	 * Initializes the controls in the top panel of the main border pane
 	 *
@@ -540,6 +541,41 @@ public class View extends Application implements Observer {
 		return r;
 	}
 
+	/**
+	 * Initializes a new UI object at the given coordinates and with the given
+	 * dimensions (For objects represented as a line)
+	 *
+	 * @param x  vertical start position
+	 * @param y  horizontal start position
+	 * @param x2 vertical end position
+	 * @param y2 horizontal end position
+	 * @return line
+	 */
+	private Line initLine(double x, double y, double x2, double y2) {
+		Line l = new Line(x, y, x2 - x, y2 - y);
+		l.setStrokeWidth(5);
+		// TODO: EventHandler for selecting, moving, and editing lines
+		return l;
+	}
+	
+	/**
+	 * Initializes a new UI object at the given coordinates and with the given
+	 * dimensions
+	 *
+	 * @param x      vertical position
+	 * @param y      horizontal position
+	 * @param radius the new object's radius in pixels
+	 * @return rectangle
+	 */
+	private Circle initChair(double x, double y, double radius) {
+		Circle c = new Circle(x, y, radius);
+		c.setStroke(Color.BLACK);
+		c.setStrokeWidth(1);
+		c.setFill(Color.WHITE);
+		// TODO: EventHandler for selecting, moving, and editing circles
+		return c;
+	}
+	
 	/**
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions (For objects represented as a line)
