@@ -3,6 +3,7 @@ package View;
 import Model.*;
 import Controller.Controller;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -42,9 +43,13 @@ public class View extends Application implements Observer {
 	final double WALL_HEIGHT = 25;
 	final double CHAIR_WIDTH = 25;
 	final double CHAIR_HEIGHT = 25;
+	final double TABLE_WIDTH = 60;
+	final double TABLE_HEIGHT = 60;
+	
 	boolean drawingWall = false;
 	boolean placingChair = false;
 	boolean placingObject = false;
+	
 
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
@@ -95,17 +100,18 @@ public class View extends Application implements Observer {
 	 */
 	@Override
 	public void update(Observable observable, Object object) {
-		ArrayList<UIObjects> itemList = model.getObjects(); // items to be placed
+
+		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
 		// - clear central panel
 		drawPane.getChildren().clear();
 		// - redraw all items
-
-		for (UIObjects obj : itemList) {
-			if (obj instanceof Wall) {
+		
+		for(UIObjects obj : itemList) {
+			if(obj instanceof Wall) {
 				System.out.println("Drawing wall");
 				Line wall = initLine(obj.getX(), obj.getY(), obj.getX2(), obj.getY2());
 				drawPane.getChildren().add(wall);
-			} else if (obj instanceof Spots) {
+			} else if(obj instanceof Spots) {
 				System.out.println("Drawing chair");
 				double radius = obj.getWidth() / 2;
 				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius);
@@ -135,14 +141,14 @@ public class View extends Application implements Observer {
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
 
-		Label leftPanelHeader = new Label("User Options");
-
+		Label leftPanelHeader = new Label("Canvas Elements");
+	
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
-		Button placeObject = new Button("Place Object"); // Place holder button
-
-		leftPanelHeader.setStyle(
-				"-fx-font-weight: bold;-fx-font-size: 20px;" + "-fx-padding: 10px 50px 20px 50px;");
+		Button placeObject = new Button("Place Table"); // Place holder button
+		
+		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
+				"-fx-padding: 10px 50px 20px 50px;");
 		buttonBox.setStyle("-fx-alignment: center;-fx-spacing: 5px");
 		placeWall.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
 		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
@@ -152,7 +158,7 @@ public class View extends Application implements Observer {
 		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
 		// Temporarily using default wall dimensions
 		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
-
+		
 		// --- Event handling "Place Wall" button ---\
 		placeWall.setOnMouseClicked(event -> {
 			drawingWall = true;
@@ -163,13 +169,13 @@ public class View extends Application implements Observer {
 		/*
 		 * placeWall.setOnMousePressed(event -> { updateBound(event, wallBounds);
 		 * root.getChildren().add(wallBounds); });
-		 * 
+		 *
 		 * placeWall.setOnMouseDragged(event2 -> { updateBound(event2, wallBounds); });
-		 * 
+		 *
 		 * placeWall.setOnMouseReleased(event3 -> { boolean inDrawPane =
 		 * drawPane.getBoundsInParent().intersects( event3.getSceneX() - LEFT_WIDTH,
 		 * event3.getSceneY() - TOP_HEIGHT, 1, 1);
-		 * 
+		 *
 		 * if (!inDrawPane) { System.out.println("Outside of central panel"); } else {
 		 * Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 		 * controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH,
@@ -187,22 +193,22 @@ public class View extends Application implements Observer {
 			placeChair.setOnMouseDragged(event2 -> {
 				updateBound(event2, chairBounds);
 			});
-
+			
 			placeChair.setOnMouseReleased(event3 -> {
 				boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 						event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-
-				if (!inDrawPane) {
+				
+				if(!inDrawPane) {
 					System.out.println("Outside of central panel");
 				} else {
 					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-					controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH,
-							CHAIR_HEIGHT);
+					controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH, CHAIR_HEIGHT);
+
 				}
 				root.getChildren().remove(chairBounds);
 			});
 		});
-
+		
 		// --- Event handling "Place Object" button ---
 		placeObject.setOnMousePressed(event -> {
 			drawingWall = false;
@@ -214,17 +220,17 @@ public class View extends Application implements Observer {
 			placeObject.setOnMouseDragged(event2 -> {
 				updateBound(event2, objectBounds);
 			});
-
+			
 			placeObject.setOnMouseReleased(event3 -> {
 				boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 						event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-
-				if (!inDrawPane) {
+				
+				if(!inDrawPane) {
 					System.out.println("Outside of central panel");
 				} else {
 					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-					controller.createNewObject("object", p.getX(), p.getY(), WALL_WIDTH,
-							WALL_HEIGHT);
+					controller.createNewObject("object", p.getX(), p.getY(), TABLE_WIDTH, TABLE_HEIGHT);
+
 				}
 				root.getChildren().remove(objectBounds);
 			});
@@ -289,6 +295,7 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
+
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
@@ -301,7 +308,8 @@ public class View extends Application implements Observer {
 		result.setOnMousePressed(event -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
-			if (drawingWall && event.isPrimaryButtonDown() && inDrawPane) {
+      
+			if(drawingWall && event.isPrimaryButtonDown() && inDrawPane) {
 				System.out.println("Drawing");
 				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 				Line wallBound = initLineBounds(p.getX(), p.getY());
@@ -313,7 +321,7 @@ public class View extends Application implements Observer {
 					wallBound.setEndY(p2.getY());
 
 					result.setOnMouseReleased(event3 -> {
-						if (event2.isPrimaryButtonDown() && drawingWall) {
+						if(event2.isPrimaryButtonDown() && drawingWall) {
 							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
 									p2.getY());
 							drawPane.getChildren().remove(wallBound);
@@ -346,7 +354,12 @@ public class View extends Application implements Observer {
 		result.getChildren().add(hBox);
 		return result;
 	}
-
+  
+	/**
+	 * Initializes the controls in the top panel of the main border pane
+	 *
+	 * @return HBox
+	 */
 	private HBox initTopControls() {
 		HBox result = new HBox();
 		HBox undoRedoBox = new HBox();
@@ -367,7 +380,7 @@ public class View extends Application implements Observer {
 		result.setStyle("-fx-spacing: 25px;");
 		undoRedoBox.setStyle("-fx-spacing: 2px;");
 		zoomBox.setStyle("-fx-spacing: 2px;");
-
+		
 		menuItemNew.setOnAction(e -> {
 			System.out.println("Menu Item \"New\" Selected");
 			// TODO: Implement creating a new floor plan layout
@@ -390,7 +403,7 @@ public class View extends Application implements Observer {
 		});
 		menuItemClose.setOnAction(e -> {
 			System.out.println("Menu Item \"Close\" Selected");
-			// TODO: Implement closing out of the application
+			Platform.exit();
 		});
 
 		menu.getItems().add(menuItemNew);
@@ -416,11 +429,12 @@ public class View extends Application implements Observer {
 
 		undoButton.setOnMouseClicked(e -> {
 			System.out.println("\"Undo\" button clicked");
-			// TODO: Implement the undo feature
+			controller.undo();
 		});
 		redoButton.setOnMouseClicked(e -> {
 			System.out.println("\"Redo\" button clicked");
 			// TODO: Implement the redo feature
+			
 		});
 		resetZoomButton.setOnMouseClicked(e -> {
 			System.out.println("\"Reset Zoom\" button clicked");
@@ -454,6 +468,21 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(BOT_HEIGHT);
+    
+		HBox hBox = new HBox();
+		Button hostButton = new Button("Host");
+		
+		result.setStyle("-fx-alignment: center; -fx-padding: 0px 25px 0px 0px;");
+		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
+		hBox.setStyle(" -fx-padding: 0px 25px 0px 0px;");
+		
+		hostButton.setOnMouseClicked(e -> {
+			System.out.println("\"Host\" button clicked");
+			// TODO: Implement the new view for the Host stage of product
+		});
+		
+		hBox.getChildren().add(hostButton);
+		result.getChildren().add(hBox);
 
 		return result;
 	}
@@ -496,13 +525,30 @@ public class View extends Application implements Observer {
 	}
 
 	/**
+	 * Initializes a dashed line representing the bounds of the wall being drawn.
+	 *
+	 * @param x the new's object bound's width in pixels
+	 * @param y the new's object bound's height in pixels
+	 * @return rectangle
+	 */
+	private Line initLineBounds(double x, double y) {
+		Line l = new Line(x, y, x, y);
+		l.setStroke(Color.BLACK);
+		l.setStrokeWidth(1);
+		l.getStrokeDashArray().addAll(5.0);
+		l.setFill(Color.TRANSPARENT);
+		
+		return l;
+	}
+	
+	/**
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions
 	 *
 	 * @param x      vertical position
 	 * @param y      horizontal position
-	 * @param width  the new's object width in pixels
-	 * @param height the new's object height in pixels
+	 * @param width  the new object's radius
+	 * @param height the new object's radius
 	 * @return rectangle
 	 */
 	private Rectangle initObject(double x, double y, double width, double height) {
@@ -547,6 +593,41 @@ public class View extends Application implements Observer {
 		return c;
 	}
 
+	/**
+	 * Initializes a new UI object at the given coordinates and with the given
+	 * dimensions (For objects represented as a line)
+	 *
+	 * @param x  vertical start position
+	 * @param y  horizontal start position
+	 * @param x2 vertical end position
+	 * @param y2 horizontal end position
+	 * @return line
+	 */
+	private Line initLine(double x, double y, double x2, double y2) {
+		Line l = new Line(x, y, x2 - x, y2 - y);
+		l.setStrokeWidth(5);
+		// TODO: EventHandler for selecting, moving, and editing lines
+		return l;
+	}
+	
+	/**
+	 * Initializes a new UI object at the given coordinates and with the given
+	 * dimensions
+	 *
+	 * @param x      vertical position
+	 * @param y      horizontal position
+	 * @param radius the new object's radius in pixels
+	 * @return rectangle
+	 */
+	private Circle initChair(double x, double y, double radius) {
+		Circle c = new Circle(x, y, radius);
+		c.setStroke(Color.BLACK);
+		c.setStrokeWidth(1);
+		c.setFill(Color.WHITE);
+		// TODO: EventHandler for selecting, moving, and editing circles
+		return c;
+	}
+	
 	/**
 	 * Updates position of object to mouse's position.
 	 * 
