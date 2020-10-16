@@ -7,7 +7,6 @@ public class Obj extends UIObjects{
 		// TODO Auto-generated constructor stub
 	}
 	
-	@Override
 	public void draw() {
 		// draw wither a line or a filled rectangle in this spot.
 		

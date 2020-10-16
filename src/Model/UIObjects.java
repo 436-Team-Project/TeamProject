@@ -1,10 +1,12 @@
 package Model;
 
+import java.io.Serializable;
+
 /*
  * main class for all objects
  * param: the ID of the object to keep track of and the initial coordinates of the shapes
  */
-public abstract class UIObjects {
+public abstract class UIObjects implements Serializable {
 	//initial starting points of the object we can assume 0,0 or wherever we want them to exist
 	double x, x2;
 	double y, y2;
@@ -25,6 +27,10 @@ public abstract class UIObjects {
 		this.y=y;
 		this.x2=x2;
 		this.y2=y2;
+	}
+	
+	public String toString() {
+		return "Obj ID: "+ID+" type: object";
 	}
 	
 	public double getX() {
@@ -52,6 +58,4 @@ public abstract class UIObjects {
 		return Math.abs(y2 - y);
 	}
 	
-	//abstract classes that will need to be used. Things can be added or removed based on needs
-	public abstract void draw();
 }

@@ -21,7 +21,6 @@ public class Tables extends UIObjects {
 	/**
 	 * Draw a square, circle, or table img in this spot
 	 */
-	@Override
 	public void draw() {
 	
 	}
