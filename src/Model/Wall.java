@@ -26,7 +26,6 @@ public class Wall extends UIObjects {
 	/**
 	 * Draw wither a line or a filled rectangle in this spot.
 	 */
-	@Override
 	public void draw() {
 	
 	}
