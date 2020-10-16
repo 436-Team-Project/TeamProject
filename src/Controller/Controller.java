@@ -28,13 +28,12 @@ public class Controller {
 		double x2 = x + width;
 		double y2 = y + height;
 		int ID = model.nextID();
-		switch(type)
-		{
+		switch(type) {
 			case "wall":
 				newObj = new Wall(ID, x, y, x2, y2);
 				break;
 			case "chair":
-				newObj = new Spots(ID,x,y,x2,y2);
+				newObj = new Spots(ID, x, y, x2, y2);
 				break;
 			case "object":
 				newObj = new Tables(ID, x, y, x2, y2);
@@ -72,7 +71,7 @@ public class Controller {
 	 * @return UIObject
 	 */
 	public UIObjects getObject(int x, int y) {
-		return model.getObject(x,y);
+		return model.getObject(x, y);
 	}
 }
 

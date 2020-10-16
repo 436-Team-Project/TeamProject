@@ -18,6 +18,7 @@ public class Spots extends UIObjects{
 		//draw a circle or chair in this spot.
 		
 	}
+	
 	 /*
 	  * switches whether the spot is available to be used or not
 	  */

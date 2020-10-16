@@ -20,7 +20,10 @@ public class Model extends Observable {
 	private final int BUFFER = 60;
 	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
 	UIObjects lastObject;
-	
+
+	private final int SIZE = 20;
+	private final int BUFFER = 60;
+
 	/**
 	 * Constructor class
 	 */
@@ -107,6 +110,7 @@ public class Model extends Observable {
 	 */
 	public UIObjects getObject(int x, int y) {
 		UIObjects obj = null;
+
 		for(UIObjects item : itemList) {
 			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
 				obj = item;
