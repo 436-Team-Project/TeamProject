@@ -543,23 +543,6 @@ public class View extends Application implements Observer {
 	/**
 	 * Initializes a dashed line representing the bounds of the wall being drawn.
 	 *
-	 * @param width  the new's object bound's width in pixels
-	 * @param height the new's object bound's height in pixels
-	 * @return rectangle
-	 */
-	private Line initLineBounds(double x, double y) {
-		Line l = new Line(x, y, x, y);
-		l.setStroke(Color.BLACK);
-		l.setStrokeWidth(1);
-		l.getStrokeDashArray().addAll(5.0);
-		l.setFill(Color.TRANSPARENT);
-
-		return l;
-	}
-
-	/**
-	 * Initializes a dashed line representing the bounds of the wall being drawn.
-	 *
 	 * @param x the new's object bound's width in pixels
 	 * @param y the new's object bound's height in pixels
 	 * @return rectangle
