@@ -4,8 +4,7 @@ import Model.*;
 import Controller.Controller;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -26,18 +25,18 @@ import java.util.Observer;
  * CuCurrent colors of the panels inside the main border pane are temporary.
  */
 public class View extends Application implements Observer {
-
+	
 	// The dimensions of the entire application
 	final int APP_HEIGHT = 800;
 	final int APP_WIDTH = 1200;
-
+	
 	// Dimensions for the panels inside the border pane
 	final int LEFT_WIDTH = 250;
 	final int TOP_HEIGHT = 50;
 	final int BOT_HEIGHT = 50;
 	final int CENTER_WIDTH = (APP_WIDTH - LEFT_WIDTH);
 	final int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
-
+	
 	// Default dimensions for objects created from buttons
 	final double WALL_WIDTH = 25;
 	final double WALL_HEIGHT = 25;
@@ -49,14 +48,14 @@ public class View extends Application implements Observer {
 	boolean drawingWall = false;
 	boolean placingChair = false;
 	boolean placingObject = false;
+	boolean isHosting = false;
 	
-
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
-
+	
 	BorderPane root; // Main pane
 	Pane drawPane;
-
+	
 	/**
 	 * Initialize
 	 */
@@ -64,34 +63,31 @@ public class View extends Application implements Observer {
 	public void init() {
 		// controller = new Controller();
 	}
-
+	
 	/**
 	 * Call this once
 	 *
 	 * @param primaryStage Stage
-	 * @param primaryStage Stage
 	 */
 	@Override
 	public void start(Stage primaryStage) {
-
 		model = new Model();
 		model.addObserver(this);
-
 		controller = new Controller(model);
-
+		
 		root = new BorderPane();
-
 		root.setCenter(initCenterPanel());
 		root.setLeft(initLeftPanel());
 		root.setTop(initTopPanel());
 		root.setBottom(initBottomPanel());
-
+		
 		Scene scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+		primaryStage.getIcons().add(ImageLoader.getImage("app_icon_black_60px.png"));
 		primaryStage.setTitle("Covid Calc");
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}
-
+	
 	/**
 	 * Update the view
 	 *
@@ -100,7 +96,7 @@ public class View extends Application implements Observer {
 	 */
 	@Override
 	public void update(Observable observable, Object object) {
-
+		
 		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
 		// - clear central panel
 		drawPane.getChildren().clear();
@@ -124,7 +120,64 @@ public class View extends Application implements Observer {
 			}
 		}
 	}
+	
+	/**
+	 * Initializes the bottom panel in the root border pane
+	 *
+	 * @return Pane
+	 */
+	private Pane initBottomPanel() {
+		Pane result = new Pane();
+		result.setBackground(new Background(
+				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
+		result.setPrefHeight(BOT_HEIGHT);
+		result.getChildren().add(initBottomControls());
+		return result;
+	}
+	
+	/**
+	 * Initializes the controls for the bottom panel
+	 *
+	 * @return HBox
+	 */
+	private HBox initBottomControls(){
+		HBox result = new HBox();
+		Button hostButton = new Button("Host");
+		Button constructButton = new Button("Construct");
+		
+		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
+		constructButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
+		
+		hostButton.setOnMouseClicked(e -> {
+			isHosting = true;
+			HostView hostRoot = new HostView(root, model, controller, drawPane);
+			root.setBottom(initBottomPanel());
+		});
+		
+		constructButton.setOnMouseClicked(e -> {
+			isHosting = false;
+			root.setCenter(initCenterPanel());
+			root.setTop(initTopPanel());
+			root.setLeft(initLeftPanel());
+			root.setRight(initRightPanel());
+			controller.displayModel();
+			root.setBottom(initBottomPanel());
+		});
+		
+		if(!isHosting) {
+			hostButton.setVisible(true);
+			constructButton.setVisible(false);
+		} else {
+			hostButton.setVisible(false);
+			constructButton.setVisible(true);
+		}
+		
+		result.getChildren().addAll(hostButton, constructButton);
 
+		HBox.setHgrow(result, Priority.ALWAYS);
+		return result;
+	}
+	
 	/**
 	 * Initializes the left panel in the root border pane
 	 * <p>
@@ -137,15 +190,16 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
-
+		
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
-
+		
 		Label leftPanelHeader = new Label("Canvas Elements");
-	
+		
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
-		Button placeObject = new Button("Place Table"); // Place holder button
+		Button placeObject = new Button("Place Table");
+		
 		
 		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
 				"-fx-padding: 10px 50px 20px 50px;");
@@ -153,7 +207,7 @@ public class View extends Application implements Observer {
 		placeWall.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
 		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
-
+		
 		Rectangle wallBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
 		// Temporarily using default wall dimensions
@@ -165,7 +219,7 @@ public class View extends Application implements Observer {
 			placingObject = false;
 			placingChair = false;
 		});
-
+		
 		/*
 		 * placeWall.setOnMousePressed(event -> { updateBound(event, wallBounds);
 		 * root.getChildren().add(wallBounds); });
@@ -181,7 +235,7 @@ public class View extends Application implements Observer {
 		 * controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH,
 		 * WALL_HEIGHT); } root.getChildren().remove(wallBounds); });
 		 */
-
+		
 		// --- Event handling "Place Chair" button ---
 		placeChair.setOnMousePressed(event -> {
 			drawingWall = false;
@@ -189,7 +243,7 @@ public class View extends Application implements Observer {
 			placingChair = true;
 			updateBound(event, chairBounds);
 			root.getChildren().add(chairBounds);
-
+			
 			placeChair.setOnMouseDragged(event2 -> {
 				updateBound(event2, chairBounds);
 			});
@@ -203,7 +257,6 @@ public class View extends Application implements Observer {
 				} else {
 					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 					controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH, CHAIR_HEIGHT);
-
 				}
 				root.getChildren().remove(chairBounds);
 			});
@@ -216,7 +269,7 @@ public class View extends Application implements Observer {
 			placingObject = true;
 			updateBound(event, objectBounds);
 			root.getChildren().add(objectBounds);
-
+			
 			placeObject.setOnMouseDragged(event2 -> {
 				updateBound(event2, objectBounds);
 			});
@@ -230,18 +283,26 @@ public class View extends Application implements Observer {
 				} else {
 					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 					controller.createNewObject("object", p.getX(), p.getY(), TABLE_WIDTH, TABLE_HEIGHT);
-
 				}
 				root.getChildren().remove(objectBounds);
 			});
 		});
-
+		
 		buttonBox.getChildren().addAll(placeWall, placeChair, placeObject);
 		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
 		result.getChildren().add(vbox);
 		return result;
 	}
-
+	
+	/**
+	 * Just returns null, could be used to add more features in the future
+	 *
+	 * @return Pane
+	 */
+	private Pane initRightPanel(){
+		return null;
+	}
+	
 	/**
 	 * Initializes the center panel in the root border pane
 	 *
@@ -250,33 +311,33 @@ public class View extends Application implements Observer {
 	private Pane initCenterPanel() {
 		Pane result = new Pane();
 		Pane child = initCenterInnerPanel(); // Draw panel
-
+		
 		result.setBackground(new Background(
 				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH);
 		result.setPrefHeight(CENTER_HEIGHT);
 		result.getChildren().add(child);
-
+		
 		// Allows right mouse drag to pan the child.
 		result.setOnMousePressed((event) -> {
-			if (event.isPrimaryButtonDown())
+			if(event.isPrimaryButtonDown())
 				return;
 			double mouseX = event.getSceneX();
 			double mouseY = event.getSceneY();
 			double paneX = child.getTranslateX();
 			double paneY = child.getTranslateY();
-
+			
 			result.setOnMouseDragged((event2) -> {
-				if (event2.isPrimaryButtonDown())
+				if(event2.isPrimaryButtonDown())
 					return;
 				child.setTranslateX(paneX + (event2.getSceneX() - mouseX));
 				child.setTranslateY(paneY + (event2.getSceneY() - mouseY));
 			});
 		});
-
+		
 		// Allows mouse scroll wheel to zoom in and out the child
 		result.setOnScroll((event) -> {
-			if (event.getDeltaY() < 0) {
+			if(event.getDeltaY() < 0) {
 				child.setScaleX(child.getScaleX() / 1.1);
 				child.setScaleY(child.getScaleY() / 1.1);
 			} else {
@@ -284,10 +345,10 @@ public class View extends Application implements Observer {
 				child.setScaleY(child.getScaleY() * 1.1);
 			}
 		});
-
+		
 		return result;
 	}
-
+	
 	/**
 	 * Initializes the inner panel for the center panel of the root border pane
 	 *
@@ -295,7 +356,6 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
-
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
@@ -303,23 +363,23 @@ public class View extends Application implements Observer {
 		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
 		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		drawPane = result;
-
+		
 		// Event-handling for drawing wall.
 		result.setOnMousePressed(event -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
-      
+			
 			if(drawingWall && event.isPrimaryButtonDown() && inDrawPane) {
 				System.out.println("Drawing");
 				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 				Line wallBound = initLineBounds(p.getX(), p.getY());
 				drawPane.getChildren().add(wallBound);
-
+				
 				result.setOnMouseDragged(event2 -> {
 					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
 					wallBound.setEndX(p2.getX());
 					wallBound.setEndY(p2.getY());
-
+					
 					result.setOnMouseReleased(event3 -> {
 						if(event2.isPrimaryButtonDown() && drawingWall) {
 							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
@@ -332,7 +392,7 @@ public class View extends Application implements Observer {
 		});
 		return result;
 	}
-
+	
 	/**
 	 * Initializes the top panel in the root border pane
 	 *
@@ -343,18 +403,18 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(TOP_HEIGHT);
-
+		
 		HBox hBox = new HBox();
 		Label topHeader = new Label("Floor Plan Creator");
 		topHeader.setStyle(
 				"-fx-font-weight: bold;-fx-font-size: 30px;" + "-fx-padding: 0px 0px 0px 100px;");
-
+		
 		HBox menuBar = initTopControls();
 		hBox.getChildren().addAll(menuBar, topHeader);
 		result.getChildren().add(hBox);
 		return result;
 	}
-  
+	
 	/**
 	 * Initializes the controls in the top panel of the main border pane
 	 *
@@ -365,7 +425,7 @@ public class View extends Application implements Observer {
 		HBox undoRedoBox = new HBox();
 		HBox zoomBox = new HBox();
 		MenuBar menuBar = new MenuBar();
-
+		
 		Menu menu = new Menu("File");
 		Menu subMenu = new Menu("Submenu");
 		MenuItem menuItemNew = new MenuItem("New");
@@ -376,7 +436,7 @@ public class View extends Application implements Observer {
 		MenuItem menuItemClose = new MenuItem("Close");
 		MenuItem subMenuItem1 = new MenuItem("Submenu Item");
 		subMenu.getItems().add(subMenuItem1);
-
+		
 		result.setStyle("-fx-spacing: 25px;");
 		undoRedoBox.setStyle("-fx-spacing: 2px;");
 		zoomBox.setStyle("-fx-spacing: 2px;");
@@ -405,7 +465,7 @@ public class View extends Application implements Observer {
 			System.out.println("Menu Item \"Close\" Selected");
 			Platform.exit();
 		});
-
+		
 		menu.getItems().add(menuItemNew);
 		menu.getItems().add(menuItemOpen);
 		menu.getItems().add(menuItemSave);
@@ -414,19 +474,19 @@ public class View extends Application implements Observer {
 		menu.getItems().add(menuItemHelp);
 		menu.getItems().add(menuItemClose);
 		menuBar.getMenus().add(menu);
-
+		
 		Button undoButton = new Button();
 		Button redoButton = new Button();
 		Button resetZoomButton = new Button();
 		Button zoomInButton = new Button();
 		Button zoomOutButton = new Button();
-
+		
 		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
 		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));
 		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
 		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
 		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
-
+		
 		undoButton.setOnMouseClicked(e -> {
 			System.out.println("\"Undo\" button clicked");
 			controller.undo();
@@ -454,39 +514,12 @@ public class View extends Application implements Observer {
 		undoRedoBox.getChildren().addAll(undoButton, redoButton);
 		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
 		result.getChildren().addAll(menuBar, undoRedoBox, zoomBox);
-
+		
 		return result;
 	}
+	
 
-	/**
-	 * Initializes the bottom panel in the root border pane
-	 *
-	 * @return Pane
-	 */
-	private Pane initBottomPanel() {
-		Pane result = new Pane();
-		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefHeight(BOT_HEIGHT);
-    
-		HBox hBox = new HBox();
-		Button hostButton = new Button("Host");
-		
-		result.setStyle("-fx-alignment: center; -fx-padding: 0px 25px 0px 0px;");
-		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
-		hBox.setStyle(" -fx-padding: 0px 25px 0px 0px;");
-		
-		hostButton.setOnMouseClicked(e -> {
-			System.out.println("\"Host\" button clicked");
-			// TODO: Implement the new view for the Host stage of product
-		});
-		
-		hBox.getChildren().add(hostButton);
-		result.getChildren().add(hBox);
-
-		return result;
-	}
-
+	
 	/**
 	 * Initializes a dashed rectangle representing the bounds of the object being
 	 * placed.
@@ -503,8 +536,25 @@ public class View extends Application implements Observer {
 		r.setStrokeWidth(1);
 		r.getStrokeDashArray().addAll(5.0);
 		r.setFill(Color.TRANSPARENT);
-
+		
 		return r;
+	}
+	
+	/**
+	 * Initializes a dashed line representing the bounds of the wall being drawn.
+	 *
+	 * @param width  the new's object bound's width in pixels
+	 * @param height the new's object bound's height in pixels
+	 * @return rectangle
+	 */
+	private Line initLineBounds(double x, double y) {
+		Line l = new Line(x, y, x, y);
+		l.setStroke(Color.BLACK);
+		l.setStrokeWidth(1);
+		l.getStrokeDashArray().addAll(5.0);
+		l.setFill(Color.TRANSPARENT);
+
+		return l;
 	}
 
 	/**
@@ -539,7 +589,6 @@ public class View extends Application implements Observer {
 		// TODO: EventHandler for selecting, moving, and editing rectangles
 		return r;
 	}
-	
 	
 	/**
 	 * Initializes a new UI object at the given coordinates and with the given
@@ -578,14 +627,14 @@ public class View extends Application implements Observer {
 	
 	/**
 	 * Updates position of object to mouse's position.
-	 * 
+	 *
 	 * @param event
 	 * @param objectBounds
 	 */
 	private void updateBound(MouseEvent event, Node objectBounds) {
 		objectBounds.setScaleX(drawPane.getScaleX());
 		objectBounds.setScaleY(drawPane.getScaleY());
-
+		
 		objectBounds.setTranslateX(event.getSceneX() + (objectBounds.getBoundsInLocal().getWidth()
 				/ 2 * (objectBounds.getScaleX() - 1)));
 		objectBounds.setTranslateY(event.getSceneY() + (objectBounds.getBoundsInLocal().getHeight()

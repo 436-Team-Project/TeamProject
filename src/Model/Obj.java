@@ -4,7 +4,6 @@ public class Obj extends UIObjects{
 	
 	public Obj(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y,x2,y2);
-		// TODO Auto-generated constructor stub
 	}
 	
 	public void draw() {

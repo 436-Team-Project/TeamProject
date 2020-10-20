@@ -13,14 +13,13 @@ public class Wall extends UIObjects {
 	 * Wall constructor
 	 *
 	 * @param ID Wall ID
-	 * @param x vertical position
-	 * @param y horizontal position
+	 * @param x  vertical position
+	 * @param y  horizontal position
 	 * @param x2 vertical position
 	 * @param y2 horizontal position
 	 */
 	public Wall(int ID, double x, double y, double x2, double y2) {
-		super(ID, x, y,x2,y2);
-		// TODO Auto-generated constructor stub
+		super(ID, x, y, x2, y2);
 	}
 	
 	/**
@@ -29,6 +28,4 @@ public class Wall extends UIObjects {
 	public void draw() {
 	
 	}
-	
-	
 }

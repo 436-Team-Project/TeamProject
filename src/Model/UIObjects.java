@@ -13,24 +13,21 @@ public abstract class UIObjects implements Serializable {
 	int ID;
 	
 	public UIObjects(int ID, double x, double y, double x2, double y2) {
-		this.x=x;
-		this.y=y;
-		this.x2=x2;
-		this.y2=y2;
-		this.ID=ID;
+		this.x = x;
+		this.y = y;
+		this.x2 = x2;
+		this.y2 = y2;
+		this.ID = ID;
 	}
+	
 	/*
 	 * when the shape is moved or altered the x and y values will be altered for storage
 	 */
-	public void update(double x,double y,double x2,double y2) {
-		this.x=x;
-		this.y=y;
-		this.x2=x2;
-		this.y2=y2;
-	}
-	
-	public String toString() {
-		return "Obj ID: "+ID+" type: object";
+	public void update(double x, double y, double x2, double y2) {
+		this.x = x;
+		this.y = y;
+		this.x2 = x2;
+		this.y2 = y2;
 	}
 	
 	public double getX() {
@@ -41,7 +38,6 @@ public abstract class UIObjects implements Serializable {
 		return y;
 	}
 	
-
 	public double getX2() {
 		return x2;
 	}
@@ -58,4 +54,7 @@ public abstract class UIObjects implements Serializable {
 		return Math.abs(y2 - y);
 	}
 	
+	public String toString() {
+		return "Obj ID: " + ID + " type: object";
+	}
 }

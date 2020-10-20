@@ -10,7 +10,6 @@ public class Spots extends UIObjects{
 	
 	public Spots(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y, x2, y2);
-		// TODO Auto-generated constructor stub
 	}
 	
 	
@@ -44,7 +43,7 @@ public class Spots extends UIObjects{
 	
 	@Override
 	public String toString() {
-		return "ID: " + this.ID+ "type: chair"; 
+		return "ID: " + this.ID+ "type: chair";
 	}
 	
 }
