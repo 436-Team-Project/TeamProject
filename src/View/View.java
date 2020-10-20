@@ -4,8 +4,7 @@ import Model.*;
 import Controller.Controller;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -49,6 +48,7 @@ public class View extends Application implements Observer {
 	boolean drawingWall = false;
 	boolean placingChair = false;
 	boolean placingObject = false;
+	boolean isHosting = false;
 	
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
@@ -73,17 +73,16 @@ public class View extends Application implements Observer {
 	public void start(Stage primaryStage) {
 		model = new Model();
 		model.addObserver(this);
-		
 		controller = new Controller(model);
 		
 		root = new BorderPane();
-		
 		root.setCenter(initCenterPanel());
 		root.setLeft(initLeftPanel());
 		root.setTop(initTopPanel());
 		root.setBottom(initBottomPanel());
 		
 		Scene scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+		primaryStage.getIcons().add(ImageLoader.getImage("app_icon_black_60px.png"));
 		primaryStage.setTitle("Covid Calc");
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -123,6 +122,63 @@ public class View extends Application implements Observer {
 	}
 	
 	/**
+	 * Initializes the bottom panel in the root border pane
+	 *
+	 * @return Pane
+	 */
+	private Pane initBottomPanel() {
+		Pane result = new Pane();
+		result.setBackground(new Background(
+				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
+		result.setPrefHeight(BOT_HEIGHT);
+		result.getChildren().add(initBottomControls());
+		return result;
+	}
+	
+	/**
+	 * Initializes the controls for the bottom panel
+	 *
+	 * @return HBox
+	 */
+	private HBox initBottomControls(){
+		HBox result = new HBox();
+		Button hostButton = new Button("Host");
+		Button constructButton = new Button("Construct");
+		
+		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
+		constructButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
+		
+		hostButton.setOnMouseClicked(e -> {
+			isHosting = true;
+			HostView hostRoot = new HostView(root, model, controller, drawPane);
+			root.setBottom(initBottomPanel());
+		});
+		
+		constructButton.setOnMouseClicked(e -> {
+			isHosting = false;
+			root.setCenter(initCenterPanel());
+			root.setTop(initTopPanel());
+			root.setLeft(initLeftPanel());
+			root.setRight(initRightPanel());
+			controller.displayModel();
+			root.setBottom(initBottomPanel());
+		});
+		
+		if(!isHosting) {
+			hostButton.setVisible(true);
+			constructButton.setVisible(false);
+		} else {
+			hostButton.setVisible(false);
+			constructButton.setVisible(true);
+		}
+		
+		result.getChildren().addAll(hostButton, constructButton);
+
+		HBox.setHgrow(result, Priority.ALWAYS);
+		return result;
+	}
+	
+	/**
 	 * Initializes the left panel in the root border pane
 	 * <p>
 	 * Places three buttons for now. More will be added later
@@ -142,7 +198,8 @@ public class View extends Application implements Observer {
 		
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
-		Button placeObject = new Button("Place Table"); // Place holder button
+		Button placeObject = new Button("Place Table");
+		
 		
 		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
 				"-fx-padding: 10px 50px 20px 50px;");
@@ -238,6 +295,15 @@ public class View extends Application implements Observer {
 	}
 	
 	/**
+	 * Just returns null, could be used to add more features in the future
+	 *
+	 * @return Pane
+	 */
+	private Pane initRightPanel(){
+		return null;
+	}
+	
+	/**
 	 * Initializes the center panel in the root border pane
 	 *
 	 * @return Pane
@@ -290,7 +356,6 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
-		
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
@@ -453,34 +518,7 @@ public class View extends Application implements Observer {
 		return result;
 	}
 	
-	/**
-	 * Initializes the bottom panel in the root border pane
-	 *
-	 * @return Pane
-	 */
-	private Pane initBottomPanel() {
-		Pane result = new Pane();
-		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefHeight(BOT_HEIGHT);
-		
-		HBox hBox = new HBox();
-		Button hostButton = new Button("Host");
-		
-		result.setStyle("-fx-alignment: center; -fx-padding: 0px 25px 0px 0px;");
-		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
-		hBox.setStyle(" -fx-padding: 0px 25px 0px 0px;");
-		
-		hostButton.setOnMouseClicked(e -> {
-			System.out.println("\"Host\" button clicked");
-			// TODO: Implement the new view for the Host stage of product
-		});
-		
-		hBox.getChildren().add(hostButton);
-		result.getChildren().add(hBox);
-		
-		return result;
-	}
+
 	
 	/**
 	 * Initializes a dashed rectangle representing the bounds of the object being
