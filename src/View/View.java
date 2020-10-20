@@ -62,6 +62,7 @@ public class View extends Application implements Observer {
 	@Override
 	public void init() {
 		// controller = new Controller();
+		
 	}
 	
 	/**
