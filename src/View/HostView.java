@@ -49,16 +49,20 @@ public class HostView {
 		this.root = root;
 		this.drawPane = drawPane;
 		
+		// Initialize border pane's panels
 		root.setCenter(initCenterPanel());
 		root.setTop(initTopPanel());
 		root.setLeft(initLeftPanel());
 		root.setRight(initRightPanel());
 		
-		controller.displayModel();
+		controller.displayModel(); // Call the controller to display the current state of the model
 	}
 	
 	/**
 	 * Initializes the top panel of the border pane
+	 * <p>
+	 * This panel is responsible for the controls not directly responsible for main "Host" features.
+	 * Auxiliary features like manipulating the canvas and other things.
 	 */
 	private Pane initTopPanel() {
 		Pane result = new Pane();
@@ -78,7 +82,10 @@ public class HostView {
 	}
 	
 	/**
-	 * Initializes the controls in the top panel of the main border pane
+	 * Initializes the controls in the top panel of the border pane
+	 * <p>
+	 * This takes care of creating the buttons and performing the actions of those buttons like
+	 * "redo", "undo", "zoom in", etc.
 	 *
 	 * @return HBox
 	 */
@@ -87,7 +94,6 @@ public class HostView {
 		HBox undoRedoBox = new HBox();
 		HBox zoomBox = new HBox();
 		MenuBar menuBar = new MenuBar();
-		
 		Menu menu = new Menu("File");
 		MenuItem menuItemHelp = new MenuItem("Help");
 		MenuItem menuItemClose = new MenuItem("Close");
@@ -100,6 +106,7 @@ public class HostView {
 			System.out.println("Menu Item \"Help\" Selected");
 			// TODO: Implement the help info for the user
 		});
+		
 		menuItemClose.setOnAction(e -> {
 			System.out.println("Menu Item \"Close\" Selected");
 			Platform.exit();
@@ -122,11 +129,13 @@ public class HostView {
 			drawPane.setScaleX(1);
 			drawPane.setScaleY(1);
 		});
+		
 		zoomInButton.setOnMouseClicked(e -> {
 			System.out.println("\"Zoom In\" button clicked");
 			drawPane.setScaleX(drawPane.getScaleX() * 1.1);
 			drawPane.setScaleY(drawPane.getScaleY() * 1.1);
 		});
+		
 		zoomOutButton.setOnMouseClicked(e -> {
 			System.out.println("\"Zoom Out\" button clicked");
 			drawPane.setScaleX(drawPane.getScaleX() / 1.1);
@@ -141,16 +150,18 @@ public class HostView {
 	
 	/**
 	 * Initializes the center panel of the border pane
+	 * <p>
+	 * This panel is responsible for performing the user's mouse actions.
 	 */
 	private Pane initCenterPanel() {
 		Pane result = new Pane();
 		Pane child = drawPane; // Draw panel
 		
-		result.setBackground(new Background(
-				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH);
 		result.setPrefHeight(CENTER_HEIGHT);
 		result.getChildren().add(child);
+		result.setBackground(new Background(
+				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		
 		// Allows right mouse drag to pan the child.
 		result.setOnMousePressed((event) -> {
@@ -185,29 +196,45 @@ public class HostView {
 	
 	/**
 	 * Initializes the left panel of the border pane
+	 * <p>
+	 * This panel has the buttons for the features the "Host" view is responsible for performing.
 	 */
 	private Pane initLeftPanel() {
 		Pane result = new Pane();
+		result.setPrefWidth(LEFT_WIDTH);
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(124, 132, 161, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(LEFT_WIDTH);
 		
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
-		
 		Label leftPanelHeader = new Label("Host Elements");
-		Button getSafePos = new Button("Get Safe Position");
-		Button assignGuest = new Button("Assign Guest");
-		Button removeGuest = new Button("Remove Guest");
 		
+		buttonBox.setStyle("-fx-spacing: 5px");
 		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
 				"-fx-padding: 0px 0px 0px 0px;");
-		buttonBox.setStyle("-fx-spacing: 5px");
-		getSafePos.setStyle("-fx-pref-width: 120px; -fx-pref-height: 40px;");
-		assignGuest.setStyle("-fx-pref-width: 120px; -fx-pref-height: 40px");
-		removeGuest.setStyle("-fx-pref-width: 120px; -fx-pref-height: 40px");
 		
-		buttonBox.getChildren().addAll(getSafePos, assignGuest, removeGuest);
+		Button getSafePosButton = new Button("Get Safe Position");
+		Button assignGuestButton = new Button("Assign Guest");
+		Button removeGuestButton = new Button("Remove Guest");
+		
+		getSafePosButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 40px;");
+		assignGuestButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 40px");
+		removeGuestButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 40px");
+		
+		getSafePosButton.setOnAction(e -> {
+			System.out.println("\"Get Safe Position\" button clicked");
+			// TODO: Implement the feature where an optimal safe space is calculated
+		});
+		assignGuestButton.setOnAction(e -> {
+			System.out.println("\"Assign Guest\" button clicked");
+			// TODO: Implement assigning a guest to a chair/spot on the floor
+		});
+		removeGuestButton.setOnAction(e -> {
+			System.out.println("\"Remove Guest\" button clicked");
+			// TODO: Implement removing a guest from the list of occupants in the floor
+		});
+		
+		buttonBox.getChildren().addAll(getSafePosButton, assignGuestButton, removeGuestButton);
 		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
 		result.getChildren().add(vbox);
 		return result;
@@ -215,30 +242,37 @@ public class HostView {
 	
 	/**
 	 * Initializes the right panel of the border pane
+	 * <p>
+	 * This panel shows the user the current values for various product attributes.
 	 */
 	private Pane initRightPanel() {
 		Pane result = new Pane();
+		result.setPrefWidth(RIGHT_WIDTH);
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(124, 132, 161, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(RIGHT_WIDTH);
-		
-		VBox vbox = new VBox();
-		VBox hostInfoBox = new VBox();
 		
 		Label leftPanelHeader = new Label("Host Info");
+		VBox hostInfoBox = new VBox();
+		VBox vbox = new VBox();
+		
+		hostInfoBox.setStyle("-fx-spacing: 5px");
+		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
+				"-fx-padding: 0px 0px 0px 0px;");
+		
 		Label info1 = new Label("Occupants: ");
 		Label info2 = new Label("Info 2: ");
 		Label info3 = new Label("Info 3: ");
-		info1Value = new Label("Answer 1");
+		
+		// TODO: Implement counting the number of occupants currently on the floor and display
+		info1Value = new Label("# of occupants");
+		// TODO: Choose and implement a second attribute of the product to display to the user
 		info2Value = new Label("Answer 2");
+		// TODO: Choose and implement a third attribute of the product to display to the user
 		info3Value = new Label("Answer 3");
 		
-		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
-				"-fx-padding: 0px 0px 0px 0px;");
 		info1.setStyle("-fx-font-weight: bold;-fx-font-size: 12px;");
 		info2.setStyle("-fx-font-weight: bold;-fx-font-size: 12px;");
 		info3.setStyle("-fx-font-weight: bold;-fx-font-size: 12px;");
-		hostInfoBox.setStyle("-fx-spacing: 5px");
 		
 		hostInfoBox.getChildren().addAll(
 				new HBox(info1, info1Value),

@@ -128,7 +128,6 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initBottomPanel() {
 		Pane result = new Pane();
-		result.setId("Bottom Panel");
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(BOT_HEIGHT);
@@ -188,7 +187,6 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initLeftPanel() {
 		Pane result = new Pane();
-		result.setId("Left Construct Panel");
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
@@ -200,7 +198,7 @@ public class View extends Application implements Observer {
 		
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
-		Button placeObject = new Button("Place Table"); // Place holder button
+		Button placeObject = new Button("Place Table");
 		
 		
 		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
