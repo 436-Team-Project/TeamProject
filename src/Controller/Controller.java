@@ -1,5 +1,7 @@
 package Controller;
 
+import java.util.ArrayList;
+
 import Model.*;
 import View.View;
 
@@ -79,6 +81,27 @@ public class Controller {
 	 */
 	public void displayModel(){
 		model.display();
+	}
+	
+	
+	public void save() {
+		model.saveState();
+	}
+	
+	public void load() {
+		model.loadState();
+	}
+	
+	public ArrayList<UIObjects> getObjects(){
+		return model.getObjects();
+	}
+	
+	void updateAvailable(int ID){
+		model.updateAvailability(ID);
+	}
+	
+	void removeObject(int ID) {
+		model.removeObject(ID);
 	}
 }
 
