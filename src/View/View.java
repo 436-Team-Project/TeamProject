@@ -106,20 +106,141 @@ public class View extends Application implements Observer {
 			if(obj instanceof Wall) {
 				System.out.println("Drawing wall");
 				Line wall = initLine(obj.getX(), obj.getY(), obj.getX2(), obj.getY2());
+
+				// These are invisible circular regions acting as endpoints of the line
+				// to allow dragging of on end.
+				Circle leftEnd  = new Circle(obj.getX(), obj.getY(), 10);
+				Circle rightEnd = new Circle(obj.getX2(), obj.getY2(), 10);
+
+				leftEnd.setFill(Color.TRANSPARENT);
+				rightEnd.setFill(Color.TRANSPARENT);
+
+				setEndPointMouseAction(leftEnd, wall, obj, true);	 // last argument is flag
+				setEndPointMouseAction(rightEnd, wall, obj, false);  // for left or right
+
+				setMouseAction(wall, obj);
+		
 				drawPane.getChildren().add(wall);
+				drawPane.getChildren().add(leftEnd);
+				drawPane.getChildren().add(rightEnd);
+
 			} else if(obj instanceof Spots) {
 				System.out.println("Drawing chair");
 				double radius = obj.getWidth() / 2;
 				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius);
+
+				setMouseAction(chair, obj);
+
 				drawPane.getChildren().add(chair);
 			} else {
 				System.out.println("Drawing object");
 				Rectangle o = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
 				o.setFill(Color.GRAY);
+
+				setMouseAction(o, obj);
+
 				drawPane.getChildren().add(o);
 			}
 		}
 	}
+
+	/**
+	 * Set the event handling of mouse actions for a given javafx circle.
+	 * 
+	 *
+	 * @param endPoint the circle to set the handlers for
+	 * @param wall	   the wall for which the circle is an endpoint
+	 * @param uio	   the UIObjects associated with the wall
+	 * @param isLeft   flag to determine whether it's left of right endpoint
+	 */
+	private void setEndPointMouseAction(Circle endPoint, Line wall, UIObjects uio, boolean isLeft) {
+		// drag left end of wall
+		endPoint.setOnMousePressed(event -> {
+			drawingWall = false;
+
+			endPoint.setOnMouseDragged(event2 -> {
+
+				if(isLeft) {
+					wall.setStartX(event2.getX());
+					wall.setStartY(event2.getY());
+				} else {
+					wall.setEndX(event2.getX());
+					wall.setEndY(event2.getY());
+				}
+				
+				endPoint.setCenterX(event2.getX());
+				endPoint.setCenterY(event2.getY());
+			});
+		});
+
+		endPoint.setOnMouseReleased(event -> {
+
+			boolean inDrawPane = (endPoint.getCenterX() > 0 && endPoint.getCenterX() < drawPane.getWidth()) &&
+								 (endPoint.getCenterY() > 0 && endPoint.getCenterY() < drawPane.getHeight());
+
+			if(!inDrawPane) {
+				System.out.println("Outside of central panel");
+				controller.displayModel();
+			} else {
+				if(isLeft) {
+					controller.updateCurrentObject(event.getX(), event.getY(),
+											uio.getX2(), uio.getY2(), uio.getId());
+				} else {
+					controller.updateCurrentObject(uio.getX(), uio.getY(),
+											event.getX(), event.getY(), uio.getId());
+				}
+			}
+		});
+	}
+
+
+	/**
+	 * Set the event handling of mouse actions for a object
+	 * 
+	 * @param obj the object to set the handlers for
+	 * @param uio the UIObjects associated with the given object
+	 */
+	private void setMouseAction(Shape obj, UIObjects uio) {
+
+		obj.setOnMousePressed(event -> {
+			drawingWall = false;
+
+			Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+
+			double mouseX    = p.getX();
+			double mouseY    = p.getY();
+			double objTransX = obj.getTranslateX();
+			double objTransY = obj.getTranslateY();
+
+			obj.setOnMouseDragged(event2 -> {
+
+				Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+				obj.setTranslateX(objTransX + (p2.getX() - mouseX));
+				obj.setTranslateY(objTransY + (p2.getY() - mouseY));
+			});
+		});
+
+		obj.setOnMouseReleased(event -> {
+
+			// check if placed within the draw pane
+			Bounds objBounds = obj.getBoundsInParent();
+
+			boolean inDrawPane = (objBounds.getMinX() > 0 && objBounds.getMaxX() < drawPane.getWidth()) &&
+								 (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
+
+			if(!inDrawPane) {
+				System.out.println("Outside of central panel");
+				controller.displayModel();
+			} else {
+				double transX = obj.getTranslateX();
+				double transY = obj.getTranslateY();
+
+				controller.updateCurrentObject(uio.getX() + transX, uio.getY() + transY,
+										uio.getX2() + transX, uio.getY2() + transY, uio.getId());
+			}
+		});
+	}
+
 	
 	/**
 	 * Initializes the bottom panel in the root border pane
@@ -256,7 +377,9 @@ public class View extends Application implements Observer {
 					System.out.println("Outside of central panel");
 				} else {
 					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-					controller.createNewObject("chair", p.getX(), p.getY(), CHAIR_WIDTH, CHAIR_HEIGHT);
+					double x2 = p.getX() + CHAIR_WIDTH;
+					double y2 = p.getY() + CHAIR_HEIGHT;
+					controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
 				}
 				root.getChildren().remove(chairBounds);
 			});
@@ -282,7 +405,9 @@ public class View extends Application implements Observer {
 					System.out.println("Outside of central panel");
 				} else {
 					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-					controller.createNewObject("object", p.getX(), p.getY(), TABLE_WIDTH, TABLE_HEIGHT);
+					double x2 = p.getX() + TABLE_WIDTH;
+					double y2 = p.getY() + TABLE_HEIGHT;
+					controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
 				}
 				root.getChildren().remove(objectBounds);
 			});
@@ -584,7 +709,7 @@ public class View extends Application implements Observer {
 	 * @return line
 	 */
 	private Line initLine(double x, double y, double x2, double y2) {
-		Line l = new Line(x, y, x2 - x, y2 - y);
+		Line l = new Line(x, y, x2, y2);
 		l.setStrokeWidth(5);
 		// TODO: EventHandler for selecting, moving, and editing lines
 		return l;
