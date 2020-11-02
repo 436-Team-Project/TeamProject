@@ -16,10 +16,8 @@ public class Tables extends UIObjects {
 		this.numberOfSpots = 4;
 	}
 	
-	/**
-	 * Draw a square, circle, or table img in this spot
-	 */
-	public void draw() {
-	
+	@Override
+	public String toString() {
+		return "ID: " + this.ID+ "type: table";
 	}
 }

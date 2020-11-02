@@ -101,5 +101,40 @@ public class Controller {
 	void removeObject(int ID) {
 		model.removeObject(ID);
 	}
+	
+	/*
+	 * removes all the items in the list.
+	 */
+	void removeAll() {
+		for (int i = 0; i < model.getObjects().size(); i++) {
+			model.removeObject(0);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param x starting x location
+	 * @param y starting y location
+	 * @param x2 bottom right corner of area selected
+	 * @param y2 bottom right corner of area selected
+	 * 
+	 * takes an area that the user selects and removes all the elements in that selected area.
+	 */
+	void removeSelected(int x, int y, int x2, int y2) {
+		int buffer = 0;
+		
+		//cycle through the IDs and if the object falls in the area delete the object.
+		for (int i = 0; i < model.getObjects().size(); i++) {
+			if (model.getObject(i-buffer).getX() >= x 
+					&& model.getObject(i-buffer).getX() <= x2 
+					&& model.getObject(i-buffer).getY() >= y 
+					&& model.getObject(i-buffer).getY() <= y2) {
+				
+				model.removeObject(i-buffer);
+				buffer++;
+			}
+		}
+		
+	}
 }
 
