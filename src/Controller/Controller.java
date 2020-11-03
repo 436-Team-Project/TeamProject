@@ -122,9 +122,9 @@ public class Controller {
 	 */
 	void removeSelected(int x, int y, int x2, int y2) {
 		int buffer = 0;
-		
+		int size = model.getObjects().size();
 		//cycle through the IDs and if the object falls in the area delete the object.
-		for (int i = 0; i < model.getObjects().size(); i++) {
+		for (int i = 0; i < size; i++) {
 			if (model.getObject(i-buffer).getX() >= x 
 					&& model.getObject(i-buffer).getX() <= x2 
 					&& model.getObject(i-buffer).getY() >= y 
