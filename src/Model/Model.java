@@ -164,6 +164,9 @@ public class Model extends Observable {
 							//we are fine if it was already unavailable and we take again
 							spot.takeAvailable();
 							itemList.set(spot.ID, spot);
+							
+							setChanged();
+							notifyObservers();
 						}
 					}
 				}
@@ -218,7 +221,9 @@ public class Model extends Observable {
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			} else if(spot.occupied) {
+			} 
+			
+			else if(spot.occupied) {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
 				for(int i = 0; i < itemList.size(); i++) {
@@ -234,6 +239,9 @@ public class Model extends Observable {
 				}
 			}
 		}
+		
+		setChanged();
+		notifyObservers();
 	}
 	
 	/**
@@ -284,5 +292,13 @@ public class Model extends Observable {
 	public ArrayList<UIObjects> getObjects() {
 		System.out.println("returning items");
 		return itemList;
+	}
+	
+	//shift the ID's and then remove the object from itemList
+	public void removeObject(int ID) {
+		for (int i=ID;i<itemList.size()-1;i++) {
+			itemList.get(i+1).ID=itemList.get(i).ID;
+		}
+		itemList.remove(ID);
 	}
 }

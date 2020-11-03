@@ -53,6 +53,10 @@ public abstract class UIObjects implements Serializable {
 	public double getHeight() {
 		return Math.abs(y2 - y);
 	}
+
+	public int getId() {
+		return ID;
+	}
 	
 	public String toString() {
 		return "Obj ID: " + ID + " type: object";

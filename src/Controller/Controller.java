@@ -1,5 +1,7 @@
 package Controller;
 
+import java.util.ArrayList;
+
 import Model.*;
 import View.View;
 
@@ -23,10 +25,8 @@ public class Controller {
 	 * @param width  the new object's radius
 	 * @param height the new object's radius
 	 */
-	public void createNewObject(String type, double x, double y, double width, double height) {
+	public void createNewObject(String type, double x, double y, double x2, double y2) {
 		UIObjects newObj = null;
-		double x2 = x + width;
-		double y2 = y + height;
 		int ID = model.nextID();
 		switch(type) {
 			case "wall":
@@ -79,6 +79,27 @@ public class Controller {
 	 */
 	public void displayModel(){
 		model.display();
+	}
+	
+	
+	public void save() {
+		model.saveState();
+	}
+	
+	public void load() {
+		model.loadState();
+	}
+	
+	public ArrayList<UIObjects> getObjects(){
+		return model.getObjects();
+	}
+	
+	void updateAvailable(int ID){
+		model.updateAvailability(ID);
+	}
+	
+	void removeObject(int ID) {
+		model.removeObject(ID);
 	}
 }
 
