@@ -22,8 +22,8 @@ public class Controller {
 	 * @param type   string "wall", "chair", or "table"
 	 * @param x      vertical position
 	 * @param y      horizontal position
-	 * @param width  the new object's radius
-	 * @param height the new object's radius
+	 * @param x2  the new object's radius
+	 * @param y2 the new object's radius
 	 */
 	public void createNewObject(String type, double x, double y, double x2, double y2) {
 		UIObjects newObj = null;

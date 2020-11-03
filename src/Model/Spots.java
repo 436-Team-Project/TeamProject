@@ -5,8 +5,8 @@ package Model;
  */
 public class Spots extends UIObjects{
 	
-	boolean available= true;
-	boolean occupied=false;
+	boolean available = true;
+	boolean occupied = false;
 	
 	public Spots(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y, x2, y2);
@@ -22,11 +22,11 @@ public class Spots extends UIObjects{
 	  * switches whether the spot is available to be used or not
 	  */
 	void makeAvailable() {
-		available=true;
+		available = true;
 	}
 	
 	void takeAvailable() {
-		available =false;
+		available = false;
 	}
 	/*
 	void updateAvailability() {
@@ -38,12 +38,12 @@ public class Spots extends UIObjects{
 	 * switches whether somebody is in the spot or not
 	 */
 	void updateOccupancy() {
-		occupied=!occupied;
+		occupied =! occupied;
 	}
 	
 	@Override
 	public String toString() {
-		return "ID: " + this.ID+ "type: chair";
+		return "ID: " + this.ID + "type: chair";
 	}
 	
 }

@@ -153,7 +153,7 @@ public class Model extends Observable {
 					continue;
 				}
 				
-				//distance formula (x2-x1)^2+(y2-y1)^2=z^2
+				// distance formula (x2 - x1)^2 + (y2 - y1)^2 = z^2
 				else {
 					double distance = Math.sqrt((nSpot.x - spot.x) + (nSpot.y - spot.y));
 					//if one is but not the other. prevents possible case for cluster

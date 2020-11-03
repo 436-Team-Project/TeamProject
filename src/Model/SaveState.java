@@ -2,10 +2,19 @@ package Model;
 import java.io.*;
 import java.util.ArrayList;
 
+/**
+ * Provided the ability to save
+ */
 public class SaveState implements Serializable {
-	ArrayList<UIObjects> itemList=new ArrayList<UIObjects>();
 	
+	ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
+	
+	/**
+	 * SaveState constructor
+	 *
+	 * @param items List of UIObjects from the model
+	 */
 	public SaveState(ArrayList<UIObjects> items) {
-		this.itemList=items;
+		this.itemList = items;
 	}
 }
