@@ -46,6 +46,7 @@ public class View extends Application implements Observer {
 	final double TABLE_WIDTH = 60;
 	final double TABLE_HEIGHT = 60;
 	
+	boolean selecting = false;
 	boolean drawingWall = false;
 	boolean placingChair = false;
 	boolean placingObject = false;
@@ -207,7 +208,6 @@ public class View extends Application implements Observer {
 	 * @param uio the UIObjects associated with the given object
 	 */
 	private void setMouseAction(Shape obj, UIObjects uio) {
-		
 		obj.setOnMousePressed(event -> {
 			drawingWall = false;
 			
@@ -276,7 +276,7 @@ public class View extends Application implements Observer {
 		
 		hostButton.setOnMouseClicked(e -> {
 			isHosting = true;
-			HostView hostRoot = new HostView(root, model, controller, drawPane);
+			HostView hostRoot = new HostView(stage, root, model, controller, drawPane);
 			root.setBottom(initBottomPanel(stage));
 		});
 		
@@ -322,6 +322,7 @@ public class View extends Application implements Observer {
 		
 		Label leftPanelHeader = new Label("Canvas Elements");
 		
+		Button selection = new Button("Select");
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
 		Button placeObject = new Button("Place Table");
@@ -329,6 +330,7 @@ public class View extends Application implements Observer {
 		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
 				"-fx-padding: 10px 50px 20px 50px;");
 		buttonBox.setStyle("-fx-alignment: center;-fx-spacing: 5px");
+		selection.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
 		placeWall.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
 		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
@@ -338,8 +340,16 @@ public class View extends Application implements Observer {
 		// Temporarily using default wall dimensions
 		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		
+		selection.setOnMouseClicked(event -> {
+			selecting = true;
+			drawingWall = false;
+			placingObject = false;
+			placingChair = false;
+		});
+		
 		// --- Event handling "Place Wall" button ---\
 		placeWall.setOnMouseClicked(event -> {
+			selecting = false;
 			drawingWall = true;
 			placingObject = false;
 			placingChair = false;
@@ -363,6 +373,7 @@ public class View extends Application implements Observer {
 		
 		// --- Event handling "Place Chair" button ---
 		placeChair.setOnMousePressed(event -> {
+			selecting = false;
 			drawingWall = false;
 			placingObject = false;
 			placingChair = true;
@@ -391,6 +402,7 @@ public class View extends Application implements Observer {
 		
 		// --- Event handling "Place Object" button ---
 		placeObject.setOnMousePressed(event -> {
+			selecting = false;
 			drawingWall = false;
 			placingChair = false;
 			placingObject = true;
@@ -417,7 +429,7 @@ public class View extends Application implements Observer {
 			});
 		});
 		
-		buttonBox.getChildren().addAll(placeWall, placeChair, placeObject);
+		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject);
 		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
 		result.getChildren().add(vbox);
 		return result;
@@ -502,6 +514,9 @@ public class View extends Application implements Observer {
 				System.out.println("Drawing");
 				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 				Line wallBound = initLineBounds(p.getX(), p.getY());
+				double startX = p.getX();
+				double startY = p.getY();
+				
 				drawPane.getChildren().add(wallBound);
 				
 				result.setOnMouseDragged(event2 -> {
@@ -511,9 +526,59 @@ public class View extends Application implements Observer {
 					
 					result.setOnMouseReleased(event3 -> {
 						if(event2.isPrimaryButtonDown() && drawingWall) {
-							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
-									p2.getY());
+							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(), p2.getY());
 							drawPane.getChildren().remove(wallBound);
+						}
+					});
+				});
+			}
+			
+			// When the user drags with LMB to select multiple items
+			if(selecting && event.isPrimaryButtonDown() && inDrawPane) {
+				System.out.println("Selecting");
+				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+				Rectangle rectBound = initRectBounds(p.getX(), p.getY());
+				
+				double startX = p.getX();
+				double startY = p.getY();
+				drawPane.getChildren().add(rectBound);
+				
+				result.setOnMouseDragged(event2 -> {
+					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+					double endX = p2.getX();
+					double endY = p2.getY();
+					
+					double height = endX - startX;
+					double width = endY - startY;
+					
+					// mouse goes on top of the starting point
+					if(height < 0) {
+						rectBound.setX(p2.getX());
+						rectBound.setWidth(startX - endX);
+					} else {
+						rectBound.setWidth(height);
+					}
+					// mouse goes left of the starting point
+					if(width < 0) {
+						rectBound.setY(p2.getY());
+						rectBound.setHeight(startY - endY);
+					} else {
+						rectBound.setHeight(width);
+					}
+					result.setOnMouseReleased(event3 -> {
+						if(event2.isPrimaryButtonDown() && selecting) {
+							double heightFinal = endX - startX;
+							double widthFinal = endY - startY;
+							double x1 = rectBound.getX();
+							double y1 = rectBound.getY();
+							double y2 = rectBound.getY() + rectBound.getHeight();
+							double x2 = rectBound.getX() + rectBound.getWidth();
+							System.out.printf("Width[%.1f], Height[%.1f] | " +
+											"x1[%.1f], y1[%.1f], x2[%.1f], y2[%.1f]\n",
+									heightFinal, widthFinal, x1, y1, x2, y2);
+							
+							controller.removeSelected(x1, y1, x2, y2);
+							drawPane.getChildren().remove(rectBound);
 						}
 					});
 				});
@@ -547,13 +612,6 @@ public class View extends Application implements Observer {
 	/**
 	 * Initializes the controls in the top panel of the main border pane
 	 *
-	 * Menu item "New": when the new file button is clicked, a temporary file will be created in the
-	 * 'Saved' directory as a to save the user file name until they decide to Save As/Save.
-	 *
-	 * Menu item "Open": The user can open a existing floor plan
-	 *
-	 * Menu item "Save As": The user can pick where to save their current floor plan
-	 *
 	 * @return HBox
 	 */
 	private HBox initTopControls(Stage stage) {
@@ -563,15 +621,11 @@ public class View extends Application implements Observer {
 		MenuBar menuBar = new MenuBar();
 		
 		Menu menu = new Menu("File");
-//		Menu subMenu = new Menu("Submenu");
 		MenuItem menuItemNew = new MenuItem("New");
 		MenuItem menuItemOpen = new MenuItem("Open");
 		MenuItem menuItemSave = new MenuItem("Save");
 		MenuItem menuItemSaveAs = new MenuItem("Save As");
-		MenuItem menuItemHelp = new MenuItem("Help");
 		MenuItem menuItemClose = new MenuItem("Close");
-//		MenuItem subMenuItem1 = new MenuItem("Submenu Item");
-//		subMenu.getItems().add(subMenuItem1);
 		
 		result.setStyle("-fx-spacing: 25px;");
 		undoRedoBox.setStyle("-fx-spacing: 2px;");
@@ -586,6 +640,9 @@ public class View extends Application implements Observer {
 			dialog.setContentText("Floor plan name:");
 			Optional<String> dialogResult = dialog.showAndWait();
 			dialogResult.ifPresent(fileName -> currentFileName = fileName);
+			
+			System.out.println("currentFileName = " + currentFileName);
+			
 			fc.setInitialFileName(currentFileName);
 			
 			model = new Model();
@@ -595,6 +652,7 @@ public class View extends Application implements Observer {
 			try {
 				File tempFile = new File("Saved/" + currentFileName);
 				if(tempFile.createNewFile()) {
+					System.out.println("Temp file created: " + tempFile.getName());
 					controller.save(tempFile);
 					controller.load(tempFile);
 				} else {
@@ -612,8 +670,6 @@ public class View extends Application implements Observer {
 		});
 		menuItemSave.setOnAction(e -> {
 			System.out.println("Menu Item \"Save\" Selected");
-			
-			// If there is no current file yet perform a "Save As"
 			if(currentFile == null) {
 				fc.setTitle("Save As");
 				currentFile = fc.showSaveDialog(stage);
@@ -628,10 +684,7 @@ public class View extends Application implements Observer {
 			currentFile = fc.showSaveDialog(stage);
 			controller.save(currentFile);
 		});
-		menuItemHelp.setOnAction(e -> {
-			System.out.println("Menu Item \"Help\" Selected");
-			// TODO: Implement the help info for the user
-		});
+		
 		menuItemClose.setOnAction(e -> {
 			System.out.println("Menu Item \"Close\" Selected");
 			Platform.exit();
@@ -641,8 +694,7 @@ public class View extends Application implements Observer {
 		menu.getItems().add(menuItemOpen);
 		menu.getItems().add(menuItemSave);
 		menu.getItems().add(menuItemSaveAs);
-//		menu.getItems().add(subMenu);
-		menu.getItems().add(menuItemHelp);
+		
 		menu.getItems().add(menuItemClose);
 		menuBar.getMenus().add(menu);
 		
@@ -687,6 +739,15 @@ public class View extends Application implements Observer {
 		result.getChildren().addAll(menuBar, undoRedoBox, zoomBox);
 		
 		return result;
+	}
+	
+	private Rectangle initRectBounds(double x, double y) {
+		Rectangle r = new Rectangle(x, y, 0, 0);
+		r.setStroke(Color.rgb(75, 161, 219));
+		r.setStrokeWidth(1);
+		r.getStrokeDashArray().addAll(5.0);
+		r.setFill(Color.rgb(75, 161, 219, 0.5));
+		return r;
 	}
 	
 	/**

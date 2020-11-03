@@ -11,11 +11,10 @@ import java.util.Observable;
  */
 
 public class Model extends Observable {
-	public ArrayList<UIObjects> itemList;
-	UIObjects lastObject;
-	
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
+	public ArrayList<UIObjects> itemList;
+	UIObjects lastObject;
 	
 	/**
 	 * Constructor class
@@ -116,6 +115,17 @@ public class Model extends Observable {
 	}
 	
 	/**
+	 * Returns a single object in the list based on if the item is on the clicked area. If not it
+	 * returns null.
+	 *
+	 * @param ID identification
+	 * @return UIObject
+	 */
+	public UIObjects getObject(int ID) {
+		return itemList.get(ID);
+	}
+	
+	/**
 	 * Returns the next object's identification
 	 *
 	 * @return int
@@ -127,7 +137,7 @@ public class Model extends Observable {
 	/**
 	 * Used when the view wants to draw the model again
 	 */
-	public void display(){
+	public void display() {
 		setChanged();
 		notifyObservers();
 	}
@@ -174,8 +184,8 @@ public class Model extends Observable {
 	 * unlike take we need to make give recursive. this is because unlike take all surrounding
 	 * spots need to be clear instead of just taking if 1 is within range.
 	 *
-	 * @param ID identification
-	 * @param element element
+	 * @param ID
+	 * @param element
 	 * @return avail true or false of if the give availability permission is allowed
 	 */
 	public boolean giveCalculator(int ID, int element) {
@@ -217,9 +227,7 @@ public class Model extends Observable {
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			}
-			
-			else if(spot.occupied) {
+			} else if(spot.occupied) {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
 				for(int i = 0; i < itemList.size(); i++) {
@@ -240,11 +248,8 @@ public class Model extends Observable {
 		notifyObservers();
 	}
 	
-
 	/**
-	 * serializes the itemList into a file at the given file path
-	 *
-	 * @param filePath File path
+	 * serializes the itemList into a file named layoutData
 	 */
 	public void saveState(String filePath) {
 		try {
@@ -256,21 +261,26 @@ public class Model extends Observable {
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
+		
 		System.out.println("finished storing");
 	}
 	
-
 	/**
-	 * Loads the state contained in the file at the given file path
-	 *
-	 * @param filePath File path
+	 * loads a previously saved state.
 	 */
 	@SuppressWarnings("unchecked")
 	public void loadState(String filePath) {
 		try {
 			FileInputStream filein = new FileInputStream(filePath);
 			ObjectInputStream objin = new ObjectInputStream(filein);
+			
 			itemList = (ArrayList<UIObjects>) objin.readObject();
+			
+			System.out.println("Loading...");
+			for(UIObjects uiObject : itemList) {
+				System.out.println(uiObject.toString());
+			}
+			
 			objin.close();
 			filein.close();
 		} catch(IOException ioe) {
@@ -283,6 +293,14 @@ public class Model extends Observable {
 		System.out.println("loaded list");
 	}
 	
+	//shift the ID's and then remove the object from itemList
+	public void removeObject(int ID) {
+		for(int i = ID; i < itemList.size() - 1; i++) {
+			itemList.get(i + 1).ID = itemList.get(i).ID;
+		}
+		itemList.remove(ID);
+	}
+	
 	/**
 	 * Returns the list of the objects
 	 *
@@ -291,13 +309,5 @@ public class Model extends Observable {
 	public ArrayList<UIObjects> getObjects() {
 		System.out.println("returning items");
 		return itemList;
-	}
-	
-	//shift the ID's and then remove the object from itemList
-	public void removeObject(int ID) {
-		for (int i=ID;i<itemList.size()-1;i++) {
-			itemList.get(i+1).ID=itemList.get(i).ID;
-		}
-		itemList.remove(ID);
 	}
 }
