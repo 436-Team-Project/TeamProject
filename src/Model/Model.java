@@ -119,6 +119,18 @@ public class Model extends Observable {
 	}
 	
 	/**
+	 * Returns a single object in the list based on if the item is on the clicked area. If not it
+	 * returns null.
+	 *
+	 * @param x vertical position
+	 * @param y horizontal position
+	 * @return UIObject
+	 */
+	public UIObjects getObject(int ID) {
+		return itemList.get(ID);
+	}
+	
+	/**
 	 * Returns the next object's identification
 	 *
 	 * @return int
