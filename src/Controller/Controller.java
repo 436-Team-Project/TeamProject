@@ -1,9 +1,9 @@
 package Controller;
 
-import java.util.ArrayList;
-
 import Model.*;
-import View.View;
+
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Get commands from the View and controls the Model
@@ -11,6 +11,7 @@ import View.View;
 public class Controller {
 	
 	private final Model model;
+	private String currentFilePath;
 	
 	public Controller(Model model) {
 		this.model = model;
@@ -22,8 +23,8 @@ public class Controller {
 	 * @param type   string "wall", "chair", or "table"
 	 * @param x      vertical position
 	 * @param y      horizontal position
-	 * @param width  the new object's radius
-	 * @param height the new object's radius
+	 * @param x2  the new object's radius
+	 * @param y2 the new object's radius
 	 */
 	public void createNewObject(String type, double x, double y, double x2, double y2) {
 		UIObjects newObj = null;
@@ -81,13 +82,36 @@ public class Controller {
 		model.display();
 	}
 	
-	
-	public void save() {
-		model.saveState();
+	/**
+	 * Saves a file at the current file path
+	 *
+	 * @param file File
+	 */
+	public void save(File file) {
+		if (file != null) {
+			System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
+			currentFilePath = file.getPath();
+			model.saveState(currentFilePath);
+		} else {
+			System.out.println("File empty");
+		}
 	}
 	
-	public void load() {
-		model.loadState();
+	/**
+	 * Loads the file at the given file path
+	 *
+	 * @param file File
+	 */
+	public void load(File file) {
+		if (file != null) {
+			System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
+			currentFilePath = file.getPath();
+			model.loadState(currentFilePath);
+			model.display();
+		} else {
+			System.out.println("File empty");
+		}
+		
 	}
 	
 	public ArrayList<UIObjects> getObjects(){

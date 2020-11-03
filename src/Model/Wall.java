@@ -28,4 +28,12 @@ public class Wall extends UIObjects {
 	public void draw() {
 	
 	}
+	
+	@Override
+	public String toString() {
+		String result = String.format("Wall<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);
+		String connections = "";
+		
+		return result;
+	}
 }

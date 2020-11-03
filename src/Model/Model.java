@@ -1,13 +1,8 @@
 package Model;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Observable;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.math.*;
 
 /**
  * The state of the application
@@ -16,16 +11,18 @@ import java.math.*;
  */
 
 public class Model extends Observable {
-	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
+	public ArrayList<UIObjects> itemList;
 	UIObjects lastObject;
-
+	
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
-
+	
 	/**
 	 * Constructor class
 	 */
 	public Model() {
+		itemList = new ArrayList<UIObjects>();
+		
 		setChanged();
 		notifyObservers();
 	}
@@ -48,7 +45,6 @@ public class Model extends Observable {
 			obj = new Tables(itemList.size(), x, y, x + SIZE, y + SIZE);
 		}
 		lastObject = obj;
-			itemList.add(obj);
 		itemList.add(obj);
 		setChanged();
 		notifyObservers();
@@ -109,7 +105,7 @@ public class Model extends Observable {
 	 */
 	public UIObjects getObject(int x, int y) {
 		UIObjects obj = null;
-
+		
 		for(UIObjects item : itemList) {
 			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
 				obj = item;
@@ -154,7 +150,7 @@ public class Model extends Observable {
 					continue;
 				}
 				
-				//distance formula (x2-x1)^2+(y2-y1)^2=z^2
+				// distance formula (x2 - x1)^2 + (y2 - y1)^2 = z^2
 				else {
 					double distance = Math.sqrt((nSpot.x - spot.x) + (nSpot.y - spot.y));
 					//if one is but not the other. prevents possible case for cluster
@@ -178,8 +174,8 @@ public class Model extends Observable {
 	 * unlike take we need to make give recursive. this is because unlike take all surrounding
 	 * spots need to be clear instead of just taking if 1 is within range.
 	 *
-	 * @param ID
-	 * @param element
+	 * @param ID identification
+	 * @param element element
 	 * @return avail true or false of if the give availability permission is allowed
 	 */
 	public boolean giveCalculator(int ID, int element) {
@@ -221,7 +217,7 @@ public class Model extends Observable {
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			} 
+			}
 			
 			else if(spot.occupied) {
 				spot.updateOccupancy();
@@ -244,12 +240,15 @@ public class Model extends Observable {
 		notifyObservers();
 	}
 	
+
 	/**
-	 * serializes the itemList into a file named layoutData
+	 * serializes the itemList into a file at the given file path
+	 *
+	 * @param filePath File path
 	 */
-	public void saveState() {
+	public void saveState(String filePath) {
 		try {
-			FileOutputStream fileout = new FileOutputStream("layoutData");
+			FileOutputStream fileout = new FileOutputStream(filePath);
 			ObjectOutputStream objectout = new ObjectOutputStream(fileout);
 			objectout.writeObject(itemList);
 			objectout.close();
@@ -257,21 +256,21 @@ public class Model extends Observable {
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
-		
 		System.out.println("finished storing");
 	}
 	
+
 	/**
-	 * loads a previously saved state.
+	 * Loads the state contained in the file at the given file path
+	 *
+	 * @param filePath File path
 	 */
 	@SuppressWarnings("unchecked")
-	public void loadState() {
+	public void loadState(String filePath) {
 		try {
-			FileInputStream filein = new FileInputStream("layoutData");
+			FileInputStream filein = new FileInputStream(filePath);
 			ObjectInputStream objin = new ObjectInputStream(filein);
-			
 			itemList = (ArrayList<UIObjects>) objin.readObject();
-			
 			objin.close();
 			filein.close();
 		} catch(IOException ioe) {
