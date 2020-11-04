@@ -9,6 +9,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -511,7 +512,7 @@ public class View extends Application implements Observer {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
 			
-			if (event.isPrimaryButtonDown() && inDrawPane) {
+			if (event.getButton() == MouseButton.PRIMARY && inDrawPane) {
 				if (drawingWall) {
 					Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 					Line wallBound = initLineBounds(p.getX(), p.getY());
@@ -523,7 +524,7 @@ public class View extends Application implements Observer {
 						wallBound.setEndY(p2.getY());
 						
 						result.setOnMouseReleased(event3 -> {
-							if(event2.isPrimaryButtonDown() && drawingWall) {
+							if(event3.getButton() == MouseButton.PRIMARY && drawingWall) {
 								controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
 										p2.getY());
 								drawPane.getChildren().remove(wallBound);
@@ -545,13 +546,14 @@ public class View extends Application implements Observer {
 								event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
 						if(!inDrawPaneEnd) {
 							System.out.println("Outside of central panel");
-						} else if (placingChair) {
+							root.getChildren().remove(chairBounds);
+						} else if (placingChair && event3.getButton() == MouseButton.PRIMARY) {
 							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 							double x2 = p.getX() + CHAIR_WIDTH;
 							double y2 = p.getY() + CHAIR_HEIGHT;
 							controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
+							root.getChildren().remove(chairBounds);
 						}
-						root.getChildren().remove(chairBounds);
 					});
 				}
 				if (placingObject) {
@@ -569,16 +571,16 @@ public class View extends Application implements Observer {
 					result.setOnMouseReleased(event3 -> {
 						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
 								event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-						
 						if(!inDrawPaneEnd) {
 							System.out.println("Outside of central panel");
-						} else if (placingObject) {
+							root.getChildren().remove(objectBounds);
+						} else if (placingObject && event3.getButton() == MouseButton.PRIMARY) {
 							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
 							double x2 = p.getX() + TABLE_WIDTH;
 							double y2 = p.getY() + TABLE_HEIGHT;
 							controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
+							root.getChildren().remove(objectBounds);
 						}
-						root.getChildren().remove(objectBounds);
 					});
 					
 				}
