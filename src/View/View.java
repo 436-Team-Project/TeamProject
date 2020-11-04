@@ -157,6 +157,8 @@ public class View extends Application implements Observer {
 		// drag left end of wall
 		endPoint.setOnMousePressed(event -> {
 			drawingWall = false;
+			placingChair = false;
+			placingObject = false;
 
 			endPoint.setOnMouseDragged(event2 -> {
 
@@ -204,6 +206,8 @@ public class View extends Application implements Observer {
 
 		obj.setOnMousePressed(event -> {
 			drawingWall = false;
+			placingChair = false;
+			placingObject = false;
 
 			Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 
@@ -329,10 +333,8 @@ public class View extends Application implements Observer {
 		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		
-		Rectangle wallBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
 		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
-		// Temporarily using default wall dimensions
-		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
+		Rectangle objectBounds = initObjectBounds(TABLE_WIDTH, TABLE_HEIGHT);
 		
 		// --- Event handling "Place Wall" button ---\
 		placeWall.setOnMouseClicked(event -> {
@@ -358,6 +360,13 @@ public class View extends Application implements Observer {
 		 */
 		
 		// --- Event handling "Place Chair" button ---
+		placeChair.setOnMouseClicked(event -> {
+			drawingWall = false;
+			placingObject = false;
+			placingChair = true;
+		});
+		
+		/*
 		placeChair.setOnMousePressed(event -> {
 			drawingWall = false;
 			placingObject = false;
@@ -384,8 +393,15 @@ public class View extends Application implements Observer {
 				root.getChildren().remove(chairBounds);
 			});
 		});
+		*/
 		
 		// --- Event handling "Place Object" button ---
+		placeObject.setOnMouseClicked(event-> {
+			drawingWall = false;
+			placingChair = false;
+			placingObject = true;
+		});
+		/*
 		placeObject.setOnMousePressed(event -> {
 			drawingWall = false;
 			placingChair = false;
@@ -412,6 +428,7 @@ public class View extends Application implements Observer {
 				root.getChildren().remove(objectBounds);
 			});
 		});
+		*/
 		
 		buttonBox.getChildren().addAll(placeWall, placeChair, placeObject);
 		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
@@ -489,30 +506,82 @@ public class View extends Application implements Observer {
 		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		drawPane = result;
 		
-		// Event-handling for drawing wall.
+		// Event-handling for mouse on drawing canvas depending on which tool is selected.
 		result.setOnMousePressed(event -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
 			
-			if(drawingWall && event.isPrimaryButtonDown() && inDrawPane) {
-				System.out.println("Drawing");
-				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-				Line wallBound = initLineBounds(p.getX(), p.getY());
-				drawPane.getChildren().add(wallBound);
-				
-				result.setOnMouseDragged(event2 -> {
-					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
-					wallBound.setEndX(p2.getX());
-					wallBound.setEndY(p2.getY());
+			if (event.isPrimaryButtonDown() && inDrawPane) {
+				if (drawingWall) {
+					Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+					Line wallBound = initLineBounds(p.getX(), p.getY());
+					drawPane.getChildren().add(wallBound);
+					
+					result.setOnMouseDragged(event2 -> {
+						Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+						wallBound.setEndX(p2.getX());
+						wallBound.setEndY(p2.getY());
+						
+						result.setOnMouseReleased(event3 -> {
+							if(event2.isPrimaryButtonDown() && drawingWall) {
+								controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
+										p2.getY());
+								drawPane.getChildren().remove(wallBound);
+							}
+						});
+					});
+				}
+				if (placingChair) {
+					Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
+					updateBound(event, chairBounds);
+					root.getChildren().add(chairBounds);
+					
+					result.setOnMouseDragged(event2 -> {
+						updateBound(event2, chairBounds);
+					});
 					
 					result.setOnMouseReleased(event3 -> {
-						if(event2.isPrimaryButtonDown() && drawingWall) {
-							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(),
-									p2.getY());
-							drawPane.getChildren().remove(wallBound);
+						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+								event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
+						if(!inDrawPaneEnd) {
+							System.out.println("Outside of central panel");
+						} else if (placingChair) {
+							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+							double x2 = p.getX() + CHAIR_WIDTH;
+							double y2 = p.getY() + CHAIR_HEIGHT;
+							controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
 						}
+						root.getChildren().remove(chairBounds);
 					});
-				});
+				}
+				if (placingObject) {
+					Rectangle objectBounds = initObjectBounds(TABLE_WIDTH, TABLE_HEIGHT);
+					drawingWall = false;
+					placingChair = false;
+					placingObject = true;
+					updateBound(event, objectBounds);
+					root.getChildren().add(objectBounds);
+					
+					result.setOnMouseDragged(event2 -> {
+						updateBound(event2, objectBounds);
+					});
+					
+					result.setOnMouseReleased(event3 -> {
+						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+								event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
+						
+						if(!inDrawPaneEnd) {
+							System.out.println("Outside of central panel");
+						} else if (placingObject) {
+							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+							double x2 = p.getX() + TABLE_WIDTH;
+							double y2 = p.getY() + TABLE_HEIGHT;
+							controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
+						}
+						root.getChildren().remove(objectBounds);
+					});
+					
+				}
 			}
 		});
 		return result;
