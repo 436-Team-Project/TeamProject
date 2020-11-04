@@ -25,13 +25,6 @@ public class Tables extends UIObjects {
 		this.numberOfSpots = 4;
 	}
 	
-	/**
-	 * Draw a square, circle, or table img in this spot
-	 */
-	public void draw() {
-	
-	}
-	
 	@Override
 	public String toString() {
 		String result = String.format("Table<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);

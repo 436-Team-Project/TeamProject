@@ -295,10 +295,14 @@ public class Model extends Observable {
 	
 	//shift the ID's and then remove the object from itemList
 	public void removeObject(int ID) {
-		for(int i = ID; i < itemList.size() - 1; i++) {
+		
+		int size = itemList.size();
+		for(int i = ID; i < size - 1; i++) {
 			itemList.get(i + 1).ID = itemList.get(i).ID;
 		}
 		itemList.remove(ID);
+		setChanged();
+		notifyObservers();
 	}
 	
 	/**

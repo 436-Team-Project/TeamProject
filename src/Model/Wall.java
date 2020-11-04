@@ -22,12 +22,6 @@ public class Wall extends UIObjects {
 		super(ID, x, y, x2, y2);
 	}
 	
-	/**
-	 * Draw wither a line or a filled rectangle in this spot.
-	 */
-	public void draw() {
-	
-	}
 	
 	@Override
 	public String toString() {
