@@ -3,6 +3,7 @@ package View;
 import Controller.Controller;
 import Model.Model;
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -128,6 +129,8 @@ public class HostView {
 			System.out.println("\"Reset Zoom\" button clicked");
 			drawPane.setScaleX(1);
 			drawPane.setScaleY(1);
+			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		});
 		
 		zoomInButton.setOnMouseClicked(e -> {
@@ -180,15 +183,24 @@ public class HostView {
 			});
 		});
 		
+
 		// Allows mouse scroll wheel to zoom in and out the child
 		result.setOnScroll((event) -> {
-			if(event.getDeltaY() < 0) {
-				child.setScaleX(child.getScaleX() / 1.1);
-				child.setScaleY(child.getScaleY() / 1.1);
-			} else {
-				child.setScaleX(child.getScaleX() * 1.1);
-				child.setScaleY(child.getScaleY() * 1.1);
+			double changeScale = 0;
+			Bounds bounds = child.localToScene(child.getBoundsInLocal());
+			double changeX = event.getSceneX() - (bounds.getWidth()/2 + bounds.getMinX());
+			double changeY = event.getSceneY() - (bounds.getHeight()/2 + bounds.getMinY());
+			if(event.getDeltaY() < 0 && child.getScaleX() > 0.1) {
+				changeScale = -0.1;
+				child.setScaleX(child.getScaleX() * (1 + changeScale));
+				child.setScaleY(child.getScaleY() * (1 + changeScale));
+			} else if (event.getDeltaY() > 0 && child.getScaleX() < 5) {
+				changeScale = 0.1;
+				child.setScaleX(child.getScaleX() * (1 + changeScale));
+				child.setScaleY(child.getScaleY() * (1 + changeScale));
 			}
+			child.setTranslateX(child.getTranslateX() - changeScale * changeX);
+			child.setTranslateY(child.getTranslateY() - changeScale * changeY);
 		});
 		
 		return result;
