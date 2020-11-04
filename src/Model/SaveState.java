@@ -1,4 +1,5 @@
 package Model;
+
 import java.io.*;
 import java.util.ArrayList;
 
@@ -7,6 +8,7 @@ import java.util.ArrayList;
  */
 public class SaveState implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
 	ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
 	
 	/**
