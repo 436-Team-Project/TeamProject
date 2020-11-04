@@ -538,6 +538,11 @@ public class View extends Application implements Observer {
 		return result;
 	}
 	
+	/**
+	 * Initializes the grid that overlays the drawing canvas
+	 * 
+	 * @return Canvas
+	 */
 	private Canvas initializeGrid() {
 		double width = drawPane.getPrefWidth();
 		double height = drawPane.getPrefHeight();
