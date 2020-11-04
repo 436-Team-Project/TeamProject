@@ -7,6 +7,8 @@ import javafx.application.Platform;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -55,7 +57,8 @@ public class View extends Application implements Observer {
 	Model model; // model of MVC
 	
 	BorderPane root; // Main pane
-	Pane drawPane;
+	Pane drawPane; // Drawing Canvas
+	Canvas grid; // Grid overlaying canvas
 	
 	/**
 	 * Initialize
@@ -102,6 +105,7 @@ public class View extends Application implements Observer {
 		// - clear central panel
 		drawPane.getChildren().clear();
 		// - redraw all items
+		drawPane.getChildren().add(grid);
 		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
@@ -431,6 +435,7 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
+		drawPane = result;
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
@@ -438,7 +443,8 @@ public class View extends Application implements Observer {
 		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
 		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		result.setClip(new Rectangle(result.getPrefWidth(), result.getPrefHeight()));
-		drawPane = result;
+		grid = initializeGrid();
+		result.getChildren().add(grid);
 		
 		// Event-handling for mouse on drawing canvas depending on which tool is selected.
 		result.setOnMousePressed(event -> {
@@ -530,6 +536,22 @@ public class View extends Application implements Observer {
 			}
 		});
 		return result;
+	}
+	
+	private Canvas initializeGrid() {
+		double width = drawPane.getPrefWidth();
+		double height = drawPane.getPrefHeight();
+		Canvas grid = new Canvas(width, height);
+		grid.setMouseTransparent(true);
+		GraphicsContext gc = grid.getGraphicsContext2D();
+		gc.setStroke(Color.GRAY);
+		gc.setLineWidth(1);
+		double offset = 30;
+		for (double i = offset; i < width; i += offset) {
+			gc.strokeLine(i, 0, i, height);
+			gc.strokeLine(0, i, width, i);
+		}
+		return grid;
 	}
 	
 	/**
