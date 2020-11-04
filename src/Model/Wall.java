@@ -22,8 +22,12 @@ public class Wall extends UIObjects {
 		super(ID, x, y, x2, y2);
 	}
 	
+	
 	@Override
 	public String toString() {
-		return "ID: " + this.ID+ "type: wall";
+		String result = String.format("Wall<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);
+		String connections = "";
+		
+		return result;
 	}
 }

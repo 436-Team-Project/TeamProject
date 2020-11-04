@@ -1,13 +1,8 @@
 package Model;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Observable;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.math.*;
 
 /**
  * The state of the application
@@ -16,16 +11,17 @@ import java.math.*;
  */
 
 public class Model extends Observable {
-	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
-	UIObjects lastObject;
-
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
-
+	public ArrayList<UIObjects> itemList;
+	UIObjects lastObject;
+	
 	/**
 	 * Constructor class
 	 */
 	public Model() {
+		itemList = new ArrayList<UIObjects>();
+		
 		setChanged();
 		notifyObservers();
 	}
@@ -108,7 +104,7 @@ public class Model extends Observable {
 	 */
 	public UIObjects getObject(int x, int y) {
 		UIObjects obj = null;
-
+		
 		for(UIObjects item : itemList) {
 			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
 				obj = item;
@@ -122,8 +118,7 @@ public class Model extends Observable {
 	 * Returns a single object in the list based on if the item is on the clicked area. If not it
 	 * returns null.
 	 *
-	 * @param x vertical position
-	 * @param y horizontal position
+	 * @param ID identification
 	 * @return UIObject
 	 */
 	public UIObjects getObject(int ID) {
@@ -142,7 +137,7 @@ public class Model extends Observable {
 	/**
 	 * Used when the view wants to draw the model again
 	 */
-	public void display(){
+	public void display() {
 		setChanged();
 		notifyObservers();
 	}
@@ -165,7 +160,7 @@ public class Model extends Observable {
 					continue;
 				}
 				
-				//distance formula (x2-x1)^2+(y2-y1)^2=z^2
+				// distance formula (x2 - x1)^2 + (y2 - y1)^2 = z^2
 				else {
 					double distance = Math.sqrt((nSpot.x - spot.x) + (nSpot.y - spot.y));
 					//if one is but not the other. prevents possible case for cluster
@@ -232,9 +227,7 @@ public class Model extends Observable {
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			} 
-			
-			else if(spot.occupied) {
+			} else if(spot.occupied) {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
 				for(int i = 0; i < itemList.size(); i++) {
@@ -258,9 +251,9 @@ public class Model extends Observable {
 	/**
 	 * serializes the itemList into a file named layoutData
 	 */
-	public void saveState() {
+	public void saveState(String filePath) {
 		try {
-			FileOutputStream fileout = new FileOutputStream("layoutData");
+			FileOutputStream fileout = new FileOutputStream(filePath);
 			ObjectOutputStream objectout = new ObjectOutputStream(fileout);
 			objectout.writeObject(itemList);
 			objectout.close();
@@ -276,12 +269,17 @@ public class Model extends Observable {
 	 * loads a previously saved state.
 	 */
 	@SuppressWarnings("unchecked")
-	public void loadState() {
+	public void loadState(String filePath) {
 		try {
-			FileInputStream filein = new FileInputStream("layoutData");
+			FileInputStream filein = new FileInputStream(filePath);
 			ObjectInputStream objin = new ObjectInputStream(filein);
 			
 			itemList = (ArrayList<UIObjects>) objin.readObject();
+			
+			System.out.println("Loading...");
+			for(UIObjects uiObject : itemList) {
+				System.out.println(uiObject.toString());
+			}
 			
 			objin.close();
 			filein.close();
@@ -295,6 +293,18 @@ public class Model extends Observable {
 		System.out.println("loaded list");
 	}
 	
+	//shift the ID's and then remove the object from itemList
+	public void removeObject(int ID) {
+		
+		int size = itemList.size();
+		for(int i = ID; i < size - 1; i++) {
+			itemList.get(i + 1).ID = itemList.get(i).ID;
+		}
+		itemList.remove(ID);
+		setChanged();
+		notifyObservers();
+	}
+	
 	/**
 	 * Returns the list of the objects
 	 *
@@ -303,13 +313,5 @@ public class Model extends Observable {
 	public ArrayList<UIObjects> getObjects() {
 		System.out.println("returning items");
 		return itemList;
-	}
-	
-	//shift the ID's and then remove the object from itemList
-	public void removeObject(int ID) {
-		for (int i=ID;i<itemList.size()-1;i++) {
-			itemList.get(i+1).ID=itemList.get(i).ID;
-		}
-		itemList.remove(ID);
 	}
 }
