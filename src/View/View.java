@@ -7,8 +7,11 @@ import javafx.application.Platform;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -60,7 +63,8 @@ public class View extends Application implements Observer {
 	Model model; // model of MVC
 	
 	BorderPane root; // Main pane
-	Pane drawPane;
+	Pane drawPane; // Drawing Canvas
+	Canvas grid; // Grid overlaying canvas
 	
 	/**
 	 * Initialize
@@ -108,9 +112,11 @@ public class View extends Application implements Observer {
 	public void update(Observable observable, Object object) {
 		
 		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
+		ArrayList<Label> labels = new ArrayList<Label>();
 		// - clear central panel
 		drawPane.getChildren().clear();
 		// - redraw all items
+		drawPane.getChildren().add(grid);
 		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
@@ -130,9 +136,19 @@ public class View extends Application implements Observer {
 				
 				setMouseAction(wall, obj);
 				
+				Label measure = new Label(String.valueOf(lineLength(wall)));
+				measure.setTranslateX((wall.getEndX()-wall.getStartX())/2 + wall.getStartX());
+				measure.setTranslateY((wall.getEndY()-wall.getStartY())/2 + wall.getStartY());
+				measure.setMouseTransparent(true);
+				measure.setAlignment(Pos.CENTER);
+				measure.setTextFill(Color.RED);
+				labels.add(measure); // Keep track of this label so that it can be brought to the front
+				
 				drawPane.getChildren().add(wall);
 				drawPane.getChildren().add(leftEnd);
 				drawPane.getChildren().add(rightEnd);
+				drawPane.getChildren().add(measure);
+        
 			} else if(obj instanceof Spots) {
 				System.out.println("Drawing chair");
 				double radius = obj.getWidth() / 2;
@@ -151,6 +167,9 @@ public class View extends Application implements Observer {
 				drawPane.getChildren().add(o);
 			}
 		}
+		for (Label l: labels) {
+			l.toFront();
+		}
 	}
 	
 	/**
@@ -164,8 +183,11 @@ public class View extends Application implements Observer {
 	private void setEndPointMouseAction(Circle endPoint, Line wall, UIObjects uio, boolean isLeft) {
 		// drag left end of wall
 		endPoint.setOnMousePressed(event -> {
+      selecting = false;
 			drawingWall = false;
-			
+			placingChair = false;
+			placingObject = false;
+
 			endPoint.setOnMouseDragged(event2 -> {
 				
 				if(isLeft) {
@@ -209,8 +231,11 @@ public class View extends Application implements Observer {
 	 */
 	private void setMouseAction(Shape obj, UIObjects uio) {
 		obj.setOnMousePressed(event -> {
+      selecting = false;
 			drawingWall = false;
-			
+			placingChair = false;
+			placingObject = false;
+
 			Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 			
 			double mouseX = p.getX();
@@ -335,18 +360,12 @@ public class View extends Application implements Observer {
 		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		
-		Rectangle wallBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
-		Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
-		// Temporarily using default wall dimensions
-		Rectangle objectBounds = initObjectBounds(WALL_WIDTH, WALL_HEIGHT);
-		
 		selection.setOnMouseClicked(event -> {
 			selecting = true;
 			drawingWall = false;
 			placingObject = false;
 			placingChair = false;
 		});
-		
 		// --- Event handling "Place Wall" button ---\
 		placeWall.setOnMouseClicked(event -> {
 			selecting = false;
@@ -355,49 +374,12 @@ public class View extends Application implements Observer {
 			placingChair = false;
 		});
 		
-		/*
-		 * placeWall.setOnMousePressed(event -> { updateBound(event, wallBounds);
-		 * root.getChildren().add(wallBounds); });
-		 *
-		 * placeWall.setOnMouseDragged(event2 -> { updateBound(event2, wallBounds); });
-		 *
-		 * placeWall.setOnMouseReleased(event3 -> { boolean inDrawPane =
-		 * drawPane.getBoundsInParent().intersects( event3.getSceneX() - LEFT_WIDTH,
-		 * event3.getSceneY() - TOP_HEIGHT, 1, 1);
-		 *
-		 * if (!inDrawPane) { System.out.println("Outside of central panel"); } else {
-		 * Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-		 * controller.createNewObject("wall", p.getX(), p.getY(), WALL_WIDTH,
-		 * WALL_HEIGHT); } root.getChildren().remove(wallBounds); });
-		 */
-		
 		// --- Event handling "Place Chair" button ---
 		placeChair.setOnMousePressed(event -> {
 			selecting = false;
 			drawingWall = false;
 			placingObject = false;
 			placingChair = true;
-			updateBound(event, chairBounds);
-			root.getChildren().add(chairBounds);
-			
-			placeChair.setOnMouseDragged(event2 -> {
-				updateBound(event2, chairBounds);
-			});
-			
-			placeChair.setOnMouseReleased(event3 -> {
-				boolean inDrawPane = drawPane.getBoundsInParent().intersects(
-						event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-				
-				if(!inDrawPane) {
-					System.out.println("Outside of central panel");
-				} else {
-					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-					double x2 = p.getX() + CHAIR_WIDTH;
-					double y2 = p.getY() + CHAIR_HEIGHT;
-					controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
-				}
-				root.getChildren().remove(chairBounds);
-			});
 		});
 		
 		// --- Event handling "Place Object" button ---
@@ -406,27 +388,6 @@ public class View extends Application implements Observer {
 			drawingWall = false;
 			placingChair = false;
 			placingObject = true;
-			updateBound(event, objectBounds);
-			root.getChildren().add(objectBounds);
-			
-			placeObject.setOnMouseDragged(event2 -> {
-				updateBound(event2, objectBounds);
-			});
-			
-			placeObject.setOnMouseReleased(event3 -> {
-				boolean inDrawPane = drawPane.getBoundsInParent().intersects(
-						event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-				
-				if(!inDrawPane) {
-					System.out.println("Outside of central panel");
-				} else {
-					Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-					double x2 = p.getX() + TABLE_WIDTH;
-					double y2 = p.getY() + TABLE_HEIGHT;
-					controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
-				}
-				root.getChildren().remove(objectBounds);
-			});
 		});
 		
 		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject);
@@ -478,13 +439,21 @@ public class View extends Application implements Observer {
 		
 		// Allows mouse scroll wheel to zoom in and out the child
 		result.setOnScroll((event) -> {
-			if(event.getDeltaY() < 0) {
-				child.setScaleX(child.getScaleX() / 1.1);
-				child.setScaleY(child.getScaleY() / 1.1);
-			} else {
-				child.setScaleX(child.getScaleX() * 1.1);
-				child.setScaleY(child.getScaleY() * 1.1);
+			double changeScale = 0;
+			Bounds bounds = child.localToScene(child.getBoundsInLocal());
+			double changeX = event.getSceneX() - (bounds.getWidth()/2 + bounds.getMinX());
+			double changeY = event.getSceneY() - (bounds.getHeight()/2 + bounds.getMinY());
+			if(event.getDeltaY() < 0 && child.getScaleX() > 0.1) {
+				changeScale = -0.1;
+				child.setScaleX(child.getScaleX() * (1 + changeScale));
+				child.setScaleY(child.getScaleY() * (1 + changeScale));
+			} else if (event.getDeltaY() > 0 && child.getScaleX() < 5) {
+				changeScale = 0.1;
+				child.setScaleX(child.getScaleX() * (1 + changeScale));
+				child.setScaleY(child.getScaleY() * (1 + changeScale));
 			}
+			child.setTranslateX(child.getTranslateX() - changeScale * changeX);
+			child.setTranslateY(child.getTranslateY() - changeScale * changeY);
 		});
 		
 		return result;
@@ -497,40 +466,121 @@ public class View extends Application implements Observer {
 	 */
 	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
+		drawPane = result;
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
 		result.setPrefHeight(CENTER_HEIGHT * 3.0 / 4.0);
 		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
 		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-		drawPane = result;
+		result.setClip(new Rectangle(result.getPrefWidth(), result.getPrefHeight()));
+		grid = initializeGrid();
+		result.getChildren().add(grid);
 		
-		// Event-handling for drawing wall.
+		// Event-handling for mouse on drawing canvas depending on which tool is selected.
 		result.setOnMousePressed(event -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
 			
-			if(drawingWall && event.isPrimaryButtonDown() && inDrawPane) {
-				System.out.println("Drawing");
-				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-				Line wallBound = initLineBounds(p.getX(), p.getY());
-				double startX = p.getX();
-				double startY = p.getY();
-				
-				drawPane.getChildren().add(wallBound);
-				
-				result.setOnMouseDragged(event2 -> {
-					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
-					wallBound.setEndX(p2.getX());
-					wallBound.setEndY(p2.getY());
+			if (event.getButton() == MouseButton.PRIMARY && inDrawPane) {
+				if (drawingWall) {
+					Line wallBound = initLineBounds(event.getSceneX(), event.getSceneY());
+					Label measurement = new Label("0");
+					measurement.setMinSize(100, 100);
+					measurement.setAlignment(Pos.CENTER);
+					measurement.setTextFill(Color.RED);
+					StackPane sp = new StackPane();
+					sp.setTranslateX(event.getSceneX());
+					sp.setTranslateY(event.getSceneY());
+					sp.getChildren().add(wallBound);
+					sp.getChildren().add(measurement);
+					sp.setMaxSize(APP_WIDTH, APP_HEIGHT);
+					//root.getChildren().add(wallBound);
+					root.getChildren().add(sp);
+					
+					result.setOnMouseDragged(event2 -> {
+						wallBound.setEndX(event2.getSceneX());
+						wallBound.setEndY(event2.getSceneY());
+						sp.setTranslateX((event2.getSceneX()-event.getSceneX())/2 + event.getSceneX());
+						sp.setTranslateY((event2.getSceneY()-event.getSceneY())/2 + event.getSceneY());
+						double length = lineLength(wallBound);
+						System.out.println(length);
+						measurement.setText(String.valueOf(length));
+						
+						result.setOnMouseReleased(event3 -> {
+							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+									event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
+							if (!inDrawPaneEnd) {
+								System.out.println("Outside of central panel");
+							} else if (event3.getButton() == MouseButton.PRIMARY && drawingWall) {
+								controller.createNewObject("wall", event.getX(), event.getY(),
+										event3.getX(), event3.getY());
+							}
+							root.getChildren().remove(sp);
+							//root.getChildren().remove(wallBound);
+						});
+					});
+				}
+				if (placingChair) {
+					Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
+					updateBound(event, chairBounds);
+					root.getChildren().add(chairBounds);
+					
+					result.setOnMouseDragged(event2 -> {
+						updateBound(event2, chairBounds);
+					});
 					
 					result.setOnMouseReleased(event3 -> {
-						if(event2.isPrimaryButtonDown() && drawingWall) {
-							controller.createNewObject("wall", p.getX(), p.getY(), p2.getX(), p2.getY());
-							drawPane.getChildren().remove(wallBound);
+						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+								event3.getSceneX() - LEFT_WIDTH, 
+								event3.getSceneY() - TOP_HEIGHT, 1, 1) &&
+								drawPane.getBoundsInParent().intersects(
+								event3.getSceneX() - LEFT_WIDTH + chairBounds.getWidth(),
+								event3.getSceneY() - TOP_HEIGHT + chairBounds.getHeight(), 1, 1);
+						if(!inDrawPaneEnd) {
+							System.out.println("Outside of central panel");
+							root.getChildren().remove(chairBounds);
+						} else if (placingChair && event3.getButton() == MouseButton.PRIMARY) {
+							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+							double x2 = p.getX() + CHAIR_WIDTH;
+							double y2 = p.getY() + CHAIR_HEIGHT;
+							controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
+							root.getChildren().remove(chairBounds);
 						}
 					});
-				});
+				}
+				if (placingObject) {
+					Rectangle objectBounds = initObjectBounds(TABLE_WIDTH, TABLE_HEIGHT);
+					drawingWall = false;
+					placingChair = false;
+					placingObject = true;
+					updateBound(event, objectBounds);
+					root.getChildren().add(objectBounds);
+					
+					result.setOnMouseDragged(event2 -> {
+						updateBound(event2, objectBounds);
+					});
+					
+					result.setOnMouseReleased(event3 -> {
+						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+								event3.getSceneX() - LEFT_WIDTH, 
+								event3.getSceneY() - TOP_HEIGHT, 1, 1) &&
+								drawPane.getBoundsInParent().intersects(
+								event3.getSceneX() - LEFT_WIDTH + objectBounds.getWidth(),
+								event3.getSceneY() - TOP_HEIGHT + objectBounds.getHeight(), 1, 1);
+						if(!inDrawPaneEnd) {
+							System.out.println("Outside of central panel");
+							root.getChildren().remove(objectBounds);
+						} else if (placingObject && event3.getButton() == MouseButton.PRIMARY) {
+							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
+							double x2 = p.getX() + TABLE_WIDTH;
+							double y2 = p.getY() + TABLE_HEIGHT;
+							controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
+							root.getChildren().remove(objectBounds);
+						}
+					});
+					
+				}
 			}
 			
 			// When the user drags with LMB to select multiple items
@@ -585,6 +635,27 @@ public class View extends Application implements Observer {
 			}
 		});
 		return result;
+	}
+	
+	/**
+	 * Initializes the grid that overlays the drawing canvas
+	 * 
+	 * @return Canvas
+	 */
+	private Canvas initializeGrid() {
+		double width = drawPane.getPrefWidth();
+		double height = drawPane.getPrefHeight();
+		Canvas grid = new Canvas(width, height);
+		grid.setMouseTransparent(true);
+		GraphicsContext gc = grid.getGraphicsContext2D();
+		gc.setStroke(Color.GRAY);
+		gc.setLineWidth(1);
+		double offset = 30;
+		for (double i = offset; i < width; i += offset) {
+			gc.strokeLine(i, 0, i, height);
+			gc.strokeLine(0, i, width, i);
+		}
+		return grid;
 	}
 	
 	/**
@@ -723,6 +794,8 @@ public class View extends Application implements Observer {
 			System.out.println("\"Reset Zoom\" button clicked");
 			drawPane.setScaleX(1);
 			drawPane.setScaleY(1);
+			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		});
 		zoomInButton.setOnMouseClicked(e -> {
 			System.out.println("\"Zoom In\" button clicked");
@@ -852,5 +925,14 @@ public class View extends Application implements Observer {
 				/ 2 * (objectBounds.getScaleX() - 1)));
 		objectBounds.setTranslateY(event.getSceneY() + (objectBounds.getBoundsInLocal().getHeight()
 				/ 2 * (objectBounds.getScaleY() - 1)));
+	}
+	
+	/**
+	 * Returns length of a given line in pixels
+	 * @param l
+	 */
+	private double lineLength(Line l) {
+		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2) 
+				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
 	}
 }
