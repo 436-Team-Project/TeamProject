@@ -102,6 +102,7 @@ public class View extends Application implements Observer {
 	public void update(Observable observable, Object object) {
 		
 		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
+		ArrayList<Label> labels = new ArrayList<Label>();
 		// - clear central panel
 		drawPane.getChildren().clear();
 		// - redraw all items
@@ -125,9 +126,18 @@ public class View extends Application implements Observer {
 
 				setMouseAction(wall, obj);
 				
+				Label measure = new Label(String.valueOf(lineLength(wall)));
+				measure.setTranslateX((wall.getEndX()-wall.getStartX())/2 + wall.getStartX());
+				measure.setTranslateY((wall.getEndY()-wall.getStartY())/2 + wall.getStartY());
+				measure.setMouseTransparent(true);
+				measure.setAlignment(Pos.CENTER);
+				measure.setTextFill(Color.RED);
+				labels.add(measure); // Keep track of this label so that it can be brought to the front
+				
 				drawPane.getChildren().add(wall);
 				drawPane.getChildren().add(leftEnd);
 				drawPane.getChildren().add(rightEnd);
+				drawPane.getChildren().add(measure);
 
 			} else if(obj instanceof Spots) {
 				System.out.println("Drawing chair");
@@ -147,6 +157,9 @@ public class View extends Application implements Observer {
 				drawPane.getChildren().add(o);
 			}
 		}
+		for (Label l: labels) {
+			l.toFront();
+		}
 	}
 
 	/**
@@ -164,6 +177,11 @@ public class View extends Application implements Observer {
 			drawingWall = false;
 			placingChair = false;
 			placingObject = false;
+
+			Label measure = new Label(String.valueOf(lineLength(wall)));
+			measure.setTranslateX((wall.getEndX()-wall.getStartX())/2 + wall.getStartX());
+			measure.setTranslateY((wall.getEndY()-wall.getStartY())/2 + wall.getStartY());
+			measure.setMouseTransparent(true);
 
 			endPoint.setOnMouseDragged(event2 -> {
 
@@ -454,11 +472,27 @@ public class View extends Application implements Observer {
 			if (event.getButton() == MouseButton.PRIMARY && inDrawPane) {
 				if (drawingWall) {
 					Line wallBound = initLineBounds(event.getSceneX(), event.getSceneY());
-					root.getChildren().add(wallBound);
+					Label measurement = new Label("0");
+					measurement.setMinSize(100, 100);
+					measurement.setAlignment(Pos.CENTER);
+					measurement.setTextFill(Color.RED);
+					StackPane sp = new StackPane();
+					sp.setTranslateX(event.getSceneX());
+					sp.setTranslateY(event.getSceneY());
+					sp.getChildren().add(wallBound);
+					sp.getChildren().add(measurement);
+					sp.setMaxSize(APP_WIDTH, APP_HEIGHT);
+					//root.getChildren().add(wallBound);
+					root.getChildren().add(sp);
 					
 					result.setOnMouseDragged(event2 -> {
 						wallBound.setEndX(event2.getSceneX());
 						wallBound.setEndY(event2.getSceneY());
+						sp.setTranslateX((event2.getSceneX()-event.getSceneX())/2 + event.getSceneX());
+						sp.setTranslateY((event2.getSceneY()-event.getSceneY())/2 + event.getSceneY());
+						double length = lineLength(wallBound);
+						System.out.println(length);
+						measurement.setText(String.valueOf(length));
 						
 						result.setOnMouseReleased(event3 -> {
 							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
@@ -469,7 +503,8 @@ public class View extends Application implements Observer {
 								controller.createNewObject("wall", event.getX(), event.getY(),
 										event3.getX(), event3.getY());
 							}
-							root.getChildren().remove(wallBound);
+							root.getChildren().remove(sp);
+							//root.getChildren().remove(wallBound);
 						});
 					});
 				}
@@ -790,5 +825,14 @@ public class View extends Application implements Observer {
 				/ 2 * (objectBounds.getScaleX() - 1)));
 		objectBounds.setTranslateY(event.getSceneY() + (objectBounds.getBoundsInLocal().getHeight()
 				/ 2 * (objectBounds.getScaleY() - 1)));
+	}
+	
+	/**
+	 * Returns length of a given line in pixels
+	 * @param l
+	 */
+	private double lineLength(Line l) {
+		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2) 
+				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
 	}
 }
