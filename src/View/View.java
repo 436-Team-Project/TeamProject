@@ -504,7 +504,7 @@ public class View extends Application implements Observer {
 						sp.setTranslateX((event2.getSceneX()-event.getSceneX())/2 + event.getSceneX());
 						sp.setTranslateY((event2.getSceneY()-event.getSceneY())/2 + event.getSceneY());
 						double length = lineLength(wallBound);
-						System.out.println(length);
+//						System.out.println(length);
 						measurement.setText(String.valueOf(length));
 						
 						result.setOnMouseReleased(event3 -> {
