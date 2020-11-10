@@ -82,6 +82,9 @@ public class Controller {
 		model.display();
 	}
 	
+	/**
+	 * @param file the file in which the program will be saved to.
+	 */
 	public void save(File file) {
 		if(file != null) {
 			System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
@@ -107,10 +110,28 @@ public class Controller {
 		return model.getObjects();
 	}
 	
+	/**
+	 * @param ID the spot that you want to update.
+	 * 
+	 * when you call this it will either take-away or give occupancy to the seat. It also updates the
+	 * surrounding seats that would be considered risky.
+	 */
 	public void updateAvailable(int ID) {
 		model.updateAvailability(ID);
 	}
 	
+//-----------------------------------------------------------------------------------	
+	/**
+	 * this is the replacement for updateAvailable
+	 * @param ID
+	 * @return risk if a user clicks a spot that is considered risky it will return true.
+	 */
+	boolean updateSpot(int ID) {
+		boolean risk =  false;
+		risk =  model.giveGetSeat(ID);
+		return risk;
+	}
+//-----------------------------------------------------------------------------------	
 	public void removeObject(int ID) {
 		model.removeObject(ID);
 	}
@@ -149,6 +170,19 @@ public class Controller {
 			}
 			model.display();
 		}
+	}
+	
+	
+	/**
+	 * This just returns the spot. ***IT DOES NOT SET THE SPOT OR UPDATE SURROUNDING SPOTS*** 
+	 * if that is desired then it can be updated to do so
+	 * 
+	 * @return the spot object that is considered most safe. 
+	 */
+	public Spots getBestSpot(){
+		int id = model.bestSpot(0);
+		Spots spot = (Spots) model.getObject(id); //get the spot
+		return spot;
 	}
 }
 

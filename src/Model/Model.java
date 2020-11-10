@@ -220,14 +220,20 @@ public class Model extends Observable {
 	 * @param ID updates the availability of the spot
 	 */
 	public void updateAvailability(int ID) {
+		
 		if(itemList.get(ID) instanceof Spots) {
 			Spots spot = (Spots) itemList.get(ID);
+			
+			//if spot is available take it.
 			if(!spot.occupied && spot.available) {
 				spot.takeAvailable();
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			} else if(spot.occupied) {
+			} 
+			
+			//if spot is taken remove occupancy
+			else if(spot.occupied) {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
 				for(int i = 0; i < itemList.size(); i++) {
@@ -247,6 +253,56 @@ public class Model extends Observable {
 		setChanged();
 		notifyObservers();
 	}
+	
+	
+	/**
+	 * based on the action it changes the occupancy status of the spot and then updates
+	 * the spots around it
+	 *
+	 * @param ID updates the availability of the spot
+	 */
+	public boolean giveGetSeat(int ID) {
+		
+		boolean risk = false;
+		if(itemList.get(ID) instanceof Spots) {
+			Spots spot = (Spots) itemList.get(ID);
+			
+			//if spot is available take it.
+			if(!spot.occupied) {
+				spot.takeAvailable();
+				spot.updateOccupancy();
+				takeCalculator(ID);
+				itemList.set(spot.ID, spot);
+				
+				//if the spot is considered risky return risk = true
+				if (!spot.available) {
+					risk=true;
+				}
+			} 
+			
+			//if spot is taken remove occupancy
+			else if(spot.occupied) {
+				spot.updateOccupancy();
+				//need to loop through all elements to give back availability
+				for(int i = 0; i < itemList.size(); i++) {
+					if(itemList.get(i) instanceof Spots) {
+						boolean update = giveCalculator(i, 0);
+						//update the availability of the item
+						if(update) {
+							Spots uSpot = (Spots) itemList.get(i);
+							uSpot.makeAvailable();
+							itemList.set(i, uSpot);
+						}
+					}
+				}
+			}
+		}
+		
+		setChanged();
+		notifyObservers();
+		return risk;
+	}
+
 	
 	/**
 	 * serializes the itemList into a file named layoutData
@@ -313,5 +369,63 @@ public class Model extends Observable {
 	public ArrayList<UIObjects> getObjects() {
 		System.out.println("returning items");
 		return itemList;
+	}
+	
+	/**
+	 * helper function for bestSpot returns the number of spots within the range of the passed in spot.
+	 * @param checker the list of objects
+	 * @return spots the number of spots
+	 */
+	int numSpotsNear(ArrayList<UIObjects> checker, int ID) {
+		int spots = 0;
+		
+		
+		//not a spot or spot is occupied or unsafe object return
+		if (!(checker.get(ID) instanceof Spots)) {
+			return -1;
+		}
+		Spots temp = (Spots) checker.get(ID);
+		if (!temp.available || temp.occupied )
+			return -1; //checks if it is a valid spot to sit somebody at
+		
+		for (int i = 0; i <checker.size(); i++) {
+			
+			//make sure it is comparing spots to spots
+			if (!(checker.get(ID) instanceof Spots)) {
+				if (i == ID)
+					; //skip this iteration
+				else {
+					//distance equation
+					if (Math.sqrt(Math.pow(checker.get(i).x-checker.get(ID).x, 2.0) 
+							+ Math.pow(checker.get(i).y-checker.get(ID).y, 2.0))
+							<= BUFFER) {
+						spots++;
+					}
+				}
+			}
+		}
+		return spots;
+	}
+	
+	
+	/**
+	 * Searches through all of the items if it is a spot that isn't occupied or in the hazard range then
+	 * search check the impact of that spot on the surrounding spots.
+	 * Return the spot with the least amount of impact on surrounding spots.
+	 * @return 
+	 */
+	public int bestSpot(int i) {
+		int cur;
+		//base case
+		if (i == itemList.size()) {
+			return -1;
+		}
+		//rest is recursive case
+		ArrayList<UIObjects> checker = new ArrayList<UIObjects>(itemList);
+		cur = numSpotsNear(checker, i);
+		int next = bestSpot(i+1);
+		
+		//return either the next or the current based on what is larger
+		return (cur >= next) ? i:i+1;
 	}
 }
