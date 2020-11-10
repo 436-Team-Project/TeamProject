@@ -1,9 +1,9 @@
 package Controller;
 
-import java.util.ArrayList;
-
 import Model.*;
-import View.View;
+
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Get commands from the View and controls the Model
@@ -11,6 +11,7 @@ import View.View;
 public class Controller {
 	
 	private final Model model;
+	private String currentFilePath;
 	
 	public Controller(Model model) {
 		this.model = model;
@@ -19,11 +20,11 @@ public class Controller {
 	/**
 	 * This adds to the object to the model
 	 *
-	 * @param type   string "wall", "chair", or "table"
-	 * @param x      vertical position
-	 * @param y      horizontal position
-	 * @param width  the new object's radius
-	 * @param height the new object's radius
+	 * @param type string "wall", "chair", or "table"
+	 * @param x    vertical position
+	 * @param y    horizontal position
+	 * @param x2   the new object's radius
+	 * @param y2   the new object's radius
 	 */
 	public void createNewObject(String type, double x, double y, double x2, double y2) {
 		UIObjects newObj = null;
@@ -77,64 +78,111 @@ public class Controller {
 	/**
 	 * Used when the view wants to draw the model
 	 */
-	public void displayModel(){
+	public void displayModel() {
 		model.display();
 	}
 	
-	
-	public void save() {
-		model.saveState();
+	/**
+	 * @param file the file in which the program will be saved to.
+	 */
+	public void save(File file) {
+		if(file != null) {
+			System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
+			currentFilePath = file.getPath();
+			model.saveState(currentFilePath);
+		} else {
+			System.out.println("File empty");
+		}
 	}
 	
-	public void load() {
-		model.loadState();
+	public void load(File file) {
+		if(file != null) {
+			System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
+			currentFilePath = file.getPath();
+			model.loadState(currentFilePath);
+			model.display();
+		} else {
+			System.out.println("File empty");
+		}
 	}
 	
-	public ArrayList<UIObjects> getObjects(){
+	public ArrayList<UIObjects> getObjects() {
 		return model.getObjects();
 	}
 	
-	void updateAvailable(int ID){
+	/**
+	 * @param ID the spot that you want to update.
+	 * 
+	 * when you call this it will either take-away or give occupancy to the seat. It also updates the
+	 * surrounding seats that would be considered risky.
+	 */
+	public void updateAvailable(int ID) {
 		model.updateAvailability(ID);
 	}
 	
-	void removeObject(int ID) {
+//-----------------------------------------------------------------------------------	
+	/**
+	 * this is the replacement for updateAvailable
+	 * @param ID
+	 * @return risk if a user clicks a spot that is considered risky it will return true.
+	 */
+	boolean updateSpot(int ID) {
+		boolean risk =  false;
+		risk =  model.giveGetSeat(ID);
+		return risk;
+	}
+//-----------------------------------------------------------------------------------	
+	public void removeObject(int ID) {
 		model.removeObject(ID);
 	}
 	
 	/*
 	 * removes all the items in the list.
 	 */
-	void removeAll() {
-		for (int i = 0; i < model.getObjects().size(); i++) {
+	public void removeAll() {
+		for(int i = 0; i < model.getObjects().size(); i++) {
 			model.removeObject(0);
 		}
 	}
 	
 	/**
-	 * 
-	 * @param x starting x location
-	 * @param y starting y location
+	 * @param x  starting x location
+	 * @param y  starting y location
 	 * @param x2 bottom right corner of area selected
 	 * @param y2 bottom right corner of area selected
-	 * 
-	 * takes an area that the user selects and removes all the elements in that selected area.
+	 *           <p>
+	 *           takes an area that the user selects and removes all the elements in that selected area.
 	 */
-	void removeSelected(int x, int y, int x2, int y2) {
+	public void removeSelected(double x, double y, double x2, double y2) {
 		int buffer = 0;
 		int size = model.getObjects().size();
 		//cycle through the IDs and if the object falls in the area delete the object.
-		for (int i = 0; i < size; i++) {
-			if (model.getObject(i-buffer).getX() >= x 
-					&& model.getObject(i-buffer).getX() <= x2 
-					&& model.getObject(i-buffer).getY() >= y 
-					&& model.getObject(i-buffer).getY() <= y2) {
+		for(int i = 0; i < size; i++) {
+			System.out.println("i = " + i);
+			if(model.getObject(i - buffer).getX() >= x
+					&& model.getObject(i - buffer).getX() <= x2
+					&& model.getObject(i - buffer).getY() >= y
+					&& model.getObject(i - buffer).getY() <= y2) {
 				
-				model.removeObject(i-buffer);
+				model.removeObject(i - buffer);
+				System.out.println("removed object with ID: "+ (i-buffer));
 				buffer++;
 			}
+			model.display();
 		}
-		
+	}
+	
+	
+	/**
+	 * This just returns the spot. ***IT DOES NOT SET THE SPOT OR UPDATE SURROUNDING SPOTS*** 
+	 * if that is desired then it can be updated to do so
+	 * 
+	 * @return the spot object that is considered most safe. 
+	 */
+	public Spots getBestSpot(){
+		int id = model.bestSpot(0);
+		Spots spot = (Spots) model.getObject(id); //get the spot
+		return spot;
 	}
 }
 

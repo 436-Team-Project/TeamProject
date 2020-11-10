@@ -7,11 +7,22 @@ import java.io.Serializable;
  * param: the ID of the object to keep track of and the initial coordinates of the shapes
  */
 public abstract class UIObjects implements Serializable {
+	
 	//initial starting points of the object we can assume 0,0 or wherever we want them to exist
+	private static final long serialVersionUID = 1L;
 	double x, x2;
 	double y, y2;
 	int ID;
 	
+	/**
+	 * UIObjects constructor
+	 *
+	 * @param ID integer
+	 * @param x  double
+	 * @param y  double
+	 * @param x2 double
+	 * @param y2 double
+	 */
 	public UIObjects(int ID, double x, double y, double x2, double y2) {
 		this.x = x;
 		this.y = y;
@@ -20,8 +31,13 @@ public abstract class UIObjects implements Serializable {
 		this.ID = ID;
 	}
 	
-	/*
+	/**
 	 * when the shape is moved or altered the x and y values will be altered for storage
+	 *
+	 * @param x  double
+	 * @param y  double
+	 * @param x2 double
+	 * @param y2 double
 	 */
 	public void update(double x, double y, double x2, double y2) {
 		this.x = x;
@@ -53,11 +69,12 @@ public abstract class UIObjects implements Serializable {
 	public double getHeight() {
 		return Math.abs(y2 - y);
 	}
-
+	
 	public int getId() {
 		return ID;
 	}
 	
+	@Override
 	public String toString() {
 		return "Obj ID: " + ID + " type: object";
 	}

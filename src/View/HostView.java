@@ -3,11 +3,16 @@ package View;
 import Controller.Controller;
 import Model.Model;
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import java.io.File;
 
 /**
  * This class is used to show a floor plan layout and is where the user will ask for safe positions
@@ -34,6 +39,10 @@ public class HostView {
 	private Label info2Value;
 	private Label info3Value;
 	
+	File currentFile;
+	String currentFileName;
+	FileChooser fc;
+	
 	/**
 	 * Constructs a HostView object
 	 *
@@ -42,16 +51,21 @@ public class HostView {
 	 * @param controller the controller of the product
 	 * @param drawPane the canvas to draw on
 	 */
-	public HostView(BorderPane root, Model model, Controller controller, Pane drawPane) {
+	public HostView(Stage stage, BorderPane root, Model model, Controller controller, Pane drawPane) {
 		super();
 		this.controller = controller;
 		this.model = model;
 		this.root = root;
 		this.drawPane = drawPane;
+		drawPane.setDisable(true);
+		
+		fc = new FileChooser();
+		fc.setInitialDirectory(new File(System.getProperty("user.dir")));
+		fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text", "*.txt"));
 		
 		// Initialize border pane's panels
 		root.setCenter(initCenterPanel());
-		root.setTop(initTopPanel());
+		root.setTop(initTopPanel(stage));
 		root.setLeft(initLeftPanel());
 		root.setRight(initRightPanel());
 		
@@ -64,7 +78,7 @@ public class HostView {
 	 * This panel is responsible for the controls not directly responsible for main "Host" features.
 	 * Auxiliary features like manipulating the canvas and other things.
 	 */
-	private Pane initTopPanel() {
+	private Pane initTopPanel(Stage stage) {
 		Pane result = new Pane();
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
@@ -75,7 +89,7 @@ public class HostView {
 		topHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 30px;" +
 				"-fx-padding: 0px 0px 0px 100px;");
 		
-		HBox menuBar = initTopControls();
+		HBox menuBar = initTopControls(stage);
 		hBox.getChildren().addAll(menuBar, topHeader);
 		result.getChildren().add(hBox);
 		return result;
@@ -89,18 +103,45 @@ public class HostView {
 	 *
 	 * @return HBox
 	 */
-	private HBox initTopControls() {
+	private HBox initTopControls(Stage stage) {
 		HBox result = new HBox();
 		HBox undoRedoBox = new HBox();
 		HBox zoomBox = new HBox();
 		MenuBar menuBar = new MenuBar();
 		Menu menu = new Menu("File");
+		
+		MenuItem menuItemOpen = new MenuItem("Open");
+		MenuItem menuItemSave = new MenuItem("Save");
+		MenuItem menuItemSaveAs = new MenuItem("Save As");
 		MenuItem menuItemHelp = new MenuItem("Help");
 		MenuItem menuItemClose = new MenuItem("Close");
 		
 		result.setStyle("-fx-spacing: 25px;");
 		undoRedoBox.setStyle("-fx-spacing: 2px;");
 		zoomBox.setStyle("-fx-spacing: 2px;");
+		
+		menuItemOpen.setOnAction(e -> {
+			System.out.println("Menu Item \"Open\" Selected");
+			fc.setTitle("Open");
+			currentFile = fc.showOpenDialog(stage);
+			controller.load(currentFile);
+		});
+		menuItemSave.setOnAction(e -> {
+			System.out.println("Menu Item \"Save\" Selected");
+			if(currentFile == null) {
+				fc.setTitle("Save As");
+				currentFile = fc.showSaveDialog(stage);
+				controller.save(currentFile);
+			} else {
+				controller.save(currentFile);
+			}
+		});
+		menuItemSaveAs.setOnAction(e -> {
+			System.out.println("Menu Item \"Save As\" Selected");
+			fc.setTitle("Save As...");
+			currentFile = fc.showSaveDialog(stage);
+			controller.save(currentFile);
+		});
 		
 		menuItemHelp.setOnAction(e -> {
 			System.out.println("Menu Item \"Help\" Selected");
@@ -112,6 +153,9 @@ public class HostView {
 			Platform.exit();
 		});
 		
+		menu.getItems().add(menuItemOpen);
+		menu.getItems().add(menuItemSave);
+		menu.getItems().add(menuItemSaveAs);
 		menu.getItems().add(menuItemHelp);
 		menu.getItems().add(menuItemClose);
 		menuBar.getMenus().add(menu);
@@ -128,6 +172,8 @@ public class HostView {
 			System.out.println("\"Reset Zoom\" button clicked");
 			drawPane.setScaleX(1);
 			drawPane.setScaleY(1);
+			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		});
 		
 		zoomInButton.setOnMouseClicked(e -> {
@@ -180,15 +226,24 @@ public class HostView {
 			});
 		});
 		
+
 		// Allows mouse scroll wheel to zoom in and out the child
 		result.setOnScroll((event) -> {
-			if(event.getDeltaY() < 0) {
-				child.setScaleX(child.getScaleX() / 1.1);
-				child.setScaleY(child.getScaleY() / 1.1);
-			} else {
-				child.setScaleX(child.getScaleX() * 1.1);
-				child.setScaleY(child.getScaleY() * 1.1);
+			double changeScale = 0;
+			Bounds bounds = child.localToScene(child.getBoundsInLocal());
+			double changeX = event.getSceneX() - (bounds.getWidth()/2 + bounds.getMinX());
+			double changeY = event.getSceneY() - (bounds.getHeight()/2 + bounds.getMinY());
+			if(event.getDeltaY() < 0 && child.getScaleX() > 0.1) {
+				changeScale = -0.1;
+				child.setScaleX(child.getScaleX() * (1 + changeScale));
+				child.setScaleY(child.getScaleY() * (1 + changeScale));
+			} else if (event.getDeltaY() > 0 && child.getScaleX() < 5) {
+				changeScale = 0.1;
+				child.setScaleX(child.getScaleX() * (1 + changeScale));
+				child.setScaleY(child.getScaleY() * (1 + changeScale));
 			}
+			child.setTranslateX(child.getTranslateX() - changeScale * changeX);
+			child.setTranslateY(child.getTranslateY() - changeScale * changeY);
 		});
 		
 		return result;

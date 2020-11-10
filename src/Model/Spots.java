@@ -3,47 +3,47 @@ package Model;
 /**
  * Spot class
  */
-public class Spots extends UIObjects{
+public class Spots extends UIObjects {
 	
-	boolean available= true;
-	boolean occupied=false;
+	boolean available = true;
+	boolean occupied = false;
 	
 	public Spots(int ID, double x, double y, double x2, double y2) {
 		super(ID, x, y, x2, y2);
 	}
-	
 	
 	public void draw() {
 		//draw a circle or chair in this spot.
 		
 	}
 	
-	 /*
-	  * switches whether the spot is available to be used or not
-	  */
+	/*
+	 * switches whether the spot is available to be used or not
+	 */
 	void makeAvailable() {
-		available=true;
+		available = true;
 	}
 	
-	void takeAvailable() {
-		available =false;
-	}
 	/*
 	void updateAvailability() {
 		available=!available;
 	}
 	*/
 	
+	void takeAvailable() {
+		available = false;
+	}
+	
 	/*
 	 * switches whether somebody is in the spot or not
 	 */
 	void updateOccupancy() {
-		occupied=!occupied;
+		occupied = !occupied;
 	}
 	
 	@Override
 	public String toString() {
-		return "ID: " + this.ID+ "type: chair";
+		String result = String.format("Spot<%d>[%.2f, %.2f, %.2f, %.2f] - type: chair", ID, x, y, x2, y2);
+		return result;
 	}
-	
 }
