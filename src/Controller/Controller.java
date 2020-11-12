@@ -58,10 +58,16 @@ public class Controller {
 	 * Deselect all the objects that are currently highlighted
 	 */
 	public void deselectAll() {
+		boolean highlightedPresent = false;
 		for(UIObjects object : model.getObjects()) {
-			object.setHighlighted(false);
+			if(object.isHighlighted()) {
+				object.setHighlighted(false);
+				highlightedPresent = true;
+			}
 		}
-		displayModel();
+		if(highlightedPresent) {
+			displayModel();
+		}
 	}
 	
 	/**
@@ -151,16 +157,24 @@ public class Controller {
 	}
 	
 	/**
+	 * Prints the models items
+	 *
+	 * @return String
+	 */
+	public String printItems() {
+		return model.printItems();
+	}
+	
+	/**
 	 * Remove all the objects in the model that are currently highlighted
 	 */
 	public void removeHighlighted() {
-		ArrayList<UIObjects> newList = new ArrayList<UIObjects>();
-		for(UIObjects object : model.getObjects()) {
-			if(!object.isHighlighted()) {
+		ArrayList<UIObjects> newList = new ArrayList<>(); // list to remove
+		for(UIObjects object : model.getObjects())
+			if(!object.isHighlighted())
 				newList.add(object);
-			}
-		}
 		model.itemList = newList;
+		model.updateIndices();
 		model.display();
 	}
 	

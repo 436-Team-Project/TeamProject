@@ -85,14 +85,21 @@ public abstract class UIObjects implements Serializable {
 		return Math.abs(y2 - y);
 	}
 	
+	public void setID(int id) {
+		this.ID = id;
+	}
+	
 	public int getId() {
 		return ID;
 	}
 	
 	@Override
 	public String toString() {
-		String result = String.format("UIObj<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);
-		return result;
-//		return "Obj ID: " + ID + " type: object";
+		String highlightStr = "F";
+		if(isHighlighted) {
+			highlightStr = "T";
+		}
+		
+		return String.format("<%d>(%s)  [%.2f, %.2f, %.2f, %.2f]", ID, highlightStr, x, y, x2, y2);
 	}
 }

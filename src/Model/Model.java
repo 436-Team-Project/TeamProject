@@ -14,7 +14,7 @@ public class Model extends Observable {
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
 	public ArrayList<UIObjects> itemList;
-	UIObjects lastObject;
+	public UIObjects lastObject;
 	
 	/**
 	 * Constructor class
@@ -293,7 +293,6 @@ public class Model extends Observable {
 				}
 			}
 		}
-		
 		setChanged();
 		notifyObservers();
 		return risk;
@@ -312,7 +311,6 @@ public class Model extends Observable {
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
-		
 		System.out.println("finished storing");
 	}
 	
@@ -371,7 +369,7 @@ public class Model extends Observable {
 			return -1;
 		}
 		//rest is recursive case
-		ArrayList<UIObjects> checker = new ArrayList<UIObjects>(itemList);
+		ArrayList<UIObjects> checker = new ArrayList<>(itemList);
 		cur = numSpotsNear(checker, i);
 		int next = bestSpot(i + 1);
 		
@@ -423,5 +421,30 @@ public class Model extends Observable {
 			}
 		}
 		return spots;
+	}
+	
+	/**
+	 * Updates the indices of the items. This is helpful when items are deleted and their old id is
+	 * greater than the current size of the item list
+	 */
+	public void updateIndices(){
+		for(int i = 0; i < itemList.size(); i++) {
+			itemList.get(i).setID(i);
+		}
+	}
+	
+	/**
+	 * Displays the item lists
+	 *
+	 * @return String
+	 */
+	public String printItems(){
+		StringBuilder result = new StringBuilder();
+		for(int i = 0; i < itemList.size(); i++) {
+			String line = String.format("[%02d]: %s\n", i, itemList.get(i));
+			result.append(line);
+		}
+		result.append("\n");
+		return result.toString();
 	}
 }

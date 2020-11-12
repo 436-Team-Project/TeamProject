@@ -12,8 +12,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -32,23 +31,25 @@ import java.util.*;
 public class View extends Application implements Observer {
 	
 	// The dimensions of the entire application
-	final int APP_HEIGHT = 800;
-	final int APP_WIDTH = 1200;
+	final static int APP_HEIGHT = 800;
+	final static int APP_WIDTH = 1200;
 	
 	// Dimensions for the panels inside the border pane
-	final int LEFT_WIDTH = 250;
-	final int TOP_HEIGHT = 50;
-	final int BOT_HEIGHT = 50;
-	final int CENTER_WIDTH = (APP_WIDTH - LEFT_WIDTH);
-	final int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
+	final static int LEFT_WIDTH = 250;
+	final static int TOP_HEIGHT = 50;
+	final static int BOT_HEIGHT = 50;
+	final static int CENTER_WIDTH = (APP_WIDTH - LEFT_WIDTH);
+	final static int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
 	
 	// Default dimensions for objects created from buttons
-	final double WALL_WIDTH = 25;
-	final double WALL_HEIGHT = 25;
-	final double CHAIR_WIDTH = 25;
-	final double CHAIR_HEIGHT = 25;
-	final double TABLE_WIDTH = 60;
-	final double TABLE_HEIGHT = 60;
+	final static double WALL_WIDTH = 25;
+	final static double WALL_HEIGHT = 25;
+	final static double CHAIR_WIDTH = 25;
+	final static double CHAIR_HEIGHT = 25;
+	final static double TABLE_WIDTH = 60;
+	final static double TABLE_HEIGHT = 60;
+	static String currentFileName;
+	static File currentFile;
 	
 	boolean selecting = false;
 	boolean drawingWall = false;
@@ -56,12 +57,12 @@ public class View extends Application implements Observer {
 	boolean placingObject = false;
 	boolean isHosting = false;
 	
-	File currentFile;
-	String currentFileName;
 	FileChooser fc;
 	
+	Scene scene;
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
+	KeyboardListener kbListener;
 	
 	BorderPane root; // Main pane
 	Pane drawPane; // Drawing Canvas
@@ -96,7 +97,9 @@ public class View extends Application implements Observer {
 		root.setTop(initTopPanel(primaryStage));
 		root.setBottom(initBottomPanel(primaryStage));
 		
-		Scene scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+		scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+		kbListener = new KeyboardListener(scene, controller, drawPane);
+		
 		primaryStage.getIcons().add(ImageLoader.getImage("app_icon_black_60px.png"));
 		primaryStage.setTitle("Covid Calc");
 		primaryStage.setScene(scene);
@@ -121,7 +124,8 @@ public class View extends Application implements Observer {
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 //				System.out.println("Drawing wall");
-				Line wall = initLine(obj.getX(), obj.getY(), obj.getX2(), obj.getY2(), obj.isHighlighted());
+				Line wall = initLine(obj.getX(), obj.getY(), obj.getX2(), obj.getY2(),
+						obj.isHighlighted());
 				
 				// These are invisible circular regions acting as endpoints of the line
 				// to allow dragging of on end.
@@ -133,7 +137,6 @@ public class View extends Application implements Observer {
 				
 				setEndPointMouseAction(leftEnd, wall, obj, true);     // last argument is flag
 				setEndPointMouseAction(rightEnd, wall, obj, false);  // for left or right
-				
 				setMouseAction(wall, obj);
 				
 				Label measure = new Label(String.valueOf(lineLength(wall)));
@@ -153,12 +156,14 @@ public class View extends Application implements Observer {
 				double radius = obj.getWidth() / 2;
 				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius,
 						obj.isHighlighted());
+				
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
 			} else {
 //				System.out.println("Drawing object");
 				Rectangle o = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight(),
 						obj.isHighlighted());
+				
 				setMouseAction(o, obj);
 				drawPane.getChildren().add(o);
 			}
@@ -198,7 +203,6 @@ public class View extends Application implements Observer {
 		});
 		
 		endPoint.setOnMouseReleased(event -> {
-			
 			boolean inDrawPane = (endPoint.getCenterX() > 0
 					&& endPoint.getCenterX() < drawPane.getWidth())
 					&& (endPoint.getCenterY() > 0 && endPoint.getCenterY() < drawPane.getHeight());
@@ -208,11 +212,11 @@ public class View extends Application implements Observer {
 				controller.displayModel();
 			} else {
 				if(isLeft) {
-					controller.updateCurrentObject(event.getX(), event.getY(),
-							uio.getX2(), uio.getY2(), uio.getId());
+					controller.updateCurrentObject(event.getX(), event.getY(), uio.getX2(),
+							uio.getY2(), uio.getId());
 				} else {
-					controller.updateCurrentObject(uio.getX(), uio.getY(),
-							event.getX(), event.getY(), uio.getId());
+					controller.updateCurrentObject(uio.getX(), uio.getY(), event.getX(),
+							event.getY(), uio.getId());
 				}
 			}
 		});
@@ -249,8 +253,9 @@ public class View extends Application implements Observer {
 			// check if placed within the draw pane
 			Bounds objBounds = obj.getBoundsInParent();
 			
-			boolean inDrawPane = (objBounds.getMinX() > 0 && objBounds.getMaxX() < drawPane.getWidth()) &&
-					(objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
+			boolean inDrawPane = (objBounds.getMinX() > 0
+					&& objBounds.getMaxX() < drawPane.getWidth())
+					&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
 			
 			if(!inDrawPane) {
 				System.out.println("Outside of central panel");
@@ -479,9 +484,14 @@ public class View extends Application implements Observer {
 			if(event.getButton() == MouseButton.PRIMARY && inDrawPane) {
 				Point2D click = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 				UIObjects clickedObject = controller.getObject(click.getX(), click.getY());
+				// If ALT is not held down deselect all highlighted
+				if(!kbListener.isKeyPressed(KeyCode.CONTROL)) {
+					controller.deselectAll();
+				}
 				if(clickedObject != null) {
-					System.out.println("Clicked on: " + clickedObject.toString());
 					clickedObject.setHighlighted(!clickedObject.isHighlighted());
+					System.out.printf("Clicked on: %s\n", clickedObject.toString());
+//					System.out.printf("Items:\n%s\n", controller.printItems());
 				}
 				
 				if(drawingWall) {
@@ -721,7 +731,7 @@ public class View extends Application implements Observer {
 				model = new Model();
 				model.addObserver(this);
 				controller = new Controller(model);
-				
+				kbListener.setController(controller);
 				try {
 					File tempFile = new File("Saved/" + currentFileName);
 					if(tempFile.createNewFile()) {
