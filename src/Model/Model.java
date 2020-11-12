@@ -20,8 +20,7 @@ public class Model extends Observable {
 	 * Constructor class
 	 */
 	public Model() {
-		itemList = new ArrayList<UIObjects>();
-		
+		itemList = new ArrayList<>();
 		setChanged();
 		notifyObservers();
 	}
@@ -102,9 +101,8 @@ public class Model extends Observable {
 	 * @param y horizontal position
 	 * @return UIObject
 	 */
-	public UIObjects getObject(int x, int y) {
+	public UIObjects getObject(double x, double y) {
 		UIObjects obj = null;
-		
 		for(UIObjects item : itemList) {
 			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
 				obj = item;
@@ -230,7 +228,7 @@ public class Model extends Observable {
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			} 
+			}
 			
 			//if spot is taken remove occupancy
 			else if(spot.occupied) {
@@ -249,11 +247,9 @@ public class Model extends Observable {
 				}
 			}
 		}
-		
 		setChanged();
 		notifyObservers();
 	}
-	
 	
 	/**
 	 * based on the action it changes the occupancy status of the spot and then updates
@@ -275,10 +271,10 @@ public class Model extends Observable {
 				itemList.set(spot.ID, spot);
 				
 				//if the spot is considered risky return risk = true
-				if (!spot.available) {
-					risk=true;
+				if(!spot.available) {
+					risk = true;
 				}
-			} 
+			}
 			
 			//if spot is taken remove occupancy
 			else if(spot.occupied) {
@@ -302,7 +298,6 @@ public class Model extends Observable {
 		notifyObservers();
 		return risk;
 	}
-
 	
 	/**
 	 * serializes the itemList into a file named layoutData
@@ -362,6 +357,29 @@ public class Model extends Observable {
 	}
 	
 	/**
+	 * Searches through all of the items if it is a spot that isn't occupied or in the hazard range then
+	 * search check the impact of that spot on the surrounding spots.
+	 * Return the spot with the least amount of impact on surrounding spots.
+	 *
+	 * @param i int
+	 * @return int
+	 */
+	public int bestSpot(int i) {
+		int cur;
+		//base case
+		if(i == itemList.size()) {
+			return -1;
+		}
+		//rest is recursive case
+		ArrayList<UIObjects> checker = new ArrayList<UIObjects>(itemList);
+		cur = numSpotsNear(checker, i);
+		int next = bestSpot(i + 1);
+		
+		//return either the next or the current based on what is larger
+		return (cur >= next) ? i : i + 1;
+	}
+	
+	/**
 	 * Returns the list of the objects
 	 *
 	 * @return array list of UIObjects
@@ -373,31 +391,31 @@ public class Model extends Observable {
 	
 	/**
 	 * helper function for bestSpot returns the number of spots within the range of the passed in spot.
+	 *
 	 * @param checker the list of objects
 	 * @return spots the number of spots
 	 */
 	int numSpotsNear(ArrayList<UIObjects> checker, int ID) {
 		int spots = 0;
 		
-		
 		//not a spot or spot is occupied or unsafe object return
-		if (!(checker.get(ID) instanceof Spots)) {
+		if(!(checker.get(ID) instanceof Spots)) {
 			return -1;
 		}
 		Spots temp = (Spots) checker.get(ID);
-		if (!temp.available || temp.occupied )
+		if(!temp.available || temp.occupied)
 			return -1; //checks if it is a valid spot to sit somebody at
 		
-		for (int i = 0; i <checker.size(); i++) {
+		for(int i = 0; i < checker.size(); i++) {
 			
 			//make sure it is comparing spots to spots
-			if (!(checker.get(ID) instanceof Spots)) {
-				if (i == ID)
+			if(!(checker.get(ID) instanceof Spots)) {
+				if(i == ID)
 					; //skip this iteration
 				else {
 					//distance equation
-					if (Math.sqrt(Math.pow(checker.get(i).x-checker.get(ID).x, 2.0) 
-							+ Math.pow(checker.get(i).y-checker.get(ID).y, 2.0))
+					if(Math.sqrt(Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
+							+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0))
 							<= BUFFER) {
 						spots++;
 					}
@@ -405,27 +423,5 @@ public class Model extends Observable {
 			}
 		}
 		return spots;
-	}
-	
-	
-	/**
-	 * Searches through all of the items if it is a spot that isn't occupied or in the hazard range then
-	 * search check the impact of that spot on the surrounding spots.
-	 * Return the spot with the least amount of impact on surrounding spots.
-	 * @return 
-	 */
-	public int bestSpot(int i) {
-		int cur;
-		//base case
-		if (i == itemList.size()) {
-			return -1;
-		}
-		//rest is recursive case
-		ArrayList<UIObjects> checker = new ArrayList<UIObjects>(itemList);
-		cur = numSpotsNear(checker, i);
-		int next = bestSpot(i+1);
-		
-		//return either the next or the current based on what is larger
-		return (cur >= next) ? i:i+1;
 	}
 }
