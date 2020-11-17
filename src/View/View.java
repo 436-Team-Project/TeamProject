@@ -787,7 +787,7 @@ public class View extends Application implements Observer {
 		Button zoomInButton = new Button();
 		Button zoomOutButton = new Button();
 		Button deleteButton = new Button("Delete");
-		Button placeholderButton = new Button("Duplicate");
+		Button placeholderButton = new Button("Placeholder");
 		
 		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
 		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));

@@ -119,8 +119,10 @@ public class KeyboardListener {
 				System.out.println("\tRedo");
 			}
 		} else if(key == KeyCode.S) {
-			System.out.println("\tSave");
-			controller.save(View.currentFile);
+			if(CONTROL_PRESSED) {
+				System.out.println("\tSave");
+				controller.save(View.currentFile);
+			}
 		} else if(key == KeyCode.DELETE) {
 			System.out.println("\tDelete");
 			controller.removeHighlighted();
