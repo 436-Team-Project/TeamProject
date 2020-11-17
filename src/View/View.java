@@ -922,9 +922,9 @@ public class View extends Application implements Observer {
 		Line l = new Line(x, y, x2, y2);
 		l.setStrokeWidth(5);
 		if(highlight) {
-			l.setFill(Color.GOLD);
+			l.setStroke(Color.GOLD);
 		} else {
-			l.setFill(Color.BLACK);
+			l.setStroke(Color.BLACK);
 		}
 		// TODO: EventHandler for selecting, moving, and editing lines
 		return l;
