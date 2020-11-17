@@ -25,9 +25,10 @@ public class Wall extends UIObjects {
 	
 	@Override
 	public String toString() {
-		String result = String.format("Wall<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);
-		String connections = "";
-		
-		return result;
+		if(super.getId() < 10) {
+			return "  Wall"+ super.toString();
+		} else {
+			return " Wall"+ super.toString();
+		}
 	}
 }

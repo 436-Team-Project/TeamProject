@@ -43,7 +43,10 @@ public class Spots extends UIObjects {
 	
 	@Override
 	public String toString() {
-		String result = String.format("Spot<%d>[%.2f, %.2f, %.2f, %.2f] - type: chair", ID, x, y, x2, y2);
-		return result;
+		if(super.getId() < 10) {
+			return "  Spot"+ super.toString();
+		} else {
+			return " Spot"+ super.toString();
+		}
 	}
 }
