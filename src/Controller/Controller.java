@@ -4,6 +4,8 @@ import Model.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Stack;
+import java.util.EmptyStackException;
 import java.util.List;
 
 /**
@@ -51,7 +53,28 @@ public class Controller {
 	 * "Undo"s the last action done by the user
 	 */
 	public void undo() {
-		model.removeLastObject();
+		try {
+			ArrayList<UIObjects> objs = model.undoStack.pop();
+			model.redoStack.push(model.cloneItemList());
+			model.updateItemList(objs);
+		} catch(EmptyStackException ese) {
+			System.out.println("Undo stack is empty");
+			return;
+		}
+	}
+
+	/**
+	 * "redo"s the last action undone by the user
+	 */
+	public void redo() {
+		try {
+			ArrayList<UIObjects> objs = model.redoStack.pop();
+			model.undoStack.push(model.cloneItemList());
+			model.updateItemList(objs);
+		} catch(EmptyStackException ese) {
+			System.out.println("Redo stack is empty");
+			return;
+		}
 	}
 	
 	/**
@@ -251,6 +274,42 @@ public class Controller {
 		Spots spot = (Spots) model.getObject(id); //get the spot
 		return spot;
 	}
+
+
+	/**
+	 * updates a given object's dimensions with the given new 
+	 * dimensions.
+	 *
+	 * @param obj       is the object to be updated
+	 * @param newWidth  is the new width to be assigned
+	 * @param newHeight is the new height to be assigned
+	 */
+	public void resize(UIObjects obj, double newWidth, double newHeight) {
+		double dw, dh;			// delta width, delta height
+		double x1, y1, x2, y2;	// new endpoints
+
+		dw = newWidth - obj.getWidth();		// change in width
+		dh = newHeight - obj.getHeight();	// change in height
+
+		// This preserves the center of the object
+		// (i.e. the addition/subtraction of area is distributed to all sides)
+		if(obj.getX() < obj.getX2()) {
+			x1 = obj.getX() - (dw/2);
+			x2 = obj.getX2() + (dw/2);
+		} else {
+			x1 = obj.getX() + (dw/2);
+			x2 = obj.getX2() - (dw/2);
+		}
+
+		if(obj.getY() < obj.getY2()) {
+			y1 = obj.getY() - (dh/2);
+			y2 = obj.getY2() + (dh/2);
+		} else {
+			y1 = obj.getY() + (dh/2);
+			y2 = obj.getY2() - (dh/2);
+		}
+		updateCurrentObject(x1, y1, x2, y2, obj.getId());
+  }
 	
 	/**
 	 * this is the replacement for updateAvailable
