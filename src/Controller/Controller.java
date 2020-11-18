@@ -292,38 +292,19 @@ public class Controller {
 
 
 	/**
-	 * updates a given object's dimensions with the given new 
-	 * dimensions.
+	 * updates the dimensions of all objects in the given list
+	 * with the given new dimensions.
 	 *
-	 * @param obj       is the object to be updated
+	 * @param objs      is a list of objects to be updated
 	 * @param newWidth  is the new width to be assigned
 	 * @param newHeight is the new height to be assigned
 	 */
-	public void resize(UIObjects obj, double newWidth, double newHeight) {
-		double dw, dh;			// delta width, delta height
-		double x1, y1, x2, y2;	// new endpoints
+	public void resizeAll(ArrayList<UIObjects> objs, double newWidth, double newHeight) {
+		// Do nothing if the list is empty
+		if(objs.isEmpty())
+			return;
 
-		dw = newWidth - obj.getWidth();		// change in width
-		dh = newHeight - obj.getHeight();	// change in height
-
-		// This preserves the center of the object
-		// (i.e. the addition/subtraction of area is distributed to all sides)
-		if(obj.getX() < obj.getX2()) {
-			x1 = obj.getX() - (dw/2);
-			x2 = obj.getX2() + (dw/2);
-		} else {
-			x1 = obj.getX() + (dw/2);
-			x2 = obj.getX2() - (dw/2);
-		}
-
-		if(obj.getY() < obj.getY2()) {
-			y1 = obj.getY() - (dh/2);
-			y2 = obj.getY2() + (dh/2);
-		} else {
-			y1 = obj.getY() + (dh/2);
-			y2 = obj.getY2() - (dh/2);
-		}
-		updateCurrentObject(x1, y1, x2, y2, obj.getId());
+		model.updateAll(objs, newWidth, newHeight);
   }
 	
 	/**

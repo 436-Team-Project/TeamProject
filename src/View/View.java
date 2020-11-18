@@ -1089,11 +1089,10 @@ public class View extends Application implements Observer {
 					return;
 				}
 
-				for(UIObjects o : toUpdate) {
-					double newWidth  = Double.parseDouble(w.getText());
-					double newHeight = Double.parseDouble(h.getText());
-					controller.resize(o, newWidth, newHeight);
-				}
+				double newWidth  = Double.parseDouble(w.getText());
+				double newHeight = Double.parseDouble(h.getText());
+
+				controller.resizeAll(toUpdate, newWidth, newHeight);
 			}
 		});
 

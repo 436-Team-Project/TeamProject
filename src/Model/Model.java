@@ -80,6 +80,55 @@ public class Model extends Observable {
 		System.out.println("updated");
 	}
 
+
+	/**
+	 * updates the dimensions of all objects in the given list
+	 * with the given new dimensions.
+	 *
+	 * NOTE: this method considers the update of all given objects as
+	 *       a single action.
+	 *
+	 * @param objs      is a list of objects to be updated
+	 * @param newWidth  is the new width to be assigned
+	 * @param newHeight is the new height to be assigned
+	 */
+	public void updateAll(ArrayList<UIObjects> objs, double newWidth, double newHeight) {
+
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
+		double dw, dh;			// delta width, delta height
+		double x1, y1, x2, y2;	// new endpoints
+
+		for(UIObjects obj : objs) {
+			dw = newWidth - obj.getWidth();		// change in width
+			dh = newHeight - obj.getHeight();	// change in height
+
+			// This preserves the center of the object
+			// (i.e. the addition/subtraction of area is distributed to all sides)
+			if(obj.getX() < obj.getX2()) {
+				x1 = obj.getX() - (dw/2);
+				x2 = obj.getX2() + (dw/2);
+			} else {
+				x1 = obj.getX() + (dw/2);
+				x2 = obj.getX2() - (dw/2);
+			}
+
+			if(obj.getY() < obj.getY2()) {
+				y1 = obj.getY() - (dh/2);
+				y2 = obj.getY2() + (dh/2);
+			} else {
+				y1 = obj.getY() + (dh/2);
+				y2 = obj.getY2() - (dh/2);
+			}
+
+			obj.update(x1, y1, x2, y2); // update the object
+		}
+		setChanged();
+		notifyObservers();
+		System.out.println("updated");
+	}
+
 	/**
 	 * updates the model'a itemList with the given new list
 	 *
