@@ -3,6 +3,7 @@ package Model;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Observable;
+import java.util.Stack;
 
 /**
  * The state of the application
@@ -16,11 +17,17 @@ public class Model extends Observable {
 	public ArrayList<UIObjects> itemList;
 	UIObjects lastObject;
 	
+	public Stack<ArrayList<UIObjects>> undoStack;
+	public Stack<ArrayList<UIObjects>> redoStack;
+
 	/**
 	 * Constructor class
 	 */
 	public Model() {
 		itemList = new ArrayList<UIObjects>();
+
+		undoStack = new Stack<ArrayList<UIObjects>>();
+		redoStack = new Stack<ArrayList<UIObjects>>();
 		
 		setChanged();
 		notifyObservers();
@@ -34,6 +41,9 @@ public class Model extends Observable {
 	 * @param y    horizontal position
 	 */
 	public void createObject(String type, int x, int y) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		UIObjects obj;
 		//create the object that is asked for.
 		if(type.equals("wall")) {
@@ -60,11 +70,25 @@ public class Model extends Observable {
 	 * @param ID int ID is the position it holds in the arraylist
 	 */
 	public void updateObject(double x1, double y1, double x2, double y2, int ID) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		UIObjects obj = itemList.get(ID);
 		obj.update(x1, y1, x2, y2);
 		setChanged();
 		notifyObservers();
 		System.out.println("updated");
+	}
+
+	/**
+	 * updates the model'a itemList with the given new list
+	 *
+	 * @param newItemList is the new list to be set
+	 */
+	public void updateItemList(ArrayList<UIObjects> newItemList) {
+		this.itemList = newItemList;
+		setChanged();
+		notifyObservers();
 	}
 	
 	/**
@@ -73,6 +97,9 @@ public class Model extends Observable {
 	 * @param newObj UIObjects new object to add to the item list
 	 */
 	public void addObject(UIObjects newObj) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		lastObject = newObj;
 		itemList.add(newObj);
 		setChanged();
@@ -86,6 +113,9 @@ public class Model extends Observable {
 	 * This method is used to accomplish the "undo" feature
 	 */
 	public void removeLastObject() {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		itemList.remove(lastObject);
 		if(itemList.size() != 0) {
 			lastObject = itemList.get(itemList.size() - 1);
@@ -351,6 +381,8 @@ public class Model extends Observable {
 	
 	//shift the ID's and then remove the object from itemList
 	public void removeObject(int ID) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
 		
 		int size = itemList.size();
 		for(int i = ID; i < size - 1; i++) {
@@ -427,5 +459,22 @@ public class Model extends Observable {
 		
 		//return either the next or the current based on what is larger
 		return (cur >= next) ? i:i+1;
+	}
+
+	/**
+	 * Clones the current item list and return the new copy
+	 *
+	 */
+	public ArrayList<UIObjects> cloneItemList() {
+		ArrayList<UIObjects> result = new ArrayList<UIObjects>();
+
+		try {
+			for(UIObjects o : itemList) {
+				result.add((UIObjects)o.clone());
+			}
+		} catch(CloneNotSupportedException e) {
+			return null;
+		}
+		return result;
 	}
 }

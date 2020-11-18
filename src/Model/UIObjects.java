@@ -1,12 +1,13 @@
 package Model;
 
 import java.io.Serializable;
+import java.lang.Cloneable;
 
 /*
  * main class for all objects
  * param: the ID of the object to keep track of and the initial coordinates of the shapes
  */
-public abstract class UIObjects implements Serializable {
+public abstract class UIObjects implements Serializable, Cloneable {
 	
 	//initial starting points of the object we can assume 0,0 or wherever we want them to exist
 	private static final long serialVersionUID = 1L;
@@ -72,6 +73,11 @@ public abstract class UIObjects implements Serializable {
 	
 	public int getId() {
 		return ID;
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 	
 	@Override

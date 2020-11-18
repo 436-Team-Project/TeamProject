@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -231,7 +232,7 @@ public class View extends Application implements Observer {
 	 */
 	private void setMouseAction(Shape obj, UIObjects uio) {
 		obj.setOnMousePressed(event -> {
-      selecting = false;
+      		selecting = false;
 			drawingWall = false;
 			placingChair = false;
 			placingObject = false;
@@ -788,6 +789,7 @@ public class View extends Application implements Observer {
 		redoButton.setOnMouseClicked(e -> {
 			System.out.println("\"Redo\" button clicked");
 			// TODO: Implement the redo feature
+			controller.redo();
 			
 		});
 		resetZoomButton.setOnMouseClicked(e -> {
@@ -934,5 +936,134 @@ public class View extends Application implements Observer {
 	private double lineLength(Line l) {
 		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2) 
 				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
+	}
+
+
+
+	/**
+	 * filters a given list of UIObjects to return a new list containing
+	 * objects of only the desired type.
+	 *
+	 * @param objs        is the list of UIObjects to be filtered
+	 * @param desiredType is the desired type to be returned
+	 */
+	private ArrayList<UIObjects> filterObjs(ArrayList<UIObjects> objs, Class<?> desiredType) {
+		ArrayList<UIObjects> result = new ArrayList<UIObjects>();
+
+		for(UIObjects o : objs) {
+			if(desiredType.isInstance(o)) {
+				result.add(o);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Determines of the given list contains different types of objects
+	 *
+	 * @param objs is the list in question
+	 */
+	 private boolean objectsVary(ArrayList<UIObjects> objs) {
+		 boolean containsTables = false;
+		 boolean containsChairs = false;
+
+		 for(UIObjects o : objs) {
+			 if(o instanceof Tables) {
+				 containsTables = true;
+			 } else if(o instanceof Spots) {
+				 containsChairs = true;
+			 }
+		 }
+
+		 return (containsTables && containsChairs);
+	 }
+
+
+	/**
+	 *
+	 *
+	 * @param objs is a list of the selected objects
+	 */
+	private void showSelectionUpdate(ArrayList<UIObjects> objs) {
+		// Do nothing if the list is empty
+		if(objs.isEmpty())
+			return;
+
+		ToggleGroup group = null;
+		RadioButton tableBtn = null;
+		RadioButton chairBtn = null;
+
+
+		// setup text fields
+		TextField w = createTextField(String.valueOf(objs.get(0).getWidth()));
+		TextField h = createTextField(String.valueOf(objs.get(0).getHeight()));
+
+
+		// setup parant node
+		VBox vbox = new VBox();
+
+		vbox.setOnKeyPressed(key -> {
+			if(key.getCode() == KeyCode.ENTER) {
+				ArrayList<UIObjects> toUpdate = objs;
+
+				if(objectsVary(objs)) {
+					String selected = ((RadioButton)group.getSelectedToggle()).getText();
+
+					if(selected.equals("Tables")) {
+						toUpdate = filterObjs(objs, Tables.class);
+					} else if(selected.equals("Chairs")) {
+						toUpdate = filterObjs(objs, Spots.class);
+					} else {
+						return;
+					}
+				}
+
+				for(UIObjects o : toUpdate) {
+					double newWidth  = Double.parseDouble(w.getText());
+					double newHeight = Double.parseDouble(h.getText());
+					controller.resize(o, newWidth, newHeight);
+				}
+			}
+		});
+
+		vbox.setStyle("-fx-alignment: center;-fx-spacing: 5px; -fx-padding: 40px 0px 0px 0px;");
+
+		// Setup radio buttons if different types are selected
+		if(objectsVary(objs)) {
+			group = new ToggleGroup();
+			tableBtn = new RadioButton("Tables");
+			chairBtn = new RadioButton("Chairs");
+
+			tableBtn.setToggleGroup(group);
+			chairBtn.setToggleGroup(group);
+
+			vbox.getChildren().addAll(tableBtn, chairBtn);
+		}
+
+		vbox.getChildren().addAll(w, h);
+
+		((VBox)((Pane)root.getLeft()).getChildren().get(0)).getChildren().add(vbox);
+	}
+
+	/**
+	 * Creates and returns a text field
+	 *
+	 * @param str is the initial text in the field
+	 */
+	private TextField createTextField(String str) {
+		TextField result = new TextField(str);
+
+		result.setMaxWidth(80);
+		result.setMaxHeight(40);
+		
+		return result;
+	}
+
+	private void clearSelectionUpdate() {
+		// get the VBox where the text fields are placed
+		VBox left = ((Pane)root.getLeft()).getChildren().get(0);
+
+		// remove the last added node
+		left.getChildren().remove(left.getChildren().size()-1);
 	}
 }
