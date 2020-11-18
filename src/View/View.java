@@ -1032,9 +1032,13 @@ public class View extends Application implements Observer {
 		if(objs.isEmpty())
 			return;
 
-		ToggleGroup group = null;
-		RadioButton tableBtn = null;
-		RadioButton chairBtn = null;
+		// Setup radio buttons if different types are selected
+		ToggleGroup group    = new ToggleGroup();
+		RadioButton tableBtn = new RadioButton("Tables");
+		RadioButton chairBtn = new RadioButton("Chairs");
+
+		tableBtn.setToggleGroup(group);
+		chairBtn.setToggleGroup(group);
 
 
 		// setup text fields
@@ -1071,15 +1075,8 @@ public class View extends Application implements Observer {
 
 		vbox.setStyle("-fx-alignment: center;-fx-spacing: 5px; -fx-padding: 40px 0px 0px 0px;");
 
-		// Setup radio buttons if different types are selected
+		// display the options only when having different types
 		if(objectsVary(objs)) {
-			group = new ToggleGroup();
-			tableBtn = new RadioButton("Tables");
-			chairBtn = new RadioButton("Chairs");
-
-			tableBtn.setToggleGroup(group);
-			chairBtn.setToggleGroup(group);
-
 			vbox.getChildren().addAll(tableBtn, chairBtn);
 		}
 
@@ -1104,7 +1101,7 @@ public class View extends Application implements Observer {
 
 	private void clearSelectionUpdate() {
 		// get the VBox where the text fields are placed
-		VBox left = ((Pane)root.getLeft()).getChildren().get(0);
+		VBox left = (VBox)((Pane)root.getLeft()).getChildren().get(0);
 
 		// remove the last added node
 		left.getChildren().remove(left.getChildren().size()-1);
