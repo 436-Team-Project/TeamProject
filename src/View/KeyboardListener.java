@@ -117,6 +117,7 @@ public class KeyboardListener {
 		} else if(key == KeyCode.Y) {
 			if(CONTROL_PRESSED) {
 				System.out.println("\tRedo");
+				controller.redo();
 			}
 		} else if(key == KeyCode.S) {
 			if(CONTROL_PRESSED) {
