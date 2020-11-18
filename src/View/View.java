@@ -56,6 +56,8 @@ public class View extends Application implements Observer {
 	boolean placingChair = false;
 	boolean placingObject = false;
 	boolean isHosting = false;
+
+	boolean updatingSelection = false;
 	
 	FileChooser fc;
 	
@@ -279,7 +281,10 @@ public class View extends Application implements Observer {
 		Pane result = new Pane();
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setOnMouseClicked(mouseEvent -> controller.deselectAll());
+		result.setOnMouseClicked(mouseEvent -> {
+			controller.deselectAll();
+			clearSelectionUpdate();
+		});
 		result.setPrefHeight(BOT_HEIGHT);
 		result.getChildren().add(initBottomControls(stage));
 		return result;
@@ -340,7 +345,10 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
-		result.setOnMouseClicked(mouseEvent -> controller.deselectAll());
+		result.setOnMouseClicked(mouseEvent -> {
+			controller.deselectAll();
+			clearSelectionUpdate();
+		});
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
 		
@@ -412,7 +420,10 @@ public class View extends Application implements Observer {
 	private Pane initCenterPanel() {
 		Pane result = new Pane();
 		Pane child = initCenterInnerPanel(); // Draw panel
-		result.setOnMouseClicked(mouseEvent -> controller.deselectAll());
+		result.setOnMouseClicked(mouseEvent -> {
+			controller.deselectAll();
+			clearSelectionUpdate();
+		});
 		result.setBackground(new Background(
 				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(CENTER_WIDTH);
@@ -487,9 +498,11 @@ public class View extends Application implements Observer {
 				// If ALT is not held down deselect all highlighted
 				if(!kbListener.isKeyPressed(KeyCode.CONTROL)) {
 					controller.deselectAll();
+					clearSelectionUpdate();
 				}
 				if(clickedObject != null) {
 					clickedObject.setHighlighted(!clickedObject.isHighlighted());
+					showSelectionUpdate();
 					System.out.printf("Clicked on: %s\n", clickedObject.toString());
 //					System.out.printf("Items:\n%s\n", controller.printItems());
 				}
@@ -637,6 +650,7 @@ public class View extends Application implements Observer {
 									heightFinal, widthFinal, x1, y1, x2, y2);
 							
 							controller.highlightSelected(x1, y1, x2, y2);
+							showSelectionUpdate();
 							drawPane.getChildren().remove(rectBound);
 						}
 					});
@@ -678,7 +692,10 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(TOP_HEIGHT);
 		
-		result.setOnMouseClicked(mouseEvent -> controller.deselectAll());
+		result.setOnMouseClicked(mouseEvent -> {
+			controller.deselectAll();
+			clearSelectionUpdate();
+		});
 		
 		HBox hBox = new HBox();
 		Label topHeader = new Label("Floor Plan Creator");
@@ -825,6 +842,7 @@ public class View extends Application implements Observer {
 		deleteButton.setOnMouseClicked(e -> {
 			System.out.println("\"Delete\" button clicked");
 			controller.removeHighlighted();
+			clearSelectionUpdate();
 		});
 		placeholderButton.setOnMouseClicked(e -> {
 			System.out.println("\"Placeholder\" button clicked");
@@ -1027,7 +1045,15 @@ public class View extends Application implements Observer {
 	 *
 	 * @param objs is a list of the selected objects
 	 */
-	private void showSelectionUpdate(ArrayList<UIObjects> objs) {
+	private void showSelectionUpdate() {
+		// check if previous call is still in action
+		if(updatingSelection)
+			return;
+			
+		updatingSelection = true;
+
+		ArrayList<UIObjects> objs = controller.getHighlightedObjects();
+
 		// Do nothing if the list is empty
 		if(objs.isEmpty())
 			return;
@@ -1051,18 +1077,16 @@ public class View extends Application implements Observer {
 
 		vbox.setOnKeyPressed(key -> {
 			if(key.getCode() == KeyCode.ENTER) {
-				ArrayList<UIObjects> toUpdate = objs;
+				ArrayList<UIObjects> toUpdate = controller.getHighlightedObjects();
 
-				if(objectsVary(objs)) {
-					String selected = ((RadioButton)group.getSelectedToggle()).getText();
+				String selected = ((RadioButton)group.getSelectedToggle()).getText();
 
-					if(selected.equals("Tables")) {
-						toUpdate = filterObjs(objs, Tables.class);
-					} else if(selected.equals("Chairs")) {
-						toUpdate = filterObjs(objs, Spots.class);
-					} else {
-						return;
-					}
+				if(selected.equals("Tables")) {
+					toUpdate = filterObjs(toUpdate, Tables.class);
+				} else if(selected.equals("Chairs")) {
+					toUpdate = filterObjs(toUpdate, Spots.class);
+				} else {
+					return;
 				}
 
 				for(UIObjects o : toUpdate) {
@@ -1075,10 +1099,8 @@ public class View extends Application implements Observer {
 
 		vbox.setStyle("-fx-alignment: center;-fx-spacing: 5px; -fx-padding: 40px 0px 0px 0px;");
 
-		// display the options only when having different types
-		if(objectsVary(objs)) {
-			vbox.getChildren().addAll(tableBtn, chairBtn);
-		}
+		// display the options of type to be resized
+		vbox.getChildren().addAll(tableBtn, chairBtn);
 
 		vbox.getChildren().addAll(w, h);
 
@@ -1100,10 +1122,17 @@ public class View extends Application implements Observer {
 	}
 
 	private void clearSelectionUpdate() {
+		// Check if showSelectionUpdate has been called
+		if(!updatingSelection)
+			return;
+
+
 		// get the VBox where the text fields are placed
 		VBox left = (VBox)((Pane)root.getLeft()).getChildren().get(0);
 
 		// remove the last added node
 		left.getChildren().remove(left.getChildren().size()-1);
+
+		updatingSelection = false;
 	}
 }

@@ -200,6 +200,21 @@ public class Controller {
 		model.updateIndices();
 		model.display();
 	}
+
+	/**
+	 * gets a list of the model's highlighted objects
+	 *
+	 */
+	public ArrayList<UIObjects> getHighlightedObjects() {
+		ArrayList<UIObjects> result = new ArrayList<>();
+
+		// Find highlighted objects
+		for(UIObjects o : model.getObjects())
+			if(o.isHighlighted())
+				result.add(o);
+
+		return result;
+	}
 	
 	/**
 	 * @param x  starting x location
