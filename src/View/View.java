@@ -1049,14 +1049,15 @@ public class View extends Application implements Observer {
 		// check if previous call is still in action
 		if(updatingSelection)
 			return;
-			
-		updatingSelection = true;
+
 
 		ArrayList<UIObjects> objs = controller.getHighlightedObjects();
 
 		// Do nothing if the list is empty
 		if(objs.isEmpty())
 			return;
+
+		updatingSelection = true;
 
 		// Setup radio buttons if different types are selected
 		ToggleGroup group    = new ToggleGroup();
