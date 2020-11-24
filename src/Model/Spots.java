@@ -17,10 +17,18 @@ public class Spots extends UIObjects {
 		
 	}
 	
+	public boolean isAvailable() {
+		return available;
+	}
+	
+	public boolean isOccupied() {
+		return occupied;
+	}
+	
 	/*
 	 * switches whether the spot is available to be used or not
 	 */
-	void makeAvailable() {
+	public void makeAvailable() {
 		available = true;
 	}
 	
@@ -30,7 +38,7 @@ public class Spots extends UIObjects {
 	}
 	*/
 	
-	void takeAvailable() {
+	public void takeAvailable() {
 		available = false;
 	}
 	
