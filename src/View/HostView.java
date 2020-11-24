@@ -31,6 +31,7 @@ public class HostView {
 	final int CENTER_WIDTH = (APP_WIDTH - (LEFT_WIDTH + RIGHT_WIDTH));
 	final int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
 	
+	private final View view;
 	private final Model model;
 	private final Controller controller;
 	private final BorderPane root;
@@ -51,8 +52,9 @@ public class HostView {
 	 * @param controller the controller of the product
 	 * @param drawPane the canvas to draw on
 	 */
-	public HostView(Stage stage, BorderPane root, Model model, Controller controller, Pane drawPane) {
+	public HostView(View view, Stage stage, BorderPane root, Model model, Controller controller, Pane drawPane) {
 		super();
+		this.view = view;
 		this.controller = controller;
 		this.model = model;
 		this.root = root;
@@ -278,14 +280,20 @@ public class HostView {
 		
 		getSafePosButton.setOnAction(e -> {
 			System.out.println("\"Get Safe Position\" button clicked");
+			controller.getBestSpot();
+			controller.displayModel();
 			// TODO: Implement the feature where an optimal safe space is calculated
 		});
 		assignGuestButton.setOnAction(e -> {
 			System.out.println("\"Assign Guest\" button clicked");
+			view.assigningSeat = true;
+			view.removingSeat = false;
 			// TODO: Implement assigning a guest to a chair/spot on the floor
 		});
 		removeGuestButton.setOnAction(e -> {
 			System.out.println("\"Remove Guest\" button clicked");
+			view.assigningSeat = false;
+			view.removingSeat = true;
 			// TODO: Implement removing a guest from the list of occupants in the floor
 		});
 		

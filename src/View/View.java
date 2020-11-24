@@ -56,6 +56,8 @@ public class View extends Application implements Observer {
 	boolean placingChair = false;
 	boolean placingObject = false;
 	boolean isHosting = false;
+	boolean assigningSeat = false;
+	boolean removingSeat = false;
 
 	boolean updatingSelection = false;
 	
@@ -305,7 +307,7 @@ public class View extends Application implements Observer {
 		
 		hostButton.setOnMouseClicked(e -> {
 			isHosting = true;
-			HostView hostRoot = new HostView(stage, root, model, controller, drawPane);
+			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
 			root.setBottom(initBottomPanel(stage));
 		});
 		
@@ -967,6 +969,12 @@ public class View extends Application implements Observer {
 			c.setFill(Color.GOLD);
 		} else {
 			c.setFill(Color.WHITE);
+		}
+		
+		if (isHosting) {
+			c.setOnMouseClicked(e -> {
+				
+			});
 		}
 		
 		// TODO: EventHandler for selecting, moving, and editing circles

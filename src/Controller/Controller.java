@@ -279,14 +279,17 @@ public class Controller {
 	}
 	
 	/**
-	 * This just returns the spot. ***IT DOES NOT SET THE SPOT OR UPDATE SURROUNDING SPOTS***
-	 * if that is desired then it can be updated to do so
+	 * This returns a spot and sets that spot as highlighted.
 	 *
 	 * @return the spot object that is considered most safe.
 	 */
 	public Spots getBestSpot() {
 		int id = model.bestSpot(0);
+		if (id == -1) {
+			return null;
+		}
 		Spots spot = (Spots) model.getObject(id); //get the spot
+		spot.setHighlighted(true);
 		return spot;
 	}
 
