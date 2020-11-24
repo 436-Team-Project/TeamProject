@@ -277,7 +277,7 @@ public class View extends Application implements Observer {
 				}
 			});
 		}
-		if (isHosting || obj instanceof Circle) {
+		if (isHosting && obj instanceof Circle) {
 			Circle c = (Circle) obj;
 			obj.setOnMouseClicked(e -> {
 				if (assigningSeat) {
