@@ -59,7 +59,7 @@ public class HostView {
 		this.model = model;
 		this.root = root;
 		this.drawPane = drawPane;
-		drawPane.setDisable(true);
+		//drawPane.setDisable(true); use isHosting boolean instead of disabling the drawingPane
 		
 		fc = new FileChooser();
 		fc.setInitialDirectory(new File(System.getProperty("user.dir")));

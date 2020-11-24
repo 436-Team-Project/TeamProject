@@ -293,7 +293,16 @@ public class Controller {
 		return spot;
 	}
 
-
+	/**
+	 * Marks spot at x and y as occupied.
+	 * @param x
+	 * @param y
+	 */
+	public void occupySpot(double x, double y) {
+		UIObjects uio = getObject(x,y);
+		updateAvailable(uio.getId());
+	}
+	
 	/**
 	 * updates the dimensions of all objects in the given list
 	 * with the given new dimensions.

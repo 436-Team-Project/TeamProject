@@ -156,10 +156,11 @@ public class View extends Application implements Observer {
 				drawPane.getChildren().add(rightEnd);
 				drawPane.getChildren().add(measure);
 			} else if(obj instanceof Spots) {
+				Spots s = (Spots) obj;
 //				System.out.println("Drawing chair");
 				double radius = obj.getWidth() / 2;
 				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius,
-						obj.isHighlighted());
+						obj.isHighlighted(), s.isOccupied(), s.isAvailable());
 				
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
@@ -187,43 +188,45 @@ public class View extends Application implements Observer {
 	 */
 	private void setEndPointMouseAction(Circle endPoint, Line wall, UIObjects uio, boolean isLeft) {
 		// drag left end of wall
-		endPoint.setOnMousePressed(event -> {
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = false;
-			
-			endPoint.setOnMouseDragged(event2 -> {
-				if(isLeft) {
-					wall.setStartX(event2.getX());
-					wall.setStartY(event2.getY());
-				} else {
-					wall.setEndX(event2.getX());
-					wall.setEndY(event2.getY());
-				}
-				endPoint.setCenterX(event2.getX());
-				endPoint.setCenterY(event2.getY());
+		if (!isHosting) {
+			endPoint.setOnMousePressed(event -> {
+				selecting = false;
+				drawingWall = false;
+				placingChair = false;
+				placingObject = false;
+				
+				endPoint.setOnMouseDragged(event2 -> {
+					if(isLeft) {
+						wall.setStartX(event2.getX());
+						wall.setStartY(event2.getY());
+					} else {
+						wall.setEndX(event2.getX());
+						wall.setEndY(event2.getY());
+					}
+					endPoint.setCenterX(event2.getX());
+					endPoint.setCenterY(event2.getY());
+				});
 			});
-		});
-		
-		endPoint.setOnMouseReleased(event -> {
-			boolean inDrawPane = (endPoint.getCenterX() > 0
-					&& endPoint.getCenterX() < drawPane.getWidth())
-					&& (endPoint.getCenterY() > 0 && endPoint.getCenterY() < drawPane.getHeight());
 			
-			if(!inDrawPane) {
-				System.out.println("Outside of central panel");
-				controller.displayModel();
-			} else {
-				if(isLeft) {
-					controller.updateCurrentObject(event.getX(), event.getY(), uio.getX2(),
-							uio.getY2(), uio.getId());
+			endPoint.setOnMouseReleased(event -> {
+				boolean inDrawPane = (endPoint.getCenterX() > 0
+						&& endPoint.getCenterX() < drawPane.getWidth())
+						&& (endPoint.getCenterY() > 0 && endPoint.getCenterY() < drawPane.getHeight());
+				
+				if(!inDrawPane) {
+					System.out.println("Outside of central panel");
+					controller.displayModel();
 				} else {
-					controller.updateCurrentObject(uio.getX(), uio.getY(), event.getX(),
-							event.getY(), uio.getId());
+					if(isLeft) {
+						controller.updateCurrentObject(event.getX(), event.getY(), uio.getX2(),
+								uio.getY2(), uio.getId());
+					} else {
+						controller.updateCurrentObject(uio.getX(), uio.getY(), event.getX(),
+								event.getY(), uio.getId());
+					}
 				}
-			}
-		});
+			});
+		}
 	}
 	
 	/**
@@ -233,45 +236,58 @@ public class View extends Application implements Observer {
 	 * @param uio the UIObjects associated with the given object
 	 */
 	private void setMouseAction(Shape obj, UIObjects uio) {
-		obj.setOnMousePressed(event -> {
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = false;
-			
-			Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-			double mouseX = p.getX();
-			double mouseY = p.getY();
-			double objTransX = obj.getTranslateX();
-			double objTransY = obj.getTranslateY();
-			
-			obj.setOnMouseDragged(event2 -> {
-				Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
-				obj.setTranslateX(objTransX + (p2.getX() - mouseX));
-				obj.setTranslateY(objTransY + (p2.getY() - mouseY));
-			});
-		});
-		
-		obj.setOnMouseReleased(event -> {
-			
-			// check if placed within the draw pane
-			Bounds objBounds = obj.getBoundsInParent();
-			
-			boolean inDrawPane = (objBounds.getMinX() > 0
-					&& objBounds.getMaxX() < drawPane.getWidth())
-					&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
-			
-			if(!inDrawPane) {
-				System.out.println("Outside of central panel");
-				controller.displayModel();
-			} else {
-				double transX = obj.getTranslateX();
-				double transY = obj.getTranslateY();
+		if (!isHosting) {
+			obj.setOnMousePressed(event -> {
+				selecting = false;
+				drawingWall = false;
+				placingChair = false;
+				placingObject = false;
 				
-				controller.updateCurrentObject(uio.getX() + transX, uio.getY() + transY,
-						uio.getX2() + transX, uio.getY2() + transY, uio.getId());
-			}
-		});
+				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+				double mouseX = p.getX();
+				double mouseY = p.getY();
+				double objTransX = obj.getTranslateX();
+				double objTransY = obj.getTranslateY();
+				
+				obj.setOnMouseDragged(event2 -> {
+					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+					obj.setTranslateX(objTransX + (p2.getX() - mouseX));
+					obj.setTranslateY(objTransY + (p2.getY() - mouseY));
+				});
+			});
+			
+			obj.setOnMouseReleased(event -> {
+				
+				// check if placed within the draw pane
+				Bounds objBounds = obj.getBoundsInParent();
+				
+				boolean inDrawPane = (objBounds.getMinX() > 0
+						&& objBounds.getMaxX() < drawPane.getWidth())
+						&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
+				
+				if(!inDrawPane) {
+					System.out.println("Outside of central panel");
+					controller.displayModel();
+				} else {
+					double transX = obj.getTranslateX();
+					double transY = obj.getTranslateY();
+					
+					controller.updateCurrentObject(uio.getX() + transX, uio.getY() + transY,
+							uio.getX2() + transX, uio.getY2() + transY, uio.getId());
+				}
+			});
+		}
+		if (isHosting || obj instanceof Circle) {
+			Circle c = (Circle) obj;
+			obj.setOnMouseClicked(e -> {
+				if (assigningSeat) {
+					controller.occupySpot(c.getCenterX(), c.getCenterY());
+					System.out.println("occupied");
+				} else if (removingSeat) {
+					System.out.println("freed");
+				}
+			});
+		}
 	}
 	
 	/**
@@ -307,12 +323,26 @@ public class View extends Application implements Observer {
 		
 		hostButton.setOnMouseClicked(e -> {
 			isHosting = true;
+			selecting = false;
+			drawingWall = false;
+			placingChair = false;
+			placingObject = false;
+			assigningSeat = false;
+			removingSeat = false;
+			updatingSelection = false;
 			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
 			root.setBottom(initBottomPanel(stage));
 		});
 		
 		constructButton.setOnMouseClicked(e -> {
 			isHosting = false;
+			selecting = false;
+			drawingWall = false;
+			placingChair = false;
+			placingObject = false;
+			assigningSeat = false;
+			removingSeat = false;
+			updatingSelection = false;
 			root.setCenter(initCenterPanel());
 			root.setTop(initTopPanel(stage));
 			root.setLeft(initLeftPanel());
@@ -494,7 +524,7 @@ public class View extends Application implements Observer {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
 			
-			if(event.getButton() == MouseButton.PRIMARY && inDrawPane) {
+			if(event.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
 				Point2D click = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 				UIObjects clickedObject = controller.getObject(click.getX(), click.getY());
 				// If ALT is not held down deselect all highlighted
@@ -960,21 +990,19 @@ public class View extends Application implements Observer {
 	 * @param radius the new object's radius in pixels
 	 * @return rectangle
 	 */
-	private Circle initChair(double x, double y, double radius, boolean highlight) {
+	private Circle initChair(double x, double y, double radius, boolean highlight, boolean occupied, boolean available) {
 		Circle c = new Circle(x, y, radius);
 		c.setStroke(Color.BLACK);
 		c.setStrokeWidth(1);
 		
 		if(highlight) {
 			c.setFill(Color.GOLD);
+		} else if (occupied) {
+			c.setFill(Color.DARKGRAY);
+		} else if (!available) {
+			c.setFill(Color.RED);
 		} else {
 			c.setFill(Color.WHITE);
-		}
-		
-		if (isHosting) {
-			c.setOnMouseClicked(e -> {
-				
-			});
 		}
 		
 		// TODO: EventHandler for selecting, moving, and editing circles
