@@ -2,6 +2,7 @@ package View;
 
 import Controller.Controller;
 import Model.Model;
+import Model.Spots;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
@@ -280,6 +281,7 @@ public class HostView {
 		
 		getSafePosButton.setOnAction(e -> {
 			System.out.println("\"Get Safe Position\" button clicked");
+			Spots spot = controller.getBestSpot();
 			controller.getBestSpot();
 			controller.displayModel();
 			// TODO: Implement the feature where an optimal safe space is calculated

@@ -13,7 +13,7 @@ import java.util.Stack;
 
 public class Model extends Observable {
 	private final int SIZE = 20;
-	private final int BUFFER = 60;
+	private final int BUFFER = 90; //15px = 1 foot
 	public ArrayList<UIObjects> itemList;
 	public UIObjects lastObject;
 	
@@ -240,7 +240,7 @@ public class Model extends Observable {
 				
 				// distance formula (x2 - x1)^2 + (y2 - y1)^2 = z^2
 				else {
-					double distance = Math.sqrt((nSpot.x - spot.x) + (nSpot.y - spot.y));
+					double distance = Math.sqrt(Math.pow(nSpot.x - spot.x, 2.0) + Math.pow(nSpot.y - spot.y,2));
 					//if one is but not the other. prevents possible case for cluster
 					//or group sitting at the same table
 					if(!spot.occupied) {
@@ -270,25 +270,27 @@ public class Model extends Observable {
 		Spots nSpot = (Spots) itemList.get(ID);
 		//default to true since we are changing if false
 		boolean avail = true;
-		
+		System.out.println(element+"=="+itemList.size());
 		//base case on the last element of the list.
 		if(element == itemList.size()) {
+			System.out.println("finished");
 			return true;
 		}
 		
 		//recursive case
-		if(itemList.get(element) instanceof Spots) {
+		else if(itemList.get(element) instanceof Spots) {
 			Spots spot = (Spots) itemList.get(element);
 			//distance formula (x2-x1)^2+(y2-y1)^2=z^2
-			double distance = Math.sqrt((nSpot.x - spot.x) + (nSpot.y - spot.y));
+			double distance = Math.sqrt(Math.pow(nSpot.x - spot.x,2) + Math.pow(nSpot.y - spot.y,2));
 			//if one is but not the other. prevents possible case for cluster
 			//or group sitting at the same table
-			if(!spot.occupied) {
-				return (distance <= BUFFER && giveCalculator(ID, element++));
+			if(spot.occupied) {
+				System.out.println("checking pair "+element +" = " + (distance <= BUFFER));
+				return (!(distance <= BUFFER) && giveCalculator(ID, element+1));
 			}
 		}
 		
-		return (true && giveCalculator(ID, element++));
+		return (true && giveCalculator(ID, element+1));
 	}
 	
 	/**
@@ -303,9 +305,10 @@ public class Model extends Observable {
 			Spots spot = (Spots) itemList.get(ID);
 			
 			//if spot is available take it.
-			if(!spot.occupied && spot.available) {
-				spot.takeAvailable();
+			if(!spot.occupied) {
+				//spot.takeAvailable();
 				spot.updateOccupancy();
+				spot.takeAvailable();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
 			}
