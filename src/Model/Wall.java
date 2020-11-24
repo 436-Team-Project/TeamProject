@@ -22,8 +22,13 @@ public class Wall extends UIObjects {
 		super(ID, x, y, x2, y2);
 	}
 	
+	
 	@Override
 	public String toString() {
-		return "ID: " + this.ID+ "type: wall";
+		if(super.getId() < 10) {
+			return "  Wall"+ super.toString();
+		} else {
+			return " Wall"+ super.toString();
+		}
 	}
 }

@@ -1,13 +1,9 @@
 package Model;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Observable;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.math.*;
+import java.util.Stack;
 
 /**
  * The state of the application
@@ -16,16 +12,23 @@ import java.math.*;
  */
 
 public class Model extends Observable {
-	public ArrayList<UIObjects> itemList = new ArrayList<UIObjects>();
-	UIObjects lastObject;
-
 	private final int SIZE = 20;
 	private final int BUFFER = 60;
+	public ArrayList<UIObjects> itemList;
+	public UIObjects lastObject;
+	
+	public Stack<ArrayList<UIObjects>> undoStack;
+	public Stack<ArrayList<UIObjects>> redoStack;
 
 	/**
 	 * Constructor class
 	 */
 	public Model() {
+		undoStack = new Stack<ArrayList<UIObjects>>();
+		redoStack = new Stack<ArrayList<UIObjects>>();
+		
+		itemList = new ArrayList<>();
+    
 		setChanged();
 		notifyObservers();
 	}
@@ -38,6 +41,9 @@ public class Model extends Observable {
 	 * @param y    horizontal position
 	 */
 	public void createObject(String type, int x, int y) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		UIObjects obj;
 		//create the object that is asked for.
 		if(type.equals("wall")) {
@@ -64,11 +70,74 @@ public class Model extends Observable {
 	 * @param ID int ID is the position it holds in the arraylist
 	 */
 	public void updateObject(double x1, double y1, double x2, double y2, int ID) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		UIObjects obj = itemList.get(ID);
 		obj.update(x1, y1, x2, y2);
 		setChanged();
 		notifyObservers();
 		System.out.println("updated");
+	}
+
+
+	/**
+	 * updates the dimensions of all objects in the given list
+	 * with the given new dimensions.
+	 *
+	 * NOTE: this method considers the update of all given objects as
+	 *       a single action.
+	 *
+	 * @param objs      is a list of objects to be updated
+	 * @param newWidth  is the new width to be assigned
+	 * @param newHeight is the new height to be assigned
+	 */
+	public void updateAll(ArrayList<UIObjects> objs, double newWidth, double newHeight) {
+
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
+		double dw, dh;			// delta width, delta height
+		double x1, y1, x2, y2;	// new endpoints
+
+		for(UIObjects obj : objs) {
+			dw = newWidth - obj.getWidth();		// change in width
+			dh = newHeight - obj.getHeight();	// change in height
+
+			// This preserves the center of the object
+			// (i.e. the addition/subtraction of area is distributed to all sides)
+			if(obj.getX() < obj.getX2()) {
+				x1 = obj.getX() - (dw/2);
+				x2 = obj.getX2() + (dw/2);
+			} else {
+				x1 = obj.getX() + (dw/2);
+				x2 = obj.getX2() - (dw/2);
+			}
+
+			if(obj.getY() < obj.getY2()) {
+				y1 = obj.getY() - (dh/2);
+				y2 = obj.getY2() + (dh/2);
+			} else {
+				y1 = obj.getY() + (dh/2);
+				y2 = obj.getY2() - (dh/2);
+			}
+
+			obj.update(x1, y1, x2, y2); // update the object
+		}
+		setChanged();
+		notifyObservers();
+		System.out.println("updated");
+	}
+
+	/**
+	 * updates the model'a itemList with the given new list
+	 *
+	 * @param newItemList is the new list to be set
+	 */
+	public void updateItemList(ArrayList<UIObjects> newItemList) {
+		this.itemList = newItemList;
+		setChanged();
+		notifyObservers();
 	}
 	
 	/**
@@ -77,6 +146,9 @@ public class Model extends Observable {
 	 * @param newObj UIObjects new object to add to the item list
 	 */
 	public void addObject(UIObjects newObj) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		lastObject = newObj;
 		itemList.add(newObj);
 		setChanged();
@@ -90,6 +162,9 @@ public class Model extends Observable {
 	 * This method is used to accomplish the "undo" feature
 	 */
 	public void removeLastObject() {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+
 		itemList.remove(lastObject);
 		if(itemList.size() != 0) {
 			lastObject = itemList.get(itemList.size() - 1);
@@ -106,9 +181,8 @@ public class Model extends Observable {
 	 * @param y horizontal position
 	 * @return UIObject
 	 */
-	public UIObjects getObject(int x, int y) {
+	public UIObjects getObject(double x, double y) {
 		UIObjects obj = null;
-
 		for(UIObjects item : itemList) {
 			if(item.x <= x && item.y <= y && item.x2 >= x && item.y2 >= y) {
 				obj = item;
@@ -122,8 +196,7 @@ public class Model extends Observable {
 	 * Returns a single object in the list based on if the item is on the clicked area. If not it
 	 * returns null.
 	 *
-	 * @param x vertical position
-	 * @param y horizontal position
+	 * @param ID identification
 	 * @return UIObject
 	 */
 	public UIObjects getObject(int ID) {
@@ -142,7 +215,7 @@ public class Model extends Observable {
 	/**
 	 * Used when the view wants to draw the model again
 	 */
-	public void display(){
+	public void display() {
 		setChanged();
 		notifyObservers();
 	}
@@ -165,7 +238,7 @@ public class Model extends Observable {
 					continue;
 				}
 				
-				//distance formula (x2-x1)^2+(y2-y1)^2=z^2
+				// distance formula (x2 - x1)^2 + (y2 - y1)^2 = z^2
 				else {
 					double distance = Math.sqrt((nSpot.x - spot.x) + (nSpot.y - spot.y));
 					//if one is but not the other. prevents possible case for cluster
@@ -225,15 +298,19 @@ public class Model extends Observable {
 	 * @param ID updates the availability of the spot
 	 */
 	public void updateAvailability(int ID) {
+		
 		if(itemList.get(ID) instanceof Spots) {
 			Spots spot = (Spots) itemList.get(ID);
+			
+			//if spot is available take it.
 			if(!spot.occupied && spot.available) {
 				spot.takeAvailable();
 				spot.updateOccupancy();
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
-			} 
+			}
 			
+			//if spot is taken remove occupancy
 			else if(spot.occupied) {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
@@ -250,17 +327,63 @@ public class Model extends Observable {
 				}
 			}
 		}
-		
 		setChanged();
 		notifyObservers();
 	}
 	
 	/**
+	 * based on the action it changes the occupancy status of the spot and then updates
+	 * the spots around it
+	 *
+	 * @param ID updates the availability of the spot
+	 */
+	public boolean giveGetSeat(int ID) {
+		
+		boolean risk = false;
+		if(itemList.get(ID) instanceof Spots) {
+			Spots spot = (Spots) itemList.get(ID);
+			
+			//if spot is available take it.
+			if(!spot.occupied) {
+				spot.takeAvailable();
+				spot.updateOccupancy();
+				takeCalculator(ID);
+				itemList.set(spot.ID, spot);
+				
+				//if the spot is considered risky return risk = true
+				if(!spot.available) {
+					risk = true;
+				}
+			}
+			
+			//if spot is taken remove occupancy
+			else if(spot.occupied) {
+				spot.updateOccupancy();
+				//need to loop through all elements to give back availability
+				for(int i = 0; i < itemList.size(); i++) {
+					if(itemList.get(i) instanceof Spots) {
+						boolean update = giveCalculator(i, 0);
+						//update the availability of the item
+						if(update) {
+							Spots uSpot = (Spots) itemList.get(i);
+							uSpot.makeAvailable();
+							itemList.set(i, uSpot);
+						}
+					}
+				}
+			}
+		}
+		setChanged();
+		notifyObservers();
+		return risk;
+	}
+	
+	/**
 	 * serializes the itemList into a file named layoutData
 	 */
-	public void saveState() {
+	public void saveState(String filePath) {
 		try {
-			FileOutputStream fileout = new FileOutputStream("layoutData");
+			FileOutputStream fileout = new FileOutputStream(filePath);
 			ObjectOutputStream objectout = new ObjectOutputStream(fileout);
 			objectout.writeObject(itemList);
 			objectout.close();
@@ -268,7 +391,6 @@ public class Model extends Observable {
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
-		
 		System.out.println("finished storing");
 	}
 	
@@ -276,12 +398,17 @@ public class Model extends Observable {
 	 * loads a previously saved state.
 	 */
 	@SuppressWarnings("unchecked")
-	public void loadState() {
+	public void loadState(String filePath) {
 		try {
-			FileInputStream filein = new FileInputStream("layoutData");
+			FileInputStream filein = new FileInputStream(filePath);
 			ObjectInputStream objin = new ObjectInputStream(filein);
 			
 			itemList = (ArrayList<UIObjects>) objin.readObject();
+			
+			System.out.println("Loading...");
+			for(UIObjects uiObject : itemList) {
+				System.out.println(uiObject.toString());
+			}
 			
 			objin.close();
 			filein.close();
@@ -295,6 +422,43 @@ public class Model extends Observable {
 		System.out.println("loaded list");
 	}
 	
+	//shift the ID's and then remove the object from itemList
+	public void removeObject(int ID) {
+		undoStack.push(cloneItemList());
+		redoStack.clear();
+		
+		int size = itemList.size();
+		for(int i = ID; i < size - 1; i++) {
+			itemList.get(i + 1).ID = itemList.get(i).ID;
+		}
+		itemList.remove(ID);
+		setChanged();
+		notifyObservers();
+	}
+	
+	/**
+	 * Searches through all of the items if it is a spot that isn't occupied or in the hazard range then
+	 * search check the impact of that spot on the surrounding spots.
+	 * Return the spot with the least amount of impact on surrounding spots.
+	 *
+	 * @param i int
+	 * @return int
+	 */
+	public int bestSpot(int i) {
+		int cur;
+		//base case
+		if(i == itemList.size()) {
+			return -1;
+		}
+		//rest is recursive case
+		ArrayList<UIObjects> checker = new ArrayList<>(itemList);
+		cur = numSpotsNear(checker, i);
+		int next = bestSpot(i + 1);
+		
+		//return either the next or the current based on what is larger
+		return (cur >= next) ? i : i + 1;
+	}
+	
 	/**
 	 * Returns the list of the objects
 	 *
@@ -305,11 +469,81 @@ public class Model extends Observable {
 		return itemList;
 	}
 	
-	//shift the ID's and then remove the object from itemList
-	public void removeObject(int ID) {
-		for (int i=ID;i<itemList.size()-1;i++) {
-			itemList.get(i+1).ID=itemList.get(i).ID;
+	/**
+	 * helper function for bestSpot returns the number of spots within the range of the passed in spot.
+	 *
+	 * @param checker the list of objects
+	 * @return spots the number of spots
+	 */
+	int numSpotsNear(ArrayList<UIObjects> checker, int ID) {
+		int spots = 0;
+		
+		//not a spot or spot is occupied or unsafe object return
+		if(!(checker.get(ID) instanceof Spots)) {
+			return -1;
 		}
-		itemList.remove(ID);
+		Spots temp = (Spots) checker.get(ID);
+		if(!temp.available || temp.occupied)
+			return -1; //checks if it is a valid spot to sit somebody at
+		
+		for(int i = 0; i < checker.size(); i++) {
+			
+			//make sure it is comparing spots to spots
+			if(!(checker.get(ID) instanceof Spots)) {
+				if(i == ID)
+					; //skip this iteration
+				else {
+					//distance equation
+					if(Math.sqrt(Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
+							+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0))
+							<= BUFFER) {
+						spots++;
+					}
+				}
+			}
+		}
+		return spots;
+	}
+	
+	/**
+	 * Updates the indices of the items. This is helpful when items are deleted and their old id is
+	 * greater than the current size of the item list
+	 */
+	public void updateIndices(){
+		for(int i = 0; i < itemList.size(); i++) {
+			itemList.get(i).setID(i);
+		}
+	}
+	
+	/**
+	 * Displays the item lists
+	 *
+	 * @return String
+	 */
+	public String printItems(){
+		StringBuilder result = new StringBuilder();
+		for(int i = 0; i < itemList.size(); i++) {
+			String line = String.format("[%02d]: %s\n", i, itemList.get(i));
+			result.append(line);
+		}
+		result.append("\n");
+		return result.toString();
+	}
+
+	/**
+	 * Clones the current item list and return the new copy
+	 *
+	 */
+	public ArrayList<UIObjects> cloneItemList() {
+		ArrayList<UIObjects> result = new ArrayList<UIObjects>();
+
+		try {
+			for(UIObjects o : itemList) {
+				result.add((UIObjects)o.clone());
+			}
+		} catch(CloneNotSupportedException e) {
+			return null;
+		}
+		return result;
 	}
 }
