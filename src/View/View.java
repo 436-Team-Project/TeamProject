@@ -255,20 +255,18 @@ public class View extends Application implements Observer {
 		if (!isHosting) {
 			obj.setOnMouseEntered(enterEvent -> {
 //				System.out.println("setOnMouseEntered - "+ uio.toString());
-				obj.setStroke(Color.RED);
-				obj.setStrokeWidth(4);
+				obj.setStrokeWidth(obj.getStrokeWidth() + 1);
 			});
 			
 			obj.setOnMouseExited(exitedEvent -> {
 //				System.out.println("setOnMouseExited - "+ uio.toString());
-				obj.setStroke(Color.BLACK);
-				obj.setStrokeWidth(1);
+				obj.setStrokeWidth(obj.getStrokeWidth() - 1);
 			});
 			
 			obj.setOnMousePressed(event -> {
 //				System.out.println("setOnMousePressed - "+ uio.toString());
 				obj.setStroke(Color.PINK);
-				obj.setStrokeWidth(3);
+				obj.setStrokeWidth(obj.getStrokeWidth() + 2);
 				isSelecting = false;
 				isDrawingWall = false;
 				isPlacingChair = false;
@@ -279,8 +277,6 @@ public class View extends Application implements Observer {
 				double mouseY = p.getY();
 				double objTransX = obj.getTranslateX();
 				double objTransY = obj.getTranslateY();
-//				uio.setHighlighted(!uio.isHighlighted());
-//				showSelectionUpdate();
 				
 				obj.setOnMouseDragged(event2 -> {
 					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
@@ -291,24 +287,16 @@ public class View extends Application implements Observer {
 			
 			obj.setOnMouseReleased(event -> {
 //				System.out.println("setOnMouseReleased - "+ uio.toString());
+				obj.setStrokeWidth(obj.getStrokeWidth() - 2);
 				
 				// check if placed within the draw pane
 				Bounds objBounds = obj.getBoundsInParent();
-				
 				boolean inDrawPane = (objBounds.getMinX() > 0
 						&& objBounds.getMaxX() < drawPane.getWidth())
 						&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
 				
-				
-				// If ALT is not held down deselect all highlighted
-				if(!KBL.isKeyPressed(KeyCode.CONTROL)) {
-					controller.deselectAll(uio);
-				} else {
-					controller.displayModel();
-				}
-				
-//				uio.setHighlighted(!uio.isHighlighted());
-////					showSelectionUpdate();
+				uio.setHighlighted(!uio.isHighlighted());
+				showSelectionUpdate();
 //				System.out.printf("Clicked on: %s\n", uio.toString());
 				
 				if(!inDrawPane) {
@@ -324,13 +312,10 @@ public class View extends Application implements Observer {
 				}
 			});
 		}
-		
 		if (isHosting && obj instanceof Circle) {
 			Circle c = (Circle) obj;
 			obj.setOnMouseClicked(e -> {
 				Spots spot = ((Spots) uio);
-//				System.out.println("hosting setOnMouseClicked - "+ uio.toString());
-				
 				if (isAssigningSeat) {
 					controller.occupySpot(c.getCenterX(), c.getCenterY());
 					spot.setOccupancy(true);
@@ -340,6 +325,12 @@ public class View extends Application implements Observer {
 					spot.setSafety(false);
 					System.out.println("freed");
 				}
+				String str1 = String.valueOf(controller.countSpotType("total"));
+				String str2 = String.valueOf(controller.countSpotType("unavailable"));
+				String str3= String.valueOf(controller.countSpotType("free"));
+				HostView.info1Value.setText(str1);
+				HostView.info2Value.setText(str2);
+				HostView.info3Value.setText(str3);
 				controller.displayModel();
 			});
 		}
@@ -387,11 +378,6 @@ public class View extends Application implements Observer {
 			updatingSelection = false;
 			controller.deselectAll(null);
 			
-			anim.setOnMousePressed(mouseEvent -> {
-				System.out.println("anim mouseEvent.getX() = " + mouseEvent.getX());
-				System.out.println("anim mouseEvent.getY() = " + mouseEvent.getY());
-				
-			});
 			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane,anim);
 			root.setBottom(initBottomPanel(stage));
 		});
@@ -409,6 +395,7 @@ public class View extends Application implements Observer {
 			root.setTop(initTopPanel(stage));
 			root.setLeft(initLeftPanel());
 			root.setRight(initRightPanel());
+			controller.resetFromHosting();
 			controller.displayModel();
 			root.setBottom(initBottomPanel(stage));
 		});
@@ -525,8 +512,8 @@ public class View extends Application implements Observer {
 		
 		centerOuter.getChildren().add(child);
 		centerOuter.setOnMousePressed(pressEvent -> {
-//			controller.deselectAll(null);
-//			clearSelectionUpdate();
+			controller.deselectAll(null);
+			clearSelectionUpdate();
 		});
 		
 		return centerOuter;
@@ -563,14 +550,12 @@ public class View extends Application implements Observer {
 
 		// Event-handling for mouse on drawing canvas depending on which tool is selected.
 		result.setOnMousePressed(pressEvent -> {
-			
 			Point2D pressedPoint = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
 			UIObjects pressedObject = controller.getObject(pressedPoint.getX(), pressedPoint.getY());
-			
 			if(pressedObject == null) {
 				controller.deselectAll(null);
 			}
-			
+//
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					pressEvent.getSceneX() - LEFT_WIDTH, pressEvent.getSceneY() - TOP_HEIGHT, 1, 1);
 			
@@ -718,16 +703,10 @@ public class View extends Application implements Observer {
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
 							anim.getChildren().remove(rectBound);
+							isSelecting= false;
 						}
 					});
 				});
-				
-//				if(anim.getChildren().contains(rectBound)) {
-//					anim.getChildren().remove(rectBound);
-//				} else {
-//					System.out.println("No rect");
-//				}
-				
 			}
 		});
 		return centerInner;
@@ -1143,6 +1122,7 @@ public class View extends Application implements Observer {
 		left.getChildren().remove(left.getChildren().size()-1);
 
 		updatingSelection = false;
+		anim.getChildren().clear();
 	}
 	
 	/**

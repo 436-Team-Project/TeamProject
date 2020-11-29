@@ -55,9 +55,9 @@ public class HostView {
 	private final BorderPane root;
 	private final Pane drawPane;
 	private  Pane anim;
-	private Label info1Value;
-	private Label info2Value;
-	private Label info3Value;
+	static Label info1Value;
+	static Label info2Value;
+	static Label info3Value;
 	static ToggleButton distanceToggle;
 	File currentFile;
 	String currentFileName;
@@ -217,28 +217,24 @@ public class HostView {
 			view.isRemovingSeat = true;
 			// TODO: Implement removing a guest from the list of occupants in the floor
 		});
+		
 		distanceToggle.setOnAction(clickEvent -> {
 			System.out.println("Distance toggle pressed");
 			if(distanceToggle.isSelected()) {
-//				view.distanceToggled = true;
 				for(Node child : drawPane.getChildren()) {
 					if(child instanceof Circle) {
 						Circle circle = (Circle) child;
-						Circle current = new Circle(circle.getCenterX(), circle.getCenterY(), 50);
-						current.setFill(Color.rgb(0,0,0,0));
-						current.setStroke(Color.BLUE);
-						current.setStrokeWidth(4);
-						anim.getChildren().add(current);
+						if(circle.getFill() != Color.TRANSPARENT) {
+							Circle current = new Circle(circle.getCenterX(), circle.getCenterY(), 60);
+							current.setFill(Color.rgb(0,0,0,0));
+							current.setStroke(Color.rgb(130,132,161,0.5));
+							current.setStrokeWidth(4);
+							anim.getChildren().add(current);
+						}
 					}
-					
 				}
-				System.out.println("Toggle value true");
-
-				
-//				drawPane.getChildren().add(new Rectangle(10,10,100,200));
 			} else {
-//				view.distanceToggled = false;
-				System.out.println("Toggle values false");
+				// Remove rings
 				anim.getChildren().removeIf(child -> child instanceof Circle);
 			}
 		});
@@ -248,11 +244,6 @@ public class HostView {
 		result.getChildren().add(vbox);
 		return result;
 	}
-	
-	private DoubleProperty startX = new SimpleDoubleProperty();
-	private DoubleProperty startY = new SimpleDoubleProperty();
-	private DoubleProperty shownX = new SimpleDoubleProperty();
-	private DoubleProperty shownY = new SimpleDoubleProperty();
 	
 	/**
 	 * Initializes the right panel of the border pane
@@ -273,27 +264,16 @@ public class HostView {
 		leftPanelHeader.setPadding(new Insets(0, 0, 0, 0));
 		leftPanelHeader.setStyle("-fx-font-weight: bold");
 		
-		Label info1Label = new Label("Occupants: ");
-		Label info2Label = new Label("Info 2: ");
-		Label info3Label = new Label("Info 3: ");
+		Label info1Label = new Label("Total: ");
+		Label info2Label = new Label("Unavailable: ");
+		Label info3Label = new Label("Free: ");
+		String str1 = String.valueOf(controller.countSpotType("total"));
+		String str2 = String.valueOf(controller.countSpotType("unavailable"));
+		String str3= String.valueOf(controller.countSpotType("free"));
 		
-		// TODO: Implement counting the number of occupants currently on the floor and display
-		info1Value = new Label("# of occupants");
-		info1Value.textProperty().bind(
-				Bindings.format("(%.1f, %.1f)", startX, startY)
-		);
-		
-		// TODO: Choose and implement a second attribute of the product to display to the user
-		info2Value = new Label("Answer 2");
-		info2Value.textProperty().bind(
-				Bindings.format("(%.1f, %.1f)", startX, startY)
-		);
-		
-		// TODO: Choose and implement a third attribute of the product to display to the user
-		info3Value = new Label("Answer 3");
-		info3Value.textProperty().bind(
-				Bindings.format("(%.1f, %.1f)", startX, startY)
-		);
+		info1Value = new Label(str1);
+		info2Value = new Label(str2);
+		info3Value = new Label(str3);
 		
 		info1Label.setFont(new Font(INFO_FONT, INFO_FONT_SIZE));
 		info2Label.setFont(new Font(INFO_FONT, INFO_FONT_SIZE));

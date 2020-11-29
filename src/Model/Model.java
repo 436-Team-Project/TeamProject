@@ -447,19 +447,22 @@ public class Model extends Observable {
 	 * @param i int
 	 * @return int
 	 */
-	public int bestSpot(int i) {
-		int cur;
+	public int[] bestSpot(int i) {
+		int cur[];
 		//base case
 		if(i == itemList.size()) {
-			return -1;
+			int arr[]= {i,99999999};
+			return arr;
 		}
 		//rest is recursive case
 		ArrayList<UIObjects> checker = new ArrayList<>(itemList);
 		cur = numSpotsNear(checker, i);
-		int next = bestSpot(i + 1);
+		int next[] = bestSpot(i + 1);
 		
+		System.out.println("checking spot "+i+" cur = "+cur+" next = "+ next);
+		System.out.println("returning "+((cur[1] <= next[1]) ? i : i + 1));
 		//return either the next or the current based on what is larger
-		return (cur >= next) ? i : i + 1;
+		return (cur[1] <= next[1]) ? cur : next;
 	}
 	
 	/**
@@ -478,25 +481,32 @@ public class Model extends Observable {
 	 * @param checker the list of objects
 	 * @return spots the number of spots
 	 */
-	int numSpotsNear(ArrayList<UIObjects> checker, int ID) {
+	int[] numSpotsNear(ArrayList<UIObjects> checker, int ID) {
 		int spots = 0;
 		
 		//not a spot or spot is occupied or unsafe object return
 		if(!(checker.get(ID) instanceof Spots)) {
-			return -1;
+			int arr[]= {ID,99999999};
+			return arr;
 		}
 		Spots temp = (Spots) checker.get(ID);
-		if(!temp.available || temp.occupied)
-			return -1; //checks if it is a valid spot to sit somebody at
+		if(!temp.available || temp.occupied) {
+			int arr[]= {ID,99999999};
+			return arr; //checks if it is a valid spot to sit somebody at
+		}
 		
 		for(int i = 0; i < checker.size(); i++) {
-			
+			System.out.println(i);
 			//make sure it is comparing spots to spots
-			if(!(checker.get(ID) instanceof Spots)) {
-				if(i == ID)
-					; //skip this iteration
+			if((checker.get(i) instanceof Spots)) {
+				//System.out.println("spot");
+				Spots temp2 = (Spots) checker.get(i);
+				if(i == ID || !temp2.available || temp2.occupied)
+					System.out.println("self");//skip this iteration
 				else {
 					//distance equation
+					//System.out.println(Math.sqrt(Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
+					//		+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0)));
 					if(Math.sqrt(Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
 							+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0))
 							<= BUFFER) {
@@ -505,8 +515,10 @@ public class Model extends Observable {
 				}
 			}
 		}
-		return spots;
+		int arr[]= {ID,spots};
+		return arr;
 	}
+	
 	
 	/**
 	 * Updates the indices of the items. This is helpful when items are deleted and their old id is
