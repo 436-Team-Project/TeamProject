@@ -17,10 +17,18 @@ public class Spots extends UIObjects {
 		
 	}
 	
+	public boolean isAvailable() {
+		return available;
+	}
+	
+	public boolean isOccupied() {
+		return occupied;
+	}
+	
 	/*
 	 * switches whether the spot is available to be used or not
 	 */
-	void makeAvailable() {
+	public void makeAvailable() {
 		available = true;
 	}
 	
@@ -30,7 +38,7 @@ public class Spots extends UIObjects {
 	}
 	*/
 	
-	void takeAvailable() {
+	public void takeAvailable() {
 		available = false;
 	}
 	
@@ -43,7 +51,10 @@ public class Spots extends UIObjects {
 	
 	@Override
 	public String toString() {
-		String result = String.format("Spot<%d>[%.2f, %.2f, %.2f, %.2f] - type: chair", ID, x, y, x2, y2);
-		return result;
+		if(super.getId() < 10) {
+			return "  Spot"+ super.toString();
+		} else {
+			return " Spot"+ super.toString();
+		}
 	}
 }

@@ -4,6 +4,9 @@ import Model.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Stack;
+import java.util.EmptyStackException;
+import java.util.List;
 
 /**
  * Get commands from the View and controls the Model
@@ -50,7 +53,44 @@ public class Controller {
 	 * "Undo"s the last action done by the user
 	 */
 	public void undo() {
-		model.removeLastObject();
+		try {
+			ArrayList<UIObjects> objs = model.undoStack.pop();
+			model.redoStack.push(model.cloneItemList());
+			model.updateItemList(objs);
+		} catch(EmptyStackException ese) {
+			System.out.println("Undo stack is empty");
+			return;
+		}
+	}
+
+	/**
+	 * "redo"s the last action undone by the user
+	 */
+	public void redo() {
+		try {
+			ArrayList<UIObjects> objs = model.redoStack.pop();
+			model.undoStack.push(model.cloneItemList());
+			model.updateItemList(objs);
+		} catch(EmptyStackException ese) {
+			System.out.println("Redo stack is empty");
+			return;
+		}
+	}
+	
+	/**
+	 * Deselect all the objects that are currently highlighted
+	 */
+	public void deselectAll() {
+		boolean highlightedPresent = false;
+		for(UIObjects object : model.getObjects()) {
+			if(object.isHighlighted()) {
+				object.setHighlighted(false);
+				highlightedPresent = true;
+			}
+		}
+		if(highlightedPresent) {
+			displayModel();
+		}
 	}
 	
 	/**
@@ -71,7 +111,7 @@ public class Controller {
 	 * @param y horizontal position
 	 * @return UIObject
 	 */
-	public UIObjects getObject(int x, int y) {
+	public UIObjects getObject(double x, double y) {
 		return model.getObject(x, y);
 	}
 	
@@ -95,6 +135,11 @@ public class Controller {
 		}
 	}
 	
+	/**
+	 * Load file at the given file
+	 *
+	 * @param file File
+	 */
 	public void load(File file) {
 		if(file != null) {
 			System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
@@ -106,32 +151,21 @@ public class Controller {
 		}
 	}
 	
-	public ArrayList<UIObjects> getObjects() {
-		return model.getObjects();
-	}
-	
 	/**
 	 * @param ID the spot that you want to update.
-	 * 
-	 * when you call this it will either take-away or give occupancy to the seat. It also updates the
-	 * surrounding seats that would be considered risky.
+	 *           <p>
+	 *           when you call this it will either take-away or give occupancy to the seat. It also updates the
+	 *           surrounding seats that would be considered risky.
 	 */
 	public void updateAvailable(int ID) {
 		model.updateAvailability(ID);
 	}
 	
-//-----------------------------------------------------------------------------------	
 	/**
-	 * this is the replacement for updateAvailable
-	 * @param ID
-	 * @return risk if a user clicks a spot that is considered risky it will return true.
+	 * Tell the model to remove the object with the matching given ID
+	 *
+	 * @param ID int
 	 */
-	boolean updateSpot(int ID) {
-		boolean risk =  false;
-		risk =  model.giveGetSeat(ID);
-		return risk;
-	}
-//-----------------------------------------------------------------------------------	
 	public void removeObject(int ID) {
 		model.removeObject(ID);
 	}
@@ -146,9 +180,46 @@ public class Controller {
 	}
 	
 	/**
+	 * Prints the models items
+	 *
+	 * @return String
+	 */
+	public String printItems() {
+		return model.printItems();
+	}
+	
+	/**
+	 * Remove all the objects in the model that are currently highlighted
+	 */
+	public void removeHighlighted() {
+		ArrayList<UIObjects> newList = new ArrayList<>(); // list to remove
+		for(UIObjects object : model.getObjects())
+			if(!object.isHighlighted())
+				newList.add(object);
+		model.itemList = newList;
+		model.updateIndices();
+		model.display();
+	}
+
+	/**
+	 * gets a list of the model's highlighted objects
+	 *
+	 */
+	public ArrayList<UIObjects> getHighlightedObjects() {
+		ArrayList<UIObjects> result = new ArrayList<>();
+
+		// Find highlighted objects
+		for(UIObjects o : model.getObjects())
+			if(o.isHighlighted())
+				result.add(o);
+
+		return result;
+	}
+	
+	/**
 	 * @param x  starting x location
 	 * @param y  starting y location
-	 * @param x2 bottom right corner of area selected
+	 * @param x2 bottom left corner of area selected
 	 * @param y2 bottom right corner of area selected
 	 *           <p>
 	 *           takes an area that the user selects and removes all the elements in that selected area.
@@ -165,24 +236,99 @@ public class Controller {
 					&& model.getObject(i - buffer).getY() <= y2) {
 				
 				model.removeObject(i - buffer);
-				System.out.println("removed object with ID: "+ (i-buffer));
+				System.out.println("removed object with ID: " + (i - buffer));
 				buffer++;
 			}
 			model.display();
 		}
 	}
 	
+	/**
+	 * Highlight the UIObjects that are within the given rectangle.
+	 *
+	 * @param x  starting x location
+	 * @param y  starting y location
+	 * @param x2 bottom left corner of area selected
+	 * @param y2 bottom right corner of area selected
+	 */
+	public void highlightSelected(double x, double y, double x2, double y2) {
+		int buffer = 0;
+		int size = model.getObjects().size();
+		//cycle through the IDs and if the object falls in the area, highlight the object.
+		for(int i = 0; i < size; i++) {
+			if(model.getObject(i).getX() >= x
+					&& model.getObject(i).getX() <= x2
+					&& model.getObject(i).getY() >= y
+					&& model.getObject(i).getY() <= y2) {
+				
+				model.getObject(i).setHighlighted(true);
+				System.out.println("highlighted object with ID: " + (i));
+				buffer++;
+			}
+			model.display();
+		}
+	}
 	
 	/**
-	 * This just returns the spot. ***IT DOES NOT SET THE SPOT OR UPDATE SURROUNDING SPOTS*** 
-	 * if that is desired then it can be updated to do so
-	 * 
-	 * @return the spot object that is considered most safe. 
+	 * Get all the objects in the model
+	 *
+	 * @return list of UIObjects
 	 */
-	public Spots getBestSpot(){
-		int id = model.bestSpot(0);
-		Spots spot = (Spots) model.getObject(id); //get the spot
+	public ArrayList<UIObjects> getObjects() {
+		return model.getObjects();
+	}
+	
+	/**
+	 * This returns a spot and sets that spot as highlighted.
+	 *
+	 * @return the spot object that is considered most safe.
+	 */
+	public Spots getBestSpot() {
+		int id[] = model.bestSpot(0);
+		/*if (id == -1) {
+			return null;
+		}*/
+		Spots spot = (Spots) model.getObject(id[0]); //get the spot
+		spot.setHighlighted(true);
 		return spot;
+	}
+
+	/**
+	 * Marks spot at x and y as occupied.
+	 * @param x
+	 * @param y
+	 */
+	public void occupySpot(double x, double y) {
+		UIObjects uio = getObject(x,y);
+		updateAvailable(uio.getId());
+	}
+	
+	/**
+	 * updates the dimensions of all objects in the given list
+	 * with the given new dimensions.
+	 *
+	 * @param objs      is a list of objects to be updated
+	 * @param newWidth  is the new width to be assigned
+	 * @param newHeight is the new height to be assigned
+	 */
+	public void resizeAll(ArrayList<UIObjects> objs, double newWidth, double newHeight) {
+		// Do nothing if the list is empty
+		if(objs.isEmpty())
+			return;
+
+		model.updateAll(objs, newWidth, newHeight);
+  }
+	
+	/**
+	 * this is the replacement for updateAvailable
+	 *
+	 * @param ID int
+	 * @return risk if a user clicks a spot that is considered risky it will return true.
+	 */
+	boolean updateSpot(int ID) {
+		boolean risk = false;
+		risk = model.giveGetSeat(ID);
+		return risk;
 	}
 }
 

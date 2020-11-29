@@ -13,7 +13,10 @@ public class Obj extends UIObjects {
 	
 	@Override
 	public String toString() {
-		String result = String.format("Obj<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);
-		return result;
+		if(super.getId() < 10) {
+			return "   Obj"+ super.toString();
+		} else {
+			return "  Obj"+ super.toString();
+		}
 	}
 }

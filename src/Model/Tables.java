@@ -28,9 +28,10 @@ public class Tables extends UIObjects {
 	
 	@Override
 	public String toString() {
-		String result = String.format("Table<%d>[%.2f, %.2f, %.2f, %.2f]", ID, x, y, x2, y2);
-		String connections = "";
-		
-		return result;
+		if(super.getId() < 10) {
+			return " Table"+ super.toString();
+		} else {
+			return "Table"+ super.toString();
+		}
 	}
 }
