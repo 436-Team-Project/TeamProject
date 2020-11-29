@@ -46,6 +46,7 @@ public class Controller {
 				System.out.println("invalid object type");
 				return;
 		}
+		
 		model.addObject(newObj);
 	}
 	
@@ -80,10 +81,12 @@ public class Controller {
 	/**
 	 * Deselect all the objects that are currently highlighted
 	 */
-	public void deselectAll() {
+	public void deselectAll(UIObjects key) {
+//		System.out.println("Controller.deselectAll");
 		boolean highlightedPresent = false;
 		for(UIObjects object : model.getObjects()) {
-			if(object.isHighlighted()) {
+			if(key == null || key.getId() != object.getId()) {
+//			System.out.println("object.getId() = " + object.getId());
 				object.setHighlighted(false);
 				highlightedPresent = true;
 			}
@@ -262,7 +265,7 @@ public class Controller {
 					&& model.getObject(i).getY() <= y2) {
 				
 				model.getObject(i).setHighlighted(true);
-				System.out.println("highlighted object with ID: " + (i));
+//				System.out.println("highlighted object with ID: " + (i));
 				buffer++;
 			}
 			model.display();
@@ -289,7 +292,7 @@ public class Controller {
 			return null;
 		}
 		Spots spot = (Spots) model.getObject(id); //get the spot
-		spot.setHighlighted(true);
+		spot.setSafety(true);
 		return spot;
 	}
 

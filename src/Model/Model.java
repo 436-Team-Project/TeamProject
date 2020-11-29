@@ -468,7 +468,7 @@ public class Model extends Observable {
 	 * @return array list of UIObjects
 	 */
 	public ArrayList<UIObjects> getObjects() {
-		System.out.println("returning items");
+//		System.out.println("returning items");
 		return itemList;
 	}
 	

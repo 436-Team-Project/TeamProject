@@ -4,13 +4,13 @@ import Controller.Controller;
 import Model.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.effect.Light;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
@@ -29,6 +29,24 @@ import java.util.*;
  * CuCurrent colors of the panels inside the main border pane are temporary.
  */
 public class View extends Application implements Observer {
+	// Pane Backgrounds
+	static Background LEFT_BG = new Background(
+			new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY));
+	static Background RIGHT_BG = new Background(
+			new BackgroundFill(Color.rgb(124, 132, 161, 1), CornerRadii.EMPTY, Insets.EMPTY));
+	static Background CENTER_OUTER_BG = new Background(
+			new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY));
+	static Background CENTER_INNER_BG = new Background(
+			new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
+	static Background TOP_BG = new Background(
+			new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY));
+	
+	// Colors
+	static Color HIGHLIGHT = Color.GOLD;
+	static Color OCCUPIED = Color.DARKGRAY;
+	static Color UNAVAILABLE = Color.RED;
+	static Color FREE = Color.WHITE;
+	static Color Safe = Color.LIGHTBLUE;
 	
 	// The dimensions of the entire application
 	final static int APP_HEIGHT = 800;
@@ -42,34 +60,36 @@ public class View extends Application implements Observer {
 	final static int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
 	
 	// Default dimensions for objects created from buttons
-	final static double WALL_WIDTH = 25;
-	final static double WALL_HEIGHT = 25;
-	final static double CHAIR_WIDTH = 25;
-	final static double CHAIR_HEIGHT = 25;
-	final static double TABLE_WIDTH = 60;
-	final static double TABLE_HEIGHT = 60;
-	static String currentFileName;
-	static File currentFile;
+	static double WALL_SIZE = 25;
+	static double CHAIR_SIZE = 25;
+	static double TABLE_SIZE = 60;
+	static int BUTTON_WIDTH = 120;
+	static int BUTTON_HEIGHT = 40;
+	static int HEADER_FONT_SIZE = 20;
+	static String HEADER_FONT = "Arial";
 	
-	boolean selecting = false;
-	boolean drawingWall = false;
-	boolean placingChair = false;
-	boolean placingObject = false;
+	// Utility Values
+	static String CURR_FILE_NAME;
+	static File CURR_FILE;
+	static FileChooser FC;
+	static KeyboardListener KBL;
+	
+	boolean isSelecting = false;
+	boolean isDrawingWall = false;
+	boolean isPlacingChair = false;
+	boolean isPlacingObject = false;
 	boolean isHosting = false;
-	boolean assigningSeat = false;
-	boolean removingSeat = false;
-
+	boolean isAssigningSeat = false;
+	boolean isRemovingSeat = false;
 	boolean updatingSelection = false;
-	
-	FileChooser fc;
 	
 	Scene scene;
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
-	KeyboardListener kbListener;
 	
 	BorderPane root; // Main pane
 	Pane drawPane; // Drawing Canvas
+	Pane anim;
 	Canvas grid; // Grid overlaying canvas
 	
 	/**
@@ -91,9 +111,9 @@ public class View extends Application implements Observer {
 		model.addObserver(this);
 		controller = new Controller(model);
 		
-		fc = new FileChooser();
-		fc.setInitialDirectory(new File(System.getProperty("user.dir")));
-		fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text", "*.txt"));
+		FC = new FileChooser();
+		FC.setInitialDirectory(new File(System.getProperty("user.dir")));
+		FC.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text", "*.txt"));
 		
 		root = new BorderPane();
 		root.setCenter(initCenterPanel());
@@ -102,7 +122,7 @@ public class View extends Application implements Observer {
 		root.setBottom(initBottomPanel(primaryStage));
 		
 		scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
-		kbListener = new KeyboardListener(scene, controller, drawPane);
+		KBL = new KeyboardListener(scene, controller, drawPane);
 		
 		primaryStage.getIcons().add(ImageLoader.getImage("app_icon_black_60px.png"));
 		primaryStage.setTitle("Covid Calc");
@@ -124,7 +144,7 @@ public class View extends Application implements Observer {
 		
 		drawPane.getChildren().clear(); // - clear central panel
 		drawPane.getChildren().add(grid); // - redraw all items
-		
+
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 //				System.out.println("Drawing wall");
@@ -159,16 +179,12 @@ public class View extends Application implements Observer {
 				Spots s = (Spots) obj;
 //				System.out.println("Drawing chair");
 				double radius = obj.getWidth() / 2;
-				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius,
-						obj.isHighlighted(), s.isOccupied(), s.isAvailable());
-				
+				Circle chair = initChair(s);
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
 			} else {
 //				System.out.println("Drawing object");
-				Rectangle o = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight(),
-						obj.isHighlighted());
-				
+				Rectangle o = initObject(obj);
 				setMouseAction(o, obj);
 				drawPane.getChildren().add(o);
 			}
@@ -190,10 +206,10 @@ public class View extends Application implements Observer {
 		// drag left end of wall
 		if (!isHosting) {
 			endPoint.setOnMousePressed(event -> {
-				selecting = false;
-				drawingWall = false;
-				placingChair = false;
-				placingObject = false;
+				isSelecting = false;
+				isDrawingWall = false;
+				isPlacingChair = false;
+				isPlacingObject = false;
 				
 				endPoint.setOnMouseDragged(event2 -> {
 					if(isLeft) {
@@ -214,7 +230,7 @@ public class View extends Application implements Observer {
 						&& (endPoint.getCenterY() > 0 && endPoint.getCenterY() < drawPane.getHeight());
 				
 				if(!inDrawPane) {
-					System.out.println("Outside of central panel");
+					System.out.println("Outside of central panel (setEndPointMouseAction)");
 					controller.displayModel();
 				} else {
 					if(isLeft) {
@@ -237,17 +253,34 @@ public class View extends Application implements Observer {
 	 */
 	private void setMouseAction(Shape obj, UIObjects uio) {
 		if (!isHosting) {
+			obj.setOnMouseEntered(enterEvent -> {
+//				System.out.println("setOnMouseEntered - "+ uio.toString());
+				obj.setStroke(Color.RED);
+				obj.setStrokeWidth(4);
+			});
+			
+			obj.setOnMouseExited(exitedEvent -> {
+//				System.out.println("setOnMouseExited - "+ uio.toString());
+				obj.setStroke(Color.BLACK);
+				obj.setStrokeWidth(1);
+			});
+			
 			obj.setOnMousePressed(event -> {
-				selecting = false;
-				drawingWall = false;
-				placingChair = false;
-				placingObject = false;
+//				System.out.println("setOnMousePressed - "+ uio.toString());
+				obj.setStroke(Color.PINK);
+				obj.setStrokeWidth(3);
+				isSelecting = false;
+				isDrawingWall = false;
+				isPlacingChair = false;
+				isPlacingObject = false;
 				
 				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
 				double mouseX = p.getX();
 				double mouseY = p.getY();
 				double objTransX = obj.getTranslateX();
 				double objTransY = obj.getTranslateY();
+//				uio.setHighlighted(!uio.isHighlighted());
+//				showSelectionUpdate();
 				
 				obj.setOnMouseDragged(event2 -> {
 					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
@@ -257,6 +290,7 @@ public class View extends Application implements Observer {
 			});
 			
 			obj.setOnMouseReleased(event -> {
+//				System.out.println("setOnMouseReleased - "+ uio.toString());
 				
 				// check if placed within the draw pane
 				Bounds objBounds = obj.getBoundsInParent();
@@ -265,31 +299,52 @@ public class View extends Application implements Observer {
 						&& objBounds.getMaxX() < drawPane.getWidth())
 						&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
 				
+				
+				// If ALT is not held down deselect all highlighted
+				if(!KBL.isKeyPressed(KeyCode.CONTROL)) {
+					controller.deselectAll(uio);
+				} else {
+					controller.displayModel();
+				}
+				
+//				uio.setHighlighted(!uio.isHighlighted());
+////					showSelectionUpdate();
+//				System.out.printf("Clicked on: %s\n", uio.toString());
+				
 				if(!inDrawPane) {
-					System.out.println("Outside of central panel");
+					System.out.println("Outside of central panel (setMouseAction)");
 					controller.displayModel();
 				} else {
 					double transX = obj.getTranslateX();
 					double transY = obj.getTranslateY();
-					
 					controller.updateCurrentObject(uio.getX() + transX, uio.getY() + transY,
 							uio.getX2() + transX, uio.getY2() + transY, uio.getId());
+					uio.setHighlighted(!uio.isHighlighted());
+					showSelectionUpdate();
 				}
 			});
 		}
+		
 		if (isHosting && obj instanceof Circle) {
 			Circle c = (Circle) obj;
 			obj.setOnMouseClicked(e -> {
-				if (assigningSeat) {
+				Spots spot = ((Spots) uio);
+//				System.out.println("hosting setOnMouseClicked - "+ uio.toString());
+				
+				if (isAssigningSeat) {
 					controller.occupySpot(c.getCenterX(), c.getCenterY());
+					spot.setOccupancy(true);
 					System.out.println("occupied");
-				} else if (removingSeat) {
+				} else if (isRemovingSeat) {
+					spot.setOccupancy(false);
+					spot.setSafety(false);
 					System.out.println("freed");
 				}
+				controller.displayModel();
 			});
 		}
 	}
-	
+
 	/**
 	 * Initializes the bottom panel in the root border pane
 	 *
@@ -299,8 +354,8 @@ public class View extends Application implements Observer {
 		Pane result = new Pane();
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+		result.setOnMousePressed(pressEvent -> {
+			controller.deselectAll(null);
 			clearSelectionUpdate();
 		});
 		result.setPrefHeight(BOT_HEIGHT);
@@ -323,25 +378,32 @@ public class View extends Application implements Observer {
 		
 		hostButton.setOnMouseClicked(e -> {
 			isHosting = true;
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = false;
-			assigningSeat = false;
-			removingSeat = false;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingChair = false;
+			isPlacingObject = false;
+			isAssigningSeat = false;
+			isRemovingSeat = false;
 			updatingSelection = false;
-			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
+			controller.deselectAll(null);
+			
+			anim.setOnMousePressed(mouseEvent -> {
+				System.out.println("anim mouseEvent.getX() = " + mouseEvent.getX());
+				System.out.println("anim mouseEvent.getY() = " + mouseEvent.getY());
+				
+			});
+			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane,anim);
 			root.setBottom(initBottomPanel(stage));
 		});
 		
 		constructButton.setOnMouseClicked(e -> {
 			isHosting = false;
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = false;
-			assigningSeat = false;
-			removingSeat = false;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingChair = false;
+			isPlacingObject = false;
+			isAssigningSeat = false;
+			isRemovingSeat = false;
 			updatingSelection = false;
 			root.setCenter(initCenterPanel());
 			root.setTop(initTopPanel(stage));
@@ -377,8 +439,8 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+		result.setOnMousePressed(pressEvent -> {
+			controller.deselectAll(null);
 			clearSelectionUpdate();
 		});
 		VBox vbox = new VBox();
@@ -400,33 +462,33 @@ public class View extends Application implements Observer {
 		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
 		
 		selection.setOnMouseClicked(event -> {
-			selecting = true;
-			drawingWall = false;
-			placingObject = false;
-			placingChair = false;
+			isSelecting = true;
+			isDrawingWall = false;
+			isPlacingObject = false;
+			isPlacingChair = false;
 		});
 		// --- Event handling "Place Wall" button ---\
 		placeWall.setOnMouseClicked(event -> {
-			selecting = false;
-			drawingWall = true;
-			placingObject = false;
-			placingChair = false;
+			isSelecting = false;
+			isDrawingWall = true;
+			isPlacingObject = false;
+			isPlacingChair = false;
 		});
 		
 		// --- Event handling "Place Chair" button ---
 		placeChair.setOnMousePressed(event -> {
-			selecting = false;
-			drawingWall = false;
-			placingObject = false;
-			placingChair = true;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingObject = false;
+			isPlacingChair = true;
 		});
 		
 		// --- Event handling "Place Object" button ---
 		placeObject.setOnMousePressed(event -> {
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = true;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingChair = false;
+			isPlacingObject = true;
 		});
 		
 		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject);
@@ -450,55 +512,24 @@ public class View extends Application implements Observer {
 	 * @return Pane
 	 */
 	private Pane initCenterPanel() {
-		Pane result = new Pane();
+		Pane centerOuter = new Pane();
+		centerOuter.setId("Center Outer");
 		Pane child = initCenterInnerPanel(); // Draw panel
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
-			clearSelectionUpdate();
-		});
-		result.setBackground(new Background(
-				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(CENTER_WIDTH);
-		result.setPrefHeight(CENTER_HEIGHT);
-		result.getChildren().add(child);
+		child.setId("Stack pane");
+		centerOuter.setBackground(CENTER_OUTER_BG);
+		centerOuter.setPrefWidth(CENTER_WIDTH);
+		centerOuter.setPrefHeight(CENTER_HEIGHT);
 		
 		// Allows right mouse drag to pan the child.
-		result.setOnMousePressed((event) -> {
-			if(event.isPrimaryButtonDown())
-				return;
-			double mouseX = event.getSceneX();
-			double mouseY = event.getSceneY();
-			double paneX = child.getTranslateX();
-			double paneY = child.getTranslateY();
-			
-			result.setOnMouseDragged((event2) -> {
-				if(event2.isPrimaryButtonDown())
-					return;
-				child.setTranslateX(paneX + (event2.getSceneX() - mouseX));
-				child.setTranslateY(paneY + (event2.getSceneY() - mouseY));
-			});
+		setupCenterMouse(centerOuter, child);
+		
+		centerOuter.getChildren().add(child);
+		centerOuter.setOnMousePressed(pressEvent -> {
+//			controller.deselectAll(null);
+//			clearSelectionUpdate();
 		});
 		
-		// Allows mouse scroll wheel to zoom in and out the child
-		result.setOnScroll((event) -> {
-			double changeScale = 0;
-			Bounds bounds = child.localToScene(child.getBoundsInLocal());
-			double changeX = event.getSceneX() - (bounds.getWidth() / 2 + bounds.getMinX());
-			double changeY = event.getSceneY() - (bounds.getHeight() / 2 + bounds.getMinY());
-			if(event.getDeltaY() < 0 && child.getScaleX() > 0.1) {
-				changeScale = -0.1;
-				child.setScaleX(child.getScaleX() * (1 + changeScale));
-				child.setScaleY(child.getScaleY() * (1 + changeScale));
-			} else if(event.getDeltaY() > 0 && child.getScaleX() < 5) {
-				changeScale = 0.1;
-				child.setScaleX(child.getScaleX() * (1 + changeScale));
-				child.setScaleY(child.getScaleY() * (1 + changeScale));
-			}
-			child.setTranslateX(child.getTranslateX() - changeScale * changeX);
-			child.setTranslateY(child.getTranslateY() - changeScale * changeY);
-		});
-		
-		return result;
+		return centerOuter;
 	}
 	
 	/**
@@ -506,48 +537,55 @@ public class View extends Application implements Observer {
 	 *
 	 * @return pane
 	 */
-	private Pane initCenterInnerPanel() {
+	private StackPane initCenterInnerPanel() {
+		StackPane centerInner = new StackPane();
 		Pane result = new Pane();
+		result.setId("Draw Pane");
 		drawPane = result;
+		anim = new Pane();
+		anim.setId("Anim Pane");
+		anim.setMouseTransparent(true);
+		
 		result.setBackground(
 				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
-		result.setPrefHeight(CENTER_HEIGHT * 3.0 / 4.0);
+		result.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
+		anim.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
 		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
 		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		anim.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+		anim.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		
 		result.setClip(new Rectangle(result.getPrefWidth(), result.getPrefHeight()));
+		
 		grid = initializeGrid();
 		result.getChildren().add(grid);
-		
+		centerInner.getChildren().addAll(result, anim);
+
 		// Event-handling for mouse on drawing canvas depending on which tool is selected.
-		result.setOnMousePressed(event -> {
-			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
-					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
+		result.setOnMousePressed(pressEvent -> {
 			
-			if(event.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
-				Point2D click = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-				UIObjects clickedObject = controller.getObject(click.getX(), click.getY());
-				// If ALT is not held down deselect all highlighted
-				if(!kbListener.isKeyPressed(KeyCode.CONTROL)) {
-					controller.deselectAll();
-					clearSelectionUpdate();
-				}
-				if(clickedObject != null) {
-					clickedObject.setHighlighted(!clickedObject.isHighlighted());
-					showSelectionUpdate();
-					System.out.printf("Clicked on: %s\n", clickedObject.toString());
-//					System.out.printf("Items:\n%s\n", controller.printItems());
-				}
+			Point2D pressedPoint = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
+			UIObjects pressedObject = controller.getObject(pressedPoint.getX(), pressedPoint.getY());
+			
+			if(pressedObject == null) {
+				controller.deselectAll(null);
+			}
+			
+			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
+					pressEvent.getSceneX() - LEFT_WIDTH, pressEvent.getSceneY() - TOP_HEIGHT, 1, 1);
+			
+			
+			if(!isSelecting &&pressEvent.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
 				
-				if(drawingWall) {
-					Line wallBound = initLineBounds(event.getSceneX(), event.getSceneY());
+				if(isDrawingWall) {
+					Line wallBound = initLineBounds(pressEvent.getSceneX(), pressEvent.getSceneY());
 					Label measurement = new Label("0");
 					measurement.setMinSize(100, 100);
 					measurement.setAlignment(Pos.CENTER);
 					measurement.setTextFill(Color.RED);
 					StackPane sp = new StackPane();
-					sp.setTranslateX(event.getSceneX());
-					sp.setTranslateY(event.getSceneY());
+					sp.setTranslateX(pressEvent.getSceneX());
+					sp.setTranslateY(pressEvent.getSceneY());
 					sp.getChildren().add(wallBound);
 					sp.getChildren().add(measurement);
 					sp.setMaxSize(APP_WIDTH, APP_HEIGHT);
@@ -557,8 +595,8 @@ public class View extends Application implements Observer {
 					result.setOnMouseDragged(event2 -> {
 						wallBound.setEndX(event2.getSceneX());
 						wallBound.setEndY(event2.getSceneY());
-						sp.setTranslateX((event2.getSceneX() - event.getSceneX()) / 2 + event.getSceneX());
-						sp.setTranslateY((event2.getSceneY() - event.getSceneY()) / 2 + event.getSceneY());
+						sp.setTranslateX((event2.getSceneX() - pressEvent.getSceneX()) / 2 + pressEvent.getSceneX());
+						sp.setTranslateY((event2.getSceneY() - pressEvent.getSceneY()) / 2 + pressEvent.getSceneY());
 						double length = lineLength(wallBound);
 						measurement.setText(String.valueOf(length));
 						
@@ -566,19 +604,18 @@ public class View extends Application implements Observer {
 							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
 									event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
 							if(!inDrawPaneEnd) {
-								System.out.println("Outside of central panel");
-							} else if(event3.getButton() == MouseButton.PRIMARY && drawingWall) {
-								controller.createNewObject("wall", event.getX(), event.getY(),
+								System.out.println("Outside of central panel (drawing wall)");
+							} else if(event3.getButton() == MouseButton.PRIMARY && isDrawingWall) {
+								controller.createNewObject("wall", pressEvent.getX(), pressEvent.getY(),
 										event3.getX(), event3.getY());
 							}
 							root.getChildren().remove(sp);
-							//root.getChildren().remove(wallBound);
 						});
 					});
 				}
-				if(placingChair) {
-					Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
-					updateBound(event, chairBounds);
+				if(isPlacingChair) {
+					Rectangle chairBounds = initObjectBounds(CHAIR_SIZE, CHAIR_SIZE);
+					updateBound(pressEvent, chairBounds);
 					root.getChildren().add(chairBounds);
 					
 					result.setOnMouseDragged(event2 -> {
@@ -593,23 +630,23 @@ public class View extends Application implements Observer {
 										event3.getSceneX() - LEFT_WIDTH + chairBounds.getWidth(),
 										event3.getSceneY() - TOP_HEIGHT + chairBounds.getHeight(), 1, 1);
 						if(!inDrawPaneEnd) {
-							System.out.println("Outside of central panel");
+							System.out.println("Outside of central panel (placing chair)");
 							root.getChildren().remove(chairBounds);
-						} else if(placingChair && event3.getButton() == MouseButton.PRIMARY) {
+						} else if(isPlacingChair && event3.getButton() == MouseButton.PRIMARY) {
 							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-							double x2 = p.getX() + CHAIR_WIDTH;
-							double y2 = p.getY() + CHAIR_HEIGHT;
+							double x2 = p.getX() + CHAIR_SIZE;
+							double y2 = p.getY() + CHAIR_SIZE;
 							controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
 							root.getChildren().remove(chairBounds);
 						}
 					});
 				}
-				if(placingObject) {
-					Rectangle objectBounds = initObjectBounds(TABLE_WIDTH, TABLE_HEIGHT);
-					drawingWall = false;
-					placingChair = false;
-					placingObject = true;
-					updateBound(event, objectBounds);
+				if(isPlacingObject) {
+					Rectangle objectBounds = initObjectBounds(TABLE_SIZE, TABLE_SIZE);
+					isDrawingWall = false;
+					isPlacingChair = false;
+					isPlacingObject = true;
+					updateBound(pressEvent, objectBounds);
 					root.getChildren().add(objectBounds);
 					
 					result.setOnMouseDragged(event2 -> {
@@ -624,12 +661,12 @@ public class View extends Application implements Observer {
 										event3.getSceneX() - LEFT_WIDTH + objectBounds.getWidth(),
 										event3.getSceneY() - TOP_HEIGHT + objectBounds.getHeight(), 1, 1);
 						if(!inDrawPaneEnd) {
-							System.out.println("Outside of central panel");
+							System.out.println("Outside of central panel (placing object)");
 							root.getChildren().remove(objectBounds);
-						} else if(placingObject && event3.getButton() == MouseButton.PRIMARY) {
+						} else if(isPlacingObject && event3.getButton() == MouseButton.PRIMARY) {
 							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-							double x2 = p.getX() + TABLE_WIDTH;
-							double y2 = p.getY() + TABLE_HEIGHT;
+							double x2 = p.getX() + TABLE_SIZE;
+							double y2 = p.getY() + TABLE_SIZE;
 							controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
 							root.getChildren().remove(objectBounds);
 						}
@@ -638,23 +675,23 @@ public class View extends Application implements Observer {
 			}
 			
 			// When the user drags with LMB to select multiple items
-			if(selecting && event.isPrimaryButtonDown() && inDrawPane) {
+			if(isSelecting && pressEvent.isPrimaryButtonDown() && inDrawPane) {
 				System.out.println("Selecting");
-				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-				Rectangle rectBound = initRectBounds(p.getX(), p.getY());
+				Rectangle rectBound = initRectBounds(pressedPoint.getX(), pressedPoint.getY());
+
+				double startX = pressedPoint.getX();
+				double startY = pressedPoint.getY();
+				anim.getChildren().add(rectBound);
+
 				
-				double startX = p.getX();
-				double startY = p.getY();
-				drawPane.getChildren().add(rectBound);
-				
-				result.setOnMouseDragged(event2 -> {
-					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+				result.setOnMouseDragged(dragEvent -> {
+					Point2D p2 = drawPane.sceneToLocal(dragEvent.getSceneX(), dragEvent.getSceneY());
 					double endX = p2.getX();
 					double endY = p2.getY();
-					
+
 					double height = endX - startX;
 					double width = endY - startY;
-					
+
 					// mouse goes on top of the starting point
 					if(height < 0) {
 						rectBound.setX(p2.getX());
@@ -669,27 +706,31 @@ public class View extends Application implements Observer {
 					} else {
 						rectBound.setHeight(width);
 					}
-					result.setOnMouseReleased(event3 -> {
-						if(event2.isPrimaryButtonDown() && selecting) {
+			
+					result.setOnMouseReleased(releaseEvent -> {
+						if(dragEvent.isPrimaryButtonDown() && isSelecting) {
 							double heightFinal = endX - startX;
 							double widthFinal = endY - startY;
 							double x1 = rectBound.getX();
 							double y1 = rectBound.getY();
 							double y2 = rectBound.getY() + rectBound.getHeight();
 							double x2 = rectBound.getX() + rectBound.getWidth();
-							System.out.printf("Width[%.1f], Height[%.1f] | " +
-											"x1[%.1f], y1[%.1f], x2[%.1f], y2[%.1f]\n",
-									heightFinal, widthFinal, x1, y1, x2, y2);
-							
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
-							drawPane.getChildren().remove(rectBound);
+							anim.getChildren().remove(rectBound);
 						}
 					});
 				});
+				
+//				if(anim.getChildren().contains(rectBound)) {
+//					anim.getChildren().remove(rectBound);
+//				} else {
+//					System.out.println("No rect");
+//				}
+				
 			}
 		});
-		return result;
+		return centerInner;
 	}
 	
 	/**
@@ -724,8 +765,8 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(TOP_HEIGHT);
 		
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+		result.setOnMousePressed(pressEvent -> {
+			controller.deselectAll(null);
 			clearSelectionUpdate();
 		});
 		
@@ -746,25 +787,11 @@ public class View extends Application implements Observer {
 	 * @return HBox
 	 */
 	private HBox initTopControls(Stage stage) {
-		HBox result = new HBox();
-		HBox undoRedoBox = new HBox();
-		HBox zoomBox = new HBox();
-		HBox manipulateBox = new HBox();
+		
+		// Set up all the menu items for the top menu bar
 		MenuBar menuBar = new MenuBar();
-		
-		Menu menu = new Menu("File");
-		MenuItem menuItemNew = new MenuItem("New");
-		MenuItem menuItemOpen = new MenuItem("Open");
-		MenuItem menuItemSave = new MenuItem("Save");
-		MenuItem menuItemSaveAs = new MenuItem("Save As");
-		MenuItem menuItemClose = new MenuItem("Close");
-		
-		result.setStyle("-fx-spacing: 25px;");
-		undoRedoBox.setStyle("-fx-spacing: 2px;");
-		zoomBox.setStyle("-fx-spacing: 2px;");
-		zoomBox.setStyle("-fx-spacing: 2px;");
-		
-		menuItemNew.setOnAction(e -> {
+		MenuItem menuNew = new MenuItem("New");
+		menuNew.setOnAction(menuEvent -> {
 			System.out.println("Menu Item \"New\" Selected");
 			
 			TextInputDialog dialog = new TextInputDialog();
@@ -775,14 +802,14 @@ public class View extends Application implements Observer {
 			
 			// User provided filename and clicked "ok"; create temporary file
 			if(dialogResult.isPresent()) {
-				dialogResult.ifPresent(fileName -> currentFileName = fileName);
-				fc.setInitialFileName(currentFileName);
+				dialogResult.ifPresent(fileName -> CURR_FILE_NAME = fileName);
+				FC.setInitialFileName(CURR_FILE_NAME);
 				model = new Model();
 				model.addObserver(this);
 				controller = new Controller(model);
-				kbListener.setController(controller);
+				KBL.setController(controller);
 				try {
-					File tempFile = new File("Saved/" + currentFileName);
+					File tempFile = new File(ImageLoader.floorPlanDir + CURR_FILE_NAME);
 					if(tempFile.createNewFile()) {
 						System.out.println("Temp file created: " + tempFile.getName());
 						controller.save(tempFile);
@@ -795,82 +822,14 @@ public class View extends Application implements Observer {
 				}
 			}
 		});
-		menuItemOpen.setOnAction(e -> {
-			System.out.println("Menu Item \"Open\" Selected");
-			fc.setTitle("Open");
-			currentFile = fc.showOpenDialog(stage);
-			controller.load(currentFile);
-		});
-		menuItemSave.setOnAction(e -> {
-			System.out.println("Menu Item \"Save\" Selected");
-			File tempFile = new File("Saved/" + currentFileName);
-			tempFile.delete();
-			if(currentFile == null) {
-				fc.setTitle("Save As");
-				currentFile = fc.showSaveDialog(stage);
-			}
-			controller.save(currentFile);
-		});
-		menuItemSaveAs.setOnAction(e -> {
-			System.out.println("Menu Item \"Save As\" Selected");
-			fc.setTitle("Save As...");
-			currentFile = fc.showSaveDialog(stage);
-			controller.save(currentFile);
-		});
+		setupMenuBar(menuBar, stage, menuNew, controller, true);
 		
-		menuItemClose.setOnAction(e -> {
-			System.out.println("Menu Item \"Close\" Selected");
-			Platform.exit();
-		});
+		HBox zoomBox = setupZoomButtons(drawPane);
 		
-		menu.getItems().add(menuItemNew);
-		menu.getItems().add(menuItemOpen);
-		menu.getItems().add(menuItemSave);
-		menu.getItems().add(menuItemSaveAs);
-		menu.getItems().add(menuItemClose);
-		menuBar.getMenus().add(menu);
-		
-		Button undoButton = new Button();
-		Button redoButton = new Button();
-		Button resetZoomButton = new Button();
-		Button zoomInButton = new Button();
-		Button zoomOutButton = new Button();
+		// Set up the buttons for canvas manipulation (delete/placeholder)
+		HBox manipulateBox = new HBox();
 		Button deleteButton = new Button("Delete");
 		Button placeholderButton = new Button("Placeholder");
-		
-		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
-		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));
-		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
-		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
-		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
-		
-		undoButton.setOnMouseClicked(e -> {
-			System.out.println("\"Undo\" button clicked");
-			controller.undo();
-		});
-		redoButton.setOnMouseClicked(e -> {
-			System.out.println("\"Redo\" button clicked");
-			// TODO: Implement the redo feature
-			controller.redo();
-			
-		});
-		resetZoomButton.setOnMouseClicked(e -> {
-			System.out.println("\"Reset Zoom\" button clicked");
-			drawPane.setScaleX(1);
-			drawPane.setScaleY(1);
-			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-		});
-		zoomInButton.setOnMouseClicked(e -> {
-			System.out.println("\"Zoom In\" button clicked");
-			drawPane.setScaleX(drawPane.getScaleX() * 1.1);
-			drawPane.setScaleY(drawPane.getScaleY() * 1.1);
-		});
-		zoomOutButton.setOnMouseClicked(e -> {
-			System.out.println("\"Zoom Out\" button clicked");
-			drawPane.setScaleX(drawPane.getScaleX() / 1.1);
-			drawPane.setScaleY(drawPane.getScaleY() / 1.1);
-		});
 		deleteButton.setOnMouseClicked(e -> {
 			System.out.println("\"Delete\" button clicked");
 			controller.removeHighlighted();
@@ -880,9 +839,27 @@ public class View extends Application implements Observer {
 			System.out.println("\"Placeholder\" button clicked");
 			// TODO: Implement a Placeholder feature
 		});
-		undoRedoBox.getChildren().addAll(undoButton, redoButton);
-		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
 		manipulateBox.getChildren().addAll(deleteButton, placeholderButton);
+		
+		// Set up the buttons for redo and undo
+		HBox undoRedoBox = new HBox();
+		undoRedoBox.setStyle("-fx-spacing: 2px;");
+		Button undoButton = new Button();
+		Button redoButton = new Button();
+		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
+		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));
+		undoButton.setOnMouseClicked(e -> {
+			System.out.println("\"Undo\" button clicked");
+			controller.undo();
+		});
+		redoButton.setOnMouseClicked(e -> {
+			System.out.println("\"Redo\" button clicked");
+			controller.redo();
+		});
+		undoRedoBox.getChildren().addAll(undoButton, redoButton);
+		
+		HBox result = new HBox();
+		result.setStyle("-fx-spacing: 25px;");
 		result.getChildren().addAll(menuBar, undoRedoBox, zoomBox, manipulateBox);
 		
 		return result;
@@ -942,15 +919,13 @@ public class View extends Application implements Observer {
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions
 	 *
-	 * @param x      vertical position
-	 * @param y      horizontal position
-	 * @param width  the new object's radius
-	 * @param height the new object's radius
+	 * @param obj iuo
 	 * @return rectangle
 	 */
-	private Rectangle initObject(double x, double y, double width, double height, boolean highlight) {
-		Rectangle r = new Rectangle(x, y, width, height);
-		if(highlight) {
+	private Rectangle initObject(UIObjects obj) {
+		Rectangle r = new Rectangle(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+		
+		if(obj.isHighlighted()) {
 			r.setFill(Color.GOLD);
 		} else {
 			r.setFill(Color.GRAY);
@@ -985,24 +960,25 @@ public class View extends Application implements Observer {
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions
 	 *
-	 * @param x      vertical position
-	 * @param y      horizontal position
-	 * @param radius the new object's radius in pixels
+	 * @param spot Spot
 	 * @return rectangle
 	 */
-	private Circle initChair(double x, double y, double radius, boolean highlight, boolean occupied, boolean available) {
-		Circle c = new Circle(x, y, radius);
+	private Circle initChair(Spots spot) {
+		double radius = spot.getWidth() / 2;
+		Circle c = new Circle(spot.getX() + radius, spot.getY()+radius, radius);
 		c.setStroke(Color.BLACK);
 		c.setStrokeWidth(1);
 		
-		if(highlight) {
-			c.setFill(Color.GOLD);
-		} else if (occupied) {
-			c.setFill(Color.DARKGRAY);
-		} else if (!available) {
-			c.setFill(Color.RED);
+		if(spot.isHighlighted()) {
+			c.setFill(HIGHLIGHT);
+		} else if (spot.isOccupied()) {
+			c.setFill(OCCUPIED);
+		} else if (spot.isSafe()) {
+			c.setFill(Safe);
+		} else if (!spot.isAvailable()) {
+			c.setFill(UNAVAILABLE);
 		} else {
-			c.setFill(Color.WHITE);
+			c.setFill(FREE);
 		}
 		
 		// TODO: EventHandler for selecting, moving, and editing circles
@@ -1077,16 +1053,13 @@ public class View extends Application implements Observer {
 
 
 	/**
-	 *
-	 *
-	 * @param objs is a list of the selected objects
+	 * showSelectionUpdate
 	 */
 	private void showSelectionUpdate() {
 		// check if previous call is still in action
 		if(updatingSelection)
 			return;
-
-
+		
 		ArrayList<UIObjects> objs = controller.getHighlightedObjects();
 
 		// Do nothing if the list is empty
@@ -1170,5 +1143,161 @@ public class View extends Application implements Observer {
 		left.getChildren().remove(left.getChildren().size()-1);
 
 		updatingSelection = false;
+	}
+	
+	/**
+	 * Sets up the top menu bar
+	 *
+	 * @param menuBar         Menu bar
+	 * @param stage           Stage
+	 * @param menuNew         Menu item responsible for the behavior of 'New'
+	 * @param controller      Controller
+	 * @param isConstructView boolean
+	 */
+	static void setupMenuBar(MenuBar menuBar, Stage stage, MenuItem menuNew,
+							 Controller controller, boolean isConstructView) {
+		Menu menu = new Menu("File");
+//		MenuItem menuNew = new MenuItem("New");
+		MenuItem menuOpen = new MenuItem("Open");
+		MenuItem menuSave = new MenuItem("Save");
+		MenuItem menuSaveAs = new MenuItem("Save As");
+		MenuItem menuClose = new MenuItem("Close");
+		
+		
+		
+		menuOpen.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Open\" Selected");
+			FC.setTitle("Open");
+			CURR_FILE = FC.showOpenDialog(stage);
+			CURR_FILE_NAME = CURR_FILE.getName();
+			System.out.println("open file name: "+ CURR_FILE_NAME);
+			controller.load(CURR_FILE);
+		});
+		
+		
+		menuSave.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Save\" Selected");
+			File tempFile = new File(ImageLoader.floorPlanDir + CURR_FILE_NAME);
+			
+			if(!CURR_FILE_NAME.contains(".txt")){
+				CURR_FILE_NAME += ".txt";
+			}
+			CURR_FILE = new File(ImageLoader.floorPlanDir+CURR_FILE_NAME);
+			
+			if(tempFile.delete()) {
+				System.out.println("Temp file deletion successful");
+			} else {
+				System.out.println("Temp file deletion unsuccessful");
+			}
+			if(CURR_FILE == null) {
+				FC.setTitle("Save As");
+				CURR_FILE = FC.showSaveDialog(stage);
+			}
+			controller.save(CURR_FILE);
+		});
+		
+		
+		menuSaveAs.setOnAction(menuEvent -> {
+			
+			System.out.println("Menu Item \"Save As\" Selected");
+			FC.setTitle("Save As...");
+			CURR_FILE = FC.showSaveDialog(stage);
+			File tempFile = new File(ImageLoader.floorPlanDir + CURR_FILE_NAME);
+			if(tempFile.delete()) {
+				System.out.println("Temp file deletion successful");
+			} else {
+				System.out.println("Temp file deletion unsuccessful");
+			}
+			
+			controller.save(CURR_FILE);
+		});
+		
+		menuClose.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Close\" Selected");
+			Platform.exit();
+		});
+		menu.getItems().addAll(menuNew, menuOpen, menuSave, menuSaveAs, menuClose);
+		menuBar.getMenus().add(menu);
+	}
+	
+	/**
+	 * Sets up the mouse controls for the center pane and the inner center pane.
+	 *
+	 * @param center      pane
+	 * @param innerCenter pane
+	 */
+	static void setupCenterMouse(Pane center, Pane innerCenter) {
+		// Allows right mouse drag to pan the child.
+		center.setOnMousePressed((event) -> {
+			if(event.isPrimaryButtonDown())
+				return;
+			double mouseX = event.getSceneX();
+			double mouseY = event.getSceneY();
+			double paneX = innerCenter.getTranslateX();
+			double paneY = innerCenter.getTranslateY();
+			
+			center.setOnMouseDragged((event2) -> {
+				if(event2.isPrimaryButtonDown())
+					return;
+				innerCenter.setTranslateX(paneX + (event2.getSceneX() - mouseX));
+				innerCenter.setTranslateY(paneY + (event2.getSceneY() - mouseY));
+			});
+		});
+		
+		// Allows mouse scroll wheel to zoom in and out the child
+		center.setOnScroll((event) -> {
+			double changeScale = 0;
+			Bounds bounds = innerCenter.localToScene(innerCenter.getBoundsInLocal());
+			double changeX = event.getSceneX() - (bounds.getWidth() / 2 + bounds.getMinX());
+			double changeY = event.getSceneY() - (bounds.getHeight() / 2 + bounds.getMinY());
+			if(event.getDeltaY() < 0 && innerCenter.getScaleX() > 0.1) {
+				changeScale = -0.1;
+				innerCenter.setScaleX(innerCenter.getScaleX() * (1 + changeScale));
+				innerCenter.setScaleY(innerCenter.getScaleY() * (1 + changeScale));
+			} else if(event.getDeltaY() > 0 && innerCenter.getScaleX() < 5) {
+				changeScale = 0.1;
+				innerCenter.setScaleX(innerCenter.getScaleX() * (1 + changeScale));
+				innerCenter.setScaleY(innerCenter.getScaleY() * (1 + changeScale));
+			}
+			innerCenter.setTranslateX(innerCenter.getTranslateX() - changeScale * changeX);
+			innerCenter.setTranslateY(innerCenter.getTranslateY() - changeScale * changeY);
+		});
+	}
+	
+	/**
+	 * Button behavior when the reset zoom button is clicked
+	 *
+	 * @param drawPane The draw pane
+	 */
+	static HBox setupZoomButtons(Pane drawPane) {
+		HBox zoomBox = new HBox();
+		zoomBox.setSpacing(2);
+		Button zoomInButton = new Button();
+		Button zoomOutButton = new Button();
+		Button resetZoomButton = new Button();
+		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
+		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
+		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
+
+		resetZoomButton.setOnMouseClicked(e -> {
+			System.out.println("\"Reset Zoom\" button clicked");
+			drawPane.setScaleX(1);
+			drawPane.setScaleY(1);
+			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		});
+		zoomInButton.setOnMouseClicked(e -> {
+			System.out.println("\"Zoom In\" button clicked");
+			drawPane.setScaleX(drawPane.getScaleX() * 1.1);
+			drawPane.setScaleY(drawPane.getScaleY() * 1.1);
+		});
+		zoomOutButton.setOnMouseClicked(e -> {
+			System.out.println("\"Zoom Out\" button clicked");
+			drawPane.setScaleX(drawPane.getScaleX() / 1.1);
+			drawPane.setScaleY(drawPane.getScaleY() / 1.1);
+		});
+		
+		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
+		return zoomBox;
 	}
 }

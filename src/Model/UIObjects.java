@@ -12,6 +12,7 @@ public abstract class UIObjects implements Serializable, Cloneable {
 	//initial starting points of the object we can assume 0,0 or wherever we want them to exist
 	private static final long serialVersionUID = 1L;
 	boolean isHighlighted;
+	boolean isSafe;
 	double x, x2;
 	double y, y2;
 	int ID;
@@ -56,6 +57,14 @@ public abstract class UIObjects implements Serializable, Cloneable {
 	 */
 	public void setHighlighted(boolean highlight) {
 		isHighlighted = highlight;
+	}
+	
+	public void setSafety(boolean safety) {
+		isSafe = safety;
+	}
+	
+	public boolean isSafe(){
+		return isSafe;
 	}
 	
 	public boolean isHighlighted(){

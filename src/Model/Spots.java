@@ -49,6 +49,10 @@ public class Spots extends UIObjects {
 		occupied = !occupied;
 	}
 	
+	public void setOccupancy(boolean occupancy) {
+		this.occupied = occupancy;
+	}
+	
 	@Override
 	public String toString() {
 		if(super.getId() < 10) {

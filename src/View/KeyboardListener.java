@@ -122,7 +122,7 @@ public class KeyboardListener {
 		} else if(key == KeyCode.S) {
 			if(CONTROL_PRESSED) {
 				System.out.println("\tSave");
-				controller.save(View.currentFile);
+				controller.save(View.CURR_FILE);
 			}
 		} else if(key == KeyCode.DELETE) {
 			System.out.println("\tDelete");
