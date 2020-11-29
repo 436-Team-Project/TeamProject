@@ -284,11 +284,11 @@ public class Controller {
 	 * @return the spot object that is considered most safe.
 	 */
 	public Spots getBestSpot() {
-		int id = model.bestSpot(0);
-		if (id == -1) {
+		int id[] = model.bestSpot(0);
+		/*if (id == -1) {
 			return null;
-		}
-		Spots spot = (Spots) model.getObject(id); //get the spot
+		}*/
+		Spots spot = (Spots) model.getObject(id[0]); //get the spot
 		spot.setHighlighted(true);
 		return spot;
 	}
