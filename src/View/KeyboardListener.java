@@ -39,7 +39,6 @@ public class KeyboardListener {
 		this.controller = controller;
 		this.drawPane = drawPane;
 		scene.setOnKeyPressed(this::keyPressed);
-		scene.setOnKeyTyped(this::keyTyped);
 		scene.setOnKeyReleased(this::keyReleased);
 	}
 	
@@ -69,35 +68,6 @@ public class KeyboardListener {
 	 */
 	public void setController(Controller controller) {
 		this.controller = controller;
-	}
-	
-	/**
-	 * When a key is typed (ignore for now)
-	 *
-	 * @param keyEvent KeyEvent
-	 */
-	private void keyTyped(KeyEvent keyEvent) {
-		String character = keyEvent.getCharacter();
-		System.out.println("Char Typed: " + character);
-		
-		switch(character) {
-			case "z":
-				break;
-			case "y":
-				break;
-			case "b":
-				break;
-			case "k":
-				break;
-			case "R":
-				break;
-			case "G":
-				break;
-			case "B":
-				break;
-			case "K":
-				break;
-		}
 	}
 	
 	/**

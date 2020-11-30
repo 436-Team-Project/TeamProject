@@ -32,12 +32,6 @@ public class Spots extends UIObjects {
 		available = true;
 	}
 	
-	/*
-	void updateAvailability() {
-		available=!available;
-	}
-	*/
-	
 	public void takeAvailable() {
 		available = false;
 	}
