@@ -313,10 +313,10 @@ public class View extends Application implements Observer {
 				Spots spot = ((Spots) uio);
 				if (isAssigningSeat) {
 					controller.occupySpot(c.getCenterX(), c.getCenterY());
-					spot.setOccupancy(true);
+//					spot.setOccupancy(true);
 					System.out.println("occupied");
 				} else if (isRemovingSeat) {
-					spot.setOccupancy(false);
+//					spot.setOccupancy(false);
 					spot.setSafety(false);
 					System.out.println("freed");
 				}
