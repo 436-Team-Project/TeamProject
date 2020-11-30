@@ -323,6 +323,7 @@ public class Controller {
 //		}
 		Spots spot = (Spots) model.getObject(id[0]); //get the spot
 		spot.setSafety(true);
+
 		return spot;
 	}
 
