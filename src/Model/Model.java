@@ -471,7 +471,7 @@ public class Model extends Observable {
 	 * @return array list of UIObjects
 	 */
 	public ArrayList<UIObjects> getObjects() {
-		System.out.println("returning items");
+//		System.out.println("returning items");
 		return itemList;
 	}
 	
@@ -518,6 +518,7 @@ public class Model extends Observable {
 		int arr[]= {ID,spots};
 		return arr;
 	}
+	
 	
 	/**
 	 * Updates the indices of the items. This is helpful when items are deleted and their old id is

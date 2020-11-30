@@ -32,12 +32,6 @@ public class Spots extends UIObjects {
 		available = true;
 	}
 	
-	/*
-	void updateAvailability() {
-		available=!available;
-	}
-	*/
-	
 	public void takeAvailable() {
 		available = false;
 	}
@@ -47,6 +41,10 @@ public class Spots extends UIObjects {
 	 */
 	void updateOccupancy() {
 		occupied = !occupied;
+	}
+	
+	public void setOccupancy(boolean occupancy) {
+		this.occupied = occupancy;
 	}
 	
 	@Override

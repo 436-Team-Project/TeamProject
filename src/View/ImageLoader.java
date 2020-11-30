@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
  *
  */
 public class ImageLoader {
+	final static String floorPlanDir = "Saved/";
 	
 	/**
 	 * Gets an image from the "images" folder and return an Image object with the given filename

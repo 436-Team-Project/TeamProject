@@ -81,12 +81,12 @@ public class Controller {
 	 * Deselect all the objects that are currently highlighted
 	 */
 	public void deselectAll() {
+//		System.out.println("Controller.deselectAll");
 		boolean highlightedPresent = false;
 		for(UIObjects object : model.getObjects()) {
-			if(object.isHighlighted()) {
+//			System.out.println("object.getId() = " + object.getId());
 				object.setHighlighted(false);
 				highlightedPresent = true;
-			}
 		}
 		if(highlightedPresent) {
 			displayModel();
@@ -188,6 +188,39 @@ public class Controller {
 		return model.printItems();
 	}
 	
+	public int countSpotType(String type) {
+		int count = 0;
+		for(UIObjects object : model.getObjects()) {
+			if(object instanceof Spots) {
+				Spots spot = (Spots) object;
+				if(type.equals("occupied") && spot.isOccupied()){
+					count++;
+				} else if(type.equals("unavailable") && !spot.isAvailable()) {
+					count++;
+				}else if(type.equals("free") && spot.isAvailable() && !spot.isOccupied()) {
+					count++;
+				}else if(type.equals("total") ) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+	
+	/**
+	 * Undoes the state changes from hosting. If the user wants to return to the construct view.
+	 */
+	public void resetFromHosting(){
+		for(UIObjects object : model.getObjects()) {
+			if(object instanceof Spots) {
+				Spots current = (Spots)object;
+				current.setSafety(false);
+				current.setOccupancy(false);
+				current.makeAvailable();
+			}
+		}
+	}
+	
 	/**
 	 * Remove all the objects in the model that are currently highlighted
 	 */
@@ -262,7 +295,7 @@ public class Controller {
 					&& model.getObject(i).getY() <= y2) {
 				
 				model.getObject(i).setHighlighted(true);
-				System.out.println("highlighted object with ID: " + (i));
+//				System.out.println("highlighted object with ID: " + (i));
 				buffer++;
 			}
 			model.display();
@@ -285,11 +318,12 @@ public class Controller {
 	 */
 	public Spots getBestSpot() {
 		int id[] = model.bestSpot(0);
-		/*if (id == -1) {
-			return null;
-		}*/
+//		if (id == -1) {
+//			return null;
+//		}
 		Spots spot = (Spots) model.getObject(id[0]); //get the spot
-		spot.setHighlighted(true);
+		spot.setSafety(true);
+
 		return spot;
 	}
 
