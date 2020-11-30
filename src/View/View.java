@@ -89,7 +89,7 @@ public class View extends Application implements Observer {
 	
 	BorderPane root; // Main pane
 	Pane drawPane; // Drawing Canvas
-	Pane anim;
+//	Pane anim;
 	Canvas grid; // Grid overlaying canvas
 	
 	/**
@@ -144,7 +144,7 @@ public class View extends Application implements Observer {
 		
 		drawPane.getChildren().clear(); // - clear central panel
 		drawPane.getChildren().add(grid); // - redraw all items
-
+		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 //				System.out.println("Drawing wall");
@@ -335,7 +335,7 @@ public class View extends Application implements Observer {
 			});
 		}
 	}
-
+	
 	/**
 	 * Initializes the bottom panel in the root border pane
 	 *
@@ -346,7 +346,7 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setOnMousePressed(pressEvent -> {
-			controller.deselectAll(null);
+			controller.deselectAll();
 			clearSelectionUpdate();
 		});
 		result.setPrefHeight(BOT_HEIGHT);
@@ -376,9 +376,9 @@ public class View extends Application implements Observer {
 			isAssigningSeat = false;
 			isRemovingSeat = false;
 			updatingSelection = false;
-			controller.deselectAll(null);
+			controller.deselectAll();
 			
-			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane,anim);
+			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
 			root.setBottom(initBottomPanel(stage));
 		});
 		
@@ -427,7 +427,7 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
 		result.setOnMousePressed(pressEvent -> {
-			controller.deselectAll(null);
+			controller.deselectAll();
 			clearSelectionUpdate();
 		});
 		VBox vbox = new VBox();
@@ -512,7 +512,7 @@ public class View extends Application implements Observer {
 		
 		centerOuter.getChildren().add(child);
 		centerOuter.setOnMousePressed(pressEvent -> {
-			controller.deselectAll(null);
+			controller.deselectAll();
 			clearSelectionUpdate();
 		});
 		
@@ -524,36 +524,25 @@ public class View extends Application implements Observer {
 	 *
 	 * @return pane
 	 */
-	private StackPane initCenterInnerPanel() {
-		StackPane centerInner = new StackPane();
+	private Pane initCenterInnerPanel() {
 		Pane result = new Pane();
-		result.setId("Draw Pane");
 		drawPane = result;
-		anim = new Pane();
-		anim.setId("Anim Pane");
-		anim.setMouseTransparent(true);
 		
-		result.setBackground(
-				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+		result.setBackground(CENTER_INNER_BG);
 		result.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
-		anim.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
 		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
 		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-		anim.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-		anim.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-		
 		result.setClip(new Rectangle(result.getPrefWidth(), result.getPrefHeight()));
 		
 		grid = initializeGrid();
 		result.getChildren().add(grid);
-		centerInner.getChildren().addAll(result, anim);
-
+		
 		// Event-handling for mouse on drawing canvas depending on which tool is selected.
 		result.setOnMousePressed(pressEvent -> {
 			Point2D pressedPoint = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
 			UIObjects pressedObject = controller.getObject(pressedPoint.getX(), pressedPoint.getY());
 			if(pressedObject == null) {
-				controller.deselectAll(null);
+				controller.deselectAll();
 			}
 //
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
@@ -663,20 +652,20 @@ public class View extends Application implements Observer {
 			if(isSelecting && pressEvent.isPrimaryButtonDown() && inDrawPane) {
 				System.out.println("Selecting");
 				Rectangle rectBound = initRectBounds(pressedPoint.getX(), pressedPoint.getY());
-
+				
 				double startX = pressedPoint.getX();
 				double startY = pressedPoint.getY();
-				anim.getChildren().add(rectBound);
-
+				drawPane.getChildren().add(rectBound);
+				
 				
 				result.setOnMouseDragged(dragEvent -> {
 					Point2D p2 = drawPane.sceneToLocal(dragEvent.getSceneX(), dragEvent.getSceneY());
 					double endX = p2.getX();
 					double endY = p2.getY();
-
+					
 					double height = endX - startX;
 					double width = endY - startY;
-
+					
 					// mouse goes on top of the starting point
 					if(height < 0) {
 						rectBound.setX(p2.getX());
@@ -691,7 +680,7 @@ public class View extends Application implements Observer {
 					} else {
 						rectBound.setHeight(width);
 					}
-			
+					
 					result.setOnMouseReleased(releaseEvent -> {
 						if(dragEvent.isPrimaryButtonDown() && isSelecting) {
 							double heightFinal = endX - startX;
@@ -702,14 +691,14 @@ public class View extends Application implements Observer {
 							double x2 = rectBound.getX() + rectBound.getWidth();
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
-							anim.getChildren().remove(rectBound);
+							drawPane.getChildren().remove(rectBound);
 							isSelecting= false;
 						}
 					});
 				});
 			}
 		});
-		return centerInner;
+		return result;
 	}
 	
 	/**
@@ -745,7 +734,7 @@ public class View extends Application implements Observer {
 		result.setPrefHeight(TOP_HEIGHT);
 		
 		result.setOnMousePressed(pressEvent -> {
-			controller.deselectAll(null);
+			controller.deselectAll();
 			clearSelectionUpdate();
 		});
 		
@@ -989,9 +978,9 @@ public class View extends Application implements Observer {
 		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
 				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
 	}
-
-
-
+	
+	
+	
 	/**
 	 * filters a given list of UIObjects to return a new list containing
 	 * objects of only the desired type.
@@ -1001,7 +990,7 @@ public class View extends Application implements Observer {
 	 */
 	private ArrayList<UIObjects> filterObjs(ArrayList<UIObjects> objs, Class<?> desiredType) {
 		ArrayList<UIObjects> result = new ArrayList<UIObjects>();
-
+		
 		for(UIObjects o : objs) {
 			if(desiredType.isInstance(o)) {
 				result.add(o);
@@ -1009,28 +998,28 @@ public class View extends Application implements Observer {
 		}
 		return result;
 	}
-
+	
 	/**
 	 * Determines of the given list contains different types of objects
 	 *
 	 * @param objs is the list in question
 	 */
-	 private boolean objectsVary(ArrayList<UIObjects> objs) {
-		 boolean containsTables = false;
-		 boolean containsChairs = false;
-
-		 for(UIObjects o : objs) {
-			 if(o instanceof Tables) {
-				 containsTables = true;
-			 } else if(o instanceof Spots) {
-				 containsChairs = true;
-			 }
-		 }
-
-		 return (containsTables && containsChairs);
-	 }
-
-
+	private boolean objectsVary(ArrayList<UIObjects> objs) {
+		boolean containsTables = false;
+		boolean containsChairs = false;
+		
+		for(UIObjects o : objs) {
+			if(o instanceof Tables) {
+				containsTables = true;
+			} else if(o instanceof Spots) {
+				containsChairs = true;
+			}
+		}
+		
+		return (containsTables && containsChairs);
+	}
+	
+	
 	/**
 	 * showSelectionUpdate
 	 */
@@ -1040,36 +1029,36 @@ public class View extends Application implements Observer {
 			return;
 		
 		ArrayList<UIObjects> objs = controller.getHighlightedObjects();
-
+		
 		// Do nothing if the list is empty
 		if(objs.isEmpty())
 			return;
-
+		
 		updatingSelection = true;
-
+		
 		// Setup radio buttons if different types are selected
 		ToggleGroup group    = new ToggleGroup();
 		RadioButton tableBtn = new RadioButton("Tables");
 		RadioButton chairBtn = new RadioButton("Chairs");
-
+		
 		tableBtn.setToggleGroup(group);
 		chairBtn.setToggleGroup(group);
-
-
+		
+		
 		// setup text fields
 		TextField w = createTextField(String.valueOf(objs.get(0).getWidth()));
 		TextField h = createTextField(String.valueOf(objs.get(0).getHeight()));
-
-
+		
+		
 		// setup parant node
 		VBox vbox = new VBox();
-
+		
 		vbox.setOnKeyPressed(key -> {
 			if(key.getCode() == KeyCode.ENTER) {
 				ArrayList<UIObjects> toUpdate = controller.getHighlightedObjects();
-
+				
 				String selected = ((RadioButton)group.getSelectedToggle()).getText();
-
+				
 				if(selected.equals("Tables")) {
 					toUpdate = filterObjs(toUpdate, Tables.class);
 				} else if(selected.equals("Chairs")) {
@@ -1077,24 +1066,24 @@ public class View extends Application implements Observer {
 				} else {
 					return;
 				}
-
+				
 				double newWidth  = Double.parseDouble(w.getText());
 				double newHeight = Double.parseDouble(h.getText());
-
+				
 				controller.resizeAll(toUpdate, newWidth, newHeight);
 			}
 		});
-
+		
 		vbox.setStyle("-fx-alignment: center;-fx-spacing: 5px; -fx-padding: 40px 0px 0px 0px;");
-
+		
 		// display the options of type to be resized
 		vbox.getChildren().addAll(tableBtn, chairBtn);
-
+		
 		vbox.getChildren().addAll(w, h);
-
+		
 		((VBox)((Pane)root.getLeft()).getChildren().get(0)).getChildren().add(vbox);
 	}
-
+	
 	/**
 	 * Creates and returns a text field
 	 *
@@ -1102,27 +1091,26 @@ public class View extends Application implements Observer {
 	 */
 	private TextField createTextField(String str) {
 		TextField result = new TextField(str);
-
+		
 		result.setMaxWidth(80);
 		result.setMaxHeight(40);
 		
 		return result;
 	}
-
+	
 	private void clearSelectionUpdate() {
 		// Check if showSelectionUpdate has been called
 		if(!updatingSelection)
 			return;
-
-
+		
+		
 		// get the VBox where the text fields are placed
 		VBox left = (VBox)((Pane)root.getLeft()).getChildren().get(0);
-
+		
 		// remove the last added node
 		left.getChildren().remove(left.getChildren().size()-1);
-
+		
 		updatingSelection = false;
-		anim.getChildren().clear();
 	}
 	
 	/**
@@ -1137,7 +1125,6 @@ public class View extends Application implements Observer {
 	static void setupMenuBar(MenuBar menuBar, Stage stage, MenuItem menuNew,
 							 Controller controller, boolean isConstructView) {
 		Menu menu = new Menu("File");
-//		MenuItem menuNew = new MenuItem("New");
 		MenuItem menuOpen = new MenuItem("Open");
 		MenuItem menuSave = new MenuItem("Save");
 		MenuItem menuSaveAs = new MenuItem("Save As");
@@ -1258,7 +1245,7 @@ public class View extends Application implements Observer {
 		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
 		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
 		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
-
+		
 		resetZoomButton.setOnMouseClicked(e -> {
 			System.out.println("\"Reset Zoom\" button clicked");
 			drawPane.setScaleX(1);

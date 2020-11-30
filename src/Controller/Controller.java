@@ -80,7 +80,7 @@ public class Controller {
 	/**
 	 * Deselect all the objects that are currently highlighted
 	 */
-	public void deselectAll(UIObjects key) {
+	public void deselectAll() {
 //		System.out.println("Controller.deselectAll");
 		boolean highlightedPresent = false;
 		for(UIObjects object : model.getObjects()) {

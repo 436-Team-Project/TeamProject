@@ -18,6 +18,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class is used to show a floor plan layout and is where the user will ask for safe positions
@@ -54,7 +56,6 @@ public class HostView {
 	private final Controller controller;
 	private final BorderPane root;
 	private final Pane drawPane;
-	private  Pane anim;
 	static Label info1Value;
 	static Label info2Value;
 	static Label info3Value;
@@ -72,14 +73,13 @@ public class HostView {
 	 * @param drawPane the canvas to draw on
 	 */
 	public HostView(View view, Stage stage, BorderPane root, Model model, Controller controller,
-					Pane drawPane, Pane anim) {
+					Pane drawPane) {
 		super();
 		this.view = view;
 		this.controller = controller;
 		this.model = model;
 		this.root = root;
 		this.drawPane = drawPane;
-		this.anim = anim;
 		
 		fc = new FileChooser();
 		fc.setInitialDirectory(new File(System.getProperty("user.dir")));
@@ -150,18 +150,12 @@ public class HostView {
 	 * This panel is responsible for performing the user's mouse actions.
 	 */
 	private Pane initCenterPanel() {
-//		Pane result = new Pane();
 		Pane result = new Pane();
-		StackPane centerInner = new StackPane();
 		Pane child = drawPane; // Draw panel
-		Pane child2 = anim;
-		anim.setMouseTransparent(true);
-		centerInner.getChildren().addAll(child, child2);
-		
 		result.setPrefWidth(CENTER_WIDTH);
 		result.setPrefHeight(CENTER_HEIGHT);
 		result.setBackground(CENTER_BG);
-		result.getChildren().add(centerInner);
+		result.getChildren().add(child);
 		
 		// Allows right mouse drag to pan the child.
 		View.setupCenterMouse(result, child);
@@ -219,23 +213,30 @@ public class HostView {
 		});
 		
 		distanceToggle.setOnAction(clickEvent -> {
+			List<Circle> rings = new ArrayList<>();
 			System.out.println("Distance toggle pressed");
 			if(distanceToggle.isSelected()) {
 				for(Node child : drawPane.getChildren()) {
 					if(child instanceof Circle) {
 						Circle circle = (Circle) child;
 						if(circle.getFill() != Color.TRANSPARENT) {
-							Circle current = new Circle(circle.getCenterX(), circle.getCenterY(), 60);
-							current.setFill(Color.rgb(0,0,0,0));
-							current.setStroke(Color.rgb(130,132,161,0.5));
-							current.setStrokeWidth(4);
-							anim.getChildren().add(current);
+							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 60);
+							ring.setFill(Color.rgb(0,0,0,0));
+							ring.setStroke(Color.rgb(130,132,161,0.5));
+							ring.setStrokeWidth(4);
+							rings.add(ring);
+//							drawPane.getChildren().add(ring);
+//							anim.getChildren().add(current);
 						}
 					}
 				}
+				for(Circle ring : rings) {
+					drawPane.getChildren().add(ring);
+				}
 			} else {
 				// Remove rings
-				anim.getChildren().removeIf(child -> child instanceof Circle);
+				drawPane.getChildren().removeIf(child -> child instanceof Circle &&
+						((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
 			}
 		});
 		
