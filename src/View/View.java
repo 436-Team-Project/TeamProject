@@ -86,10 +86,8 @@ public class View extends Application implements Observer {
 	Scene scene;
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
-	
 	BorderPane root; // Main pane
 	Pane drawPane; // Drawing Canvas
-//	Pane anim;
 	Canvas grid; // Grid overlaying canvas
 	
 	/**
@@ -263,8 +261,11 @@ public class View extends Application implements Observer {
 				obj.setStrokeWidth(obj.getStrokeWidth() - 1);
 			});
 			
-			obj.setOnMousePressed(event -> {
+			obj.setOnMousePressed(pressedEvent -> {
 //				System.out.println("setOnMousePressed - "+ uio.toString());
+				uio.setHighlighted(!uio.isHighlighted());
+				showSelectionUpdate();
+				
 				obj.setStroke(Color.PINK);
 				obj.setStrokeWidth(obj.getStrokeWidth() + 2);
 				isSelecting = false;
@@ -272,7 +273,7 @@ public class View extends Application implements Observer {
 				isPlacingChair = false;
 				isPlacingObject = false;
 				
-				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+				Point2D p = drawPane.sceneToLocal(pressedEvent.getSceneX(), pressedEvent.getSceneY());
 				double mouseX = p.getX();
 				double mouseY = p.getY();
 				double objTransX = obj.getTranslateX();
@@ -295,10 +296,6 @@ public class View extends Application implements Observer {
 						&& objBounds.getMaxX() < drawPane.getWidth())
 						&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
 				
-				uio.setHighlighted(!uio.isHighlighted());
-				showSelectionUpdate();
-//				System.out.printf("Clicked on: %s\n", uio.toString());
-				
 				if(!inDrawPane) {
 					System.out.println("Outside of central panel (setMouseAction)");
 					controller.displayModel();
@@ -307,8 +304,6 @@ public class View extends Application implements Observer {
 					double transY = obj.getTranslateY();
 					controller.updateCurrentObject(uio.getX() + transX, uio.getY() + transY,
 							uio.getX2() + transX, uio.getY2() + transY, uio.getId());
-					uio.setHighlighted(!uio.isHighlighted());
-					showSelectionUpdate();
 				}
 			});
 		}
@@ -377,7 +372,6 @@ public class View extends Application implements Observer {
 			isRemovingSeat = false;
 			updatingSelection = false;
 			controller.deselectAll();
-			
 			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
 			root.setBottom(initBottomPanel(stage));
 		});
@@ -426,7 +420,7 @@ public class View extends Application implements Observer {
 		result.setBackground(new Background(
 				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefWidth(LEFT_WIDTH);
-		result.setOnMousePressed(pressEvent -> {
+		result.setOnMouseClicked(mouseEvent -> {
 			controller.deselectAll();
 			clearSelectionUpdate();
 		});
@@ -511,7 +505,7 @@ public class View extends Application implements Observer {
 		setupCenterMouse(centerOuter, child);
 		
 		centerOuter.getChildren().add(child);
-		centerOuter.setOnMousePressed(pressEvent -> {
+		centerOuter.setOnMouseClicked(pressEvent -> {
 			controller.deselectAll();
 			clearSelectionUpdate();
 		});
@@ -539,17 +533,24 @@ public class View extends Application implements Observer {
 		
 		// Event-handling for mouse on drawing canvas depending on which tool is selected.
 		result.setOnMousePressed(pressEvent -> {
-			Point2D pressedPoint = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
-			UIObjects pressedObject = controller.getObject(pressedPoint.getX(), pressedPoint.getY());
-			if(pressedObject == null) {
-				controller.deselectAll();
-			}
-//
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
 					pressEvent.getSceneX() - LEFT_WIDTH, pressEvent.getSceneY() - TOP_HEIGHT, 1, 1);
 			
 			
-			if(!isSelecting &&pressEvent.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
+			if(pressEvent.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
+//				Point2D pressedPoint = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
+//				UIObjects pressedObject = controller.getObject(pressedPoint.getX(), pressedPoint.getY());
+//
+//				if(!KBL.isKeyPressed(KeyCode.CONTROL)) {
+//					controller.deselectAll();
+//					clearSelectionUpdate();
+//				}
+//				if(pressedObject != null) {
+//					pressedObject.setHighlighted(!pressedObject.isHighlighted());
+//					showSelectionUpdate();
+//					System.out.printf("Clicked on: %s\n", pressedObject.toString());
+////					System.out.printf("Items:\n%s\n", controller.printItems());
+//				}
 				
 				if(isDrawingWall) {
 					Line wallBound = initLineBounds(pressEvent.getSceneX(), pressEvent.getSceneY());
@@ -651,10 +652,11 @@ public class View extends Application implements Observer {
 			// When the user drags with LMB to select multiple items
 			if(isSelecting && pressEvent.isPrimaryButtonDown() && inDrawPane) {
 				System.out.println("Selecting");
-				Rectangle rectBound = initRectBounds(pressedPoint.getX(), pressedPoint.getY());
+				Point2D p = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
+				Rectangle rectBound = initRectBounds(p.getX(), p.getY());
 				
-				double startX = pressedPoint.getX();
-				double startY = pressedPoint.getY();
+				double startX = p.getX();
+				double startY = p.getY();
 				drawPane.getChildren().add(rectBound);
 				
 				
@@ -692,7 +694,6 @@ public class View extends Application implements Observer {
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
 							drawPane.getChildren().remove(rectBound);
-							isSelecting= false;
 						}
 					});
 				});
@@ -733,7 +734,7 @@ public class View extends Application implements Observer {
 				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
 		result.setPrefHeight(TOP_HEIGHT);
 		
-		result.setOnMousePressed(pressEvent -> {
+		result.setOnMouseClicked(mouseEvent -> {
 			controller.deselectAll();
 			clearSelectionUpdate();
 		});
@@ -1102,7 +1103,6 @@ public class View extends Application implements Observer {
 		// Check if showSelectionUpdate has been called
 		if(!updatingSelection)
 			return;
-		
 		
 		// get the VBox where the text fields are placed
 		VBox left = (VBox)((Pane)root.getLeft()).getChildren().get(0);

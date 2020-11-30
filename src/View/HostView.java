@@ -3,16 +3,12 @@ package View;
 import Controller.Controller;
 import Model.Model;
 import Model.Spots;
-import javafx.beans.binding.Bindings;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -225,8 +221,6 @@ public class HostView {
 							ring.setStroke(Color.rgb(130,132,161,0.5));
 							ring.setStrokeWidth(4);
 							rings.add(ring);
-//							drawPane.getChildren().add(ring);
-//							anim.getChildren().add(current);
 						}
 					}
 				}
