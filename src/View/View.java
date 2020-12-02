@@ -161,7 +161,10 @@ public class View extends Application implements Observer {
 				setEndPointMouseAction(rightEnd, wall, obj, false);  // for left or right
 				setMouseAction(wall, obj);
 				
-				Label measure = new Label(String.valueOf(lineLength(wall)));
+				
+				Label measure = new Label();
+				String length = String.format("%.1f", lineLength(wall) / 15);
+				measure.setText(length);
 				measure.setTranslateX((wall.getEndX() - wall.getStartX()) / 2 + wall.getStartX());
 				measure.setTranslateY((wall.getEndY() - wall.getStartY()) / 2 + wall.getStartY());
 				measure.setMouseTransparent(true);
@@ -570,8 +573,8 @@ public class View extends Application implements Observer {
 						wallBound.setEndY(event2.getSceneY());
 						sp.setTranslateX((event2.getSceneX() - pressEvent.getSceneX()) / 2 + pressEvent.getSceneX());
 						sp.setTranslateY((event2.getSceneY() - pressEvent.getSceneY()) / 2 + pressEvent.getSceneY());
-						double length = lineLength(wallBound);
-						measurement.setText(String.valueOf(length));
+						String length = String.format("%.1f", lineLength(wallBound) / 15);
+						measurement.setText(length);
 						
 						result.setOnMouseReleased(event3 -> {
 							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
@@ -974,8 +977,8 @@ public class View extends Application implements Observer {
 	 * @param l
 	 */
 	private double lineLength(Line l) {
-		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
-				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
+		return Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
+				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2));
 	}
 	
 	
@@ -1045,8 +1048,8 @@ public class View extends Application implements Observer {
 		
 		
 		// setup text fields
-		TextField w = createTextField(String.valueOf(objs.get(0).getWidth()));
-		TextField h = createTextField(String.valueOf(objs.get(0).getHeight()));
+		TextField w = createTextField(String.format("%.2f",objs.get(0).getWidth() / 15));
+		TextField h = createTextField(String.format("%.2f",objs.get(0).getHeight() / 15));
 		
 		
 		// setup parant node
@@ -1066,8 +1069,8 @@ public class View extends Application implements Observer {
 					return;
 				}
 				
-				double newWidth  = Double.parseDouble(w.getText());
-				double newHeight = Double.parseDouble(h.getText());
+				double newWidth  = Double.parseDouble(w.getText()) * 15;
+				double newHeight = Double.parseDouble(h.getText()) * 15;
 				
 				controller.resizeAll(toUpdate, newWidth, newHeight);
 			}
