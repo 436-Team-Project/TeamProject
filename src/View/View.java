@@ -1048,8 +1048,8 @@ public class View extends Application implements Observer {
 		
 		
 		// setup text fields
-		TextField w = createTextField(String.valueOf(objs.get(0).getWidth()));
-		TextField h = createTextField(String.valueOf(objs.get(0).getHeight()));
+		TextField w = createTextField(String.format("%.2f",objs.get(0).getWidth() / 15));
+		TextField h = createTextField(String.format("%.2f",objs.get(0).getHeight() / 15));
 		
 		
 		// setup parant node
@@ -1069,8 +1069,8 @@ public class View extends Application implements Observer {
 					return;
 				}
 				
-				double newWidth  = Double.parseDouble(w.getText());
-				double newHeight = Double.parseDouble(h.getText());
+				double newWidth  = Double.parseDouble(w.getText()) * 15;
+				double newHeight = Double.parseDouble(h.getText()) * 15;
 				
 				controller.resizeAll(toUpdate, newWidth, newHeight);
 			}
