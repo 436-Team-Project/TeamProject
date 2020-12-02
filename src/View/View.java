@@ -161,7 +161,10 @@ public class View extends Application implements Observer {
 				setEndPointMouseAction(rightEnd, wall, obj, false);  // for left or right
 				setMouseAction(wall, obj);
 				
-				Label measure = new Label(String.valueOf(lineLength(wall)));
+				
+				Label measure = new Label();
+				String length = String.format("%.1f", lineLength(wall) / 15);
+				measure.setText(length);
 				measure.setTranslateX((wall.getEndX() - wall.getStartX()) / 2 + wall.getStartX());
 				measure.setTranslateY((wall.getEndY() - wall.getStartY()) / 2 + wall.getStartY());
 				measure.setMouseTransparent(true);
@@ -570,8 +573,8 @@ public class View extends Application implements Observer {
 						wallBound.setEndY(event2.getSceneY());
 						sp.setTranslateX((event2.getSceneX() - pressEvent.getSceneX()) / 2 + pressEvent.getSceneX());
 						sp.setTranslateY((event2.getSceneY() - pressEvent.getSceneY()) / 2 + pressEvent.getSceneY());
-						double length = lineLength(wallBound);
-						measurement.setText(String.valueOf(length));
+						String length = String.format("%.1f", lineLength(wallBound) / 15);
+						measurement.setText(length);
 						
 						result.setOnMouseReleased(event3 -> {
 							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
@@ -974,8 +977,8 @@ public class View extends Application implements Observer {
 	 * @param l
 	 */
 	private double lineLength(Line l) {
-		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
-				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
+		return Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
+				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2));
 	}
 	
 	
