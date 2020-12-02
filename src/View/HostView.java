@@ -216,7 +216,7 @@ public class HostView {
 					if(child instanceof Circle) {
 						Circle circle = (Circle) child;
 						if(circle.getFill() != Color.TRANSPARENT) {
-							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 60);
+							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
 							ring.setFill(Color.rgb(0,0,0,0));
 							ring.setStroke(Color.rgb(130,132,161,0.5));
 							ring.setStrokeWidth(4);
