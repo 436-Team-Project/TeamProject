@@ -82,7 +82,7 @@ public class View extends Application implements Observer {
 	boolean isRemovingSeat = false;
 	boolean updatingSelection = false;
 	boolean toggleSelected = false;
-	
+	ToggleButton distanceToggle;
 	// JavaFx Objects
 	Scene scene;
 	Controller controller; // Controller of MVC
@@ -169,6 +169,7 @@ public class View extends Application implements Observer {
 				Circle chair = setChair((Spots) obj);
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
+				toggleSelected = false;
 				distanceToggle.setSelected(false);
 			
 			} else {
@@ -452,7 +453,7 @@ public class View extends Application implements Observer {
 		topControlBox.getChildren().addAll(menuBar, undoRedoBox, zoomBox, manipulateBox, topHeader);
 		return topControlBox;
 	}
-	ToggleButton distanceToggle;
+
 	/**
 	 * Initializes the left panel in the root border pane
 	 * <p>
