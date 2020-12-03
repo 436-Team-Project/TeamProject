@@ -4,11 +4,13 @@ import Controller.Controller;
 import Model.Model;
 import Model.Spots;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -23,29 +25,26 @@ import java.util.List;
  */
 public class HostView {
 	// Pane Backgrounds
-	static Background LEFT_BG = new Background(
-			new BackgroundFill(Color.rgb(124, 132, 161, 1), CornerRadii.EMPTY, Insets.EMPTY));
-	static Background RIGHT_BG = new Background(
-			new BackgroundFill(Color.rgb(124, 132, 161, 1), CornerRadii.EMPTY, Insets.EMPTY));
-	static Background CENTER_BG = new Background(
-			new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY));
-	static Background TOP_BG = new Background(
-			new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY));
-	
-	static int INFO_FONT_SIZE = 12;
-	static String INFO_FONT = "Arial";
+	static String leftPaneStyle =
+			"-fx-background-color: #7B83A0;-fx-pref-width: 150px;-fx-pref-height: 300px;";
+	static String rightPaneStyle =
+			"-fx-background-color: #7B83A0;-fx-pref-width: 150px;-fx-pref-height: 300px;";
+	static String infoStyle = "-fx-background-color: #434B64;-fx-alignment: top-center;" +
+			"-fx-pref-width: 120px;-fx-pref-height: 120px;";
+	static String infoLabelStyle = "-fx-font-weight: normal;-fx-font-style: regular;" +
+			"-fx-font: 18px Arial;-fx-text-fill: white;-fx-pref-width: 120px;" +
+			"-fx-pref-height: 30px;-fx-alignment: center;";
+	static String infoValueStyle = "-fx-font-weight: bold;-fx-font-style: regular;" +
+			"-fx-font: 30px Arial;-fx-text-fill: white;-fx-pref-width: 120px;" +
+			"-fx-pref-height: 90px;-fx-alignment: center;";
 	
 	// The dimensions of the entire application
 	final static int APP_WIDTH = 1200;
 	final static int APP_HEIGHT = 800;
 	
 	// Dimensions for the panels inside the border pane
-	final static int LEFT_WIDTH = 150;
-	final static int RIGHT_WIDTH = 150;
-	final static int TOP_HEIGHT = 50;
-	final static int BOT_HEIGHT = 50;
-	final static int CENTER_WIDTH = (APP_WIDTH - (LEFT_WIDTH + RIGHT_WIDTH));
-	final static int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
+	final static int CENTER_WIDTH = (APP_WIDTH - (150 + 150));
+	final static int CENTER_HEIGHT = (APP_HEIGHT - (50 + 50));
 	
 	private final View view;
 	private final Model model;
@@ -99,18 +98,8 @@ public class HostView {
 	 */
 	private Pane initTopPanel(Stage stage) {
 		Pane topPane = new Pane();
-		HBox hBox = new HBox();
-		Label topHeader = new Label("Hosting");
-		HBox menuBar = initTopControls(stage);
-		
-		topPane.setBackground(TOP_BG);
-		topPane.setPrefHeight(TOP_HEIGHT);
-		topHeader.setFont(new Font(View.HEADER_FONT, View.HEADER_FONT_SIZE));
-		topHeader.setPadding(new Insets(0, 0, 0, 100));
-		topHeader.setStyle("-fx-font-weight: bold;");
-		
-		hBox.getChildren().addAll(menuBar, topHeader);
-		topPane.getChildren().add(hBox);
+		topPane.setStyle(View.topPaneStyle);
+		topPane.getChildren().add(initTopControls(stage));
 		return topPane;
 	}
 	
@@ -133,10 +122,14 @@ public class HostView {
 		View.setupMenuBar(menuBar, stage, menuNew, controller, false);
 		HBox zoomBox = View.setupZoomButtons(drawPane);
 		
-		HBox hBox = new HBox();
-		hBox.setSpacing(25);
-		hBox.getChildren().addAll(menuBar, zoomBox);
-		return hBox;
+		Label topHeader = new Label("Hosting");
+		topHeader.setStyle(View.viewHeader +
+				"-fx-pref-width: 400px;-fx-pref-height: 50px;-fx-padding: 0 0 0 200;");
+		
+		HBox topControlBox = new HBox();
+		topControlBox.setStyle("-fx-pref-width: 1200px;-fx-pref-height: 50px;-fx-spacing: 25px;");
+		topControlBox.getChildren().addAll(menuBar, zoomBox, topHeader);
+		return topControlBox;
 	}
 	
 	/**
@@ -147,9 +140,17 @@ public class HostView {
 	private Pane initCenterPanel() {
 		Pane centerOuter = new Pane();
 		Pane centerInner = drawPane; // Draw panel
+		centerInner.setStyle(View.centerInnerStyle);
+		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
+		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		centerInner.setClip(new Rectangle(centerInner.getPrefWidth(), centerInner.getPrefHeight()));
+//		grid = initializeGrid();
+//		centerInner.getChildren().add(grid);
+		
 		centerOuter.setPrefWidth(CENTER_WIDTH);
 		centerOuter.setPrefHeight(CENTER_HEIGHT);
-		centerOuter.setBackground(CENTER_BG);
+		centerOuter.setStyle(View.centerOuterStyle);
 		// Allows right mouse drag to pan the child.
 		View.setupCenterMouse(centerOuter, centerInner);
 		
@@ -164,26 +165,25 @@ public class HostView {
 	 */
 	private Pane initLeftPanel() {
 		Pane leftPane = new Pane();
-		VBox vbox = new VBox();
+		VBox leftControlBox = new VBox();
 		VBox buttonBox = new VBox();
 		Label leftPanelHeader = new Label("Host Elements");
 		
-		leftPane.setPrefWidth(LEFT_WIDTH);
-		leftPane.setBackground(LEFT_BG);
-		buttonBox.setSpacing(5);
-		leftPanelHeader.setFont(new Font(View.HEADER_FONT, View.HEADER_FONT_SIZE));
-		leftPanelHeader.setPadding(new Insets(0, 0, 0, 0));
-		leftPanelHeader.setStyle("-fx-font-weight: bold");
+		leftPane.setStyle(leftPaneStyle);
+		leftControlBox.setStyle("-fx-pref-width: 150px;-fx-alignment: top-center;");
+		buttonBox.setStyle("-fx-pref-width: 150px;-fx-alignment: center;-fx-spacing: 20px;");
+		leftPanelHeader.setStyle(View.labelStyle +
+				"-fx-pref-width: 150px;-fx-alignment: top-center;-fx-padding: 20 0 60 0;");
 		
 		Button getSafePosButton = new Button("Get Safe Position");
 		Button assignGuestButton = new Button("Assign Guest");
 		Button removeGuestButton = new Button("Remove Guest");
 		ToggleButton distanceToggle = new ToggleButton("6 Foot Radius");
+		getSafePosButton.setStyle(View.buttonStyle);
+		assignGuestButton.setStyle(View.buttonStyle);
+		removeGuestButton.setStyle(View.buttonStyle);
+		distanceToggle.setStyle(View.buttonStyle);
 		
-		getSafePosButton.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
-		assignGuestButton.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
-		removeGuestButton.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
-		distanceToggle.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
 		distanceToggle.setSelected(false);
 		// Event handling for "Get Safe Position" button
 		getSafePosButton.setOnAction(e -> {
@@ -238,10 +238,12 @@ public class HostView {
 		
 		buttonBox.getChildren().addAll(getSafePosButton, assignGuestButton,
 				removeGuestButton, distanceToggle);
-		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
-		leftPane.getChildren().add(vbox);
+		leftControlBox.getChildren().addAll(leftPanelHeader, buttonBox);
+		leftPane.getChildren().add(leftControlBox);
 		return leftPane;
 	}
+	
+
 	
 	/**
 	 * Initializes the right panel of the border pane
@@ -250,39 +252,44 @@ public class HostView {
 	 */
 	private Pane initRightPanel() {
 		Pane rightPane = new Pane();
-		rightPane.setPrefWidth(RIGHT_WIDTH);
-		rightPane.setBackground(RIGHT_BG);
-		Label leftPanelHeader = new Label("Host Info");
+		VBox rightPaneBox = new VBox();
+		Label rightPanelHeader = new Label("Information");
 		VBox hostInfoBox = new VBox();
-		VBox vbox = new VBox();
 		
-		hostInfoBox.setSpacing(5);
-		leftPanelHeader.setFont(new Font(View.HEADER_FONT, View.HEADER_FONT_SIZE));
-		leftPanelHeader.setPadding(new Insets(0, 0, 0, 0));
-		leftPanelHeader.setStyle("-fx-font-weight: bold");
+		rightPane.setStyle(leftPaneStyle);
+		rightPaneBox.setStyle("-fx-alignment: center;");
+		rightPanelHeader.setStyle(View.labelStyle +
+				"-fx-pref-width: 150px;-fx-alignment: top-center;-fx-padding: 20 0 60 0;");
+		hostInfoBox.setStyle("-fx-alignment: top-center;-fx-pref-width: 150px;" +
+				"-fx-pref-height: 500px;-fx-spacing: 20px;-fx-fill-width: false;");
 		
 		Label info1Label = new Label("Total: ");
 		Label info2Label = new Label("Unavailable: ");
 		Label info3Label = new Label("Free: ");
-		String str1 = String.valueOf(controller.countSpotType("total"));
-		String str2 = String.valueOf(controller.countSpotType("unavailable"));
-		String str3 = String.valueOf(controller.countSpotType("free"));
+		info1Label.setStyle(infoLabelStyle);
+		info2Label.setStyle(infoLabelStyle);
+		info3Label.setStyle(infoLabelStyle);
 		
-		info1Value = new Label(str1);
-		info2Value = new Label(str2);
-		info3Value = new Label(str3);
+		info1Value = new Label(String.valueOf(controller.countSpotType("total")));
+		info2Value = new Label(String.valueOf(controller.countSpotType("unavailable")));
+		info3Value = new Label(String.valueOf(controller.countSpotType("free")));
+		info1Value.setStyle(infoValueStyle);
+		info2Value.setStyle(infoValueStyle);
+		info3Value.setStyle(infoValueStyle);
 		
-		info1Label.setFont(new Font(INFO_FONT, INFO_FONT_SIZE));
-		info2Label.setFont(new Font(INFO_FONT, INFO_FONT_SIZE));
-		info3Label.setFont(new Font(INFO_FONT, INFO_FONT_SIZE));
+		VBox infoTotalBox = new VBox();
+		VBox infoUnavailableBox = new VBox();
+		VBox infoFreeBox = new VBox();
+		infoTotalBox.setStyle(infoStyle);
+		infoUnavailableBox.setStyle(infoStyle);
+		infoFreeBox.setStyle(infoStyle);
+		infoTotalBox.getChildren().addAll(info1Label, info1Value);
+		infoUnavailableBox.getChildren().addAll(info2Label, info2Value);
+		infoFreeBox.getChildren().addAll(info3Label, info3Value);
 		
-		hostInfoBox.getChildren().addAll(
-				new HBox(info1Label, info1Value),
-				new HBox(info2Label, info2Value),
-				new HBox(info3Label, info3Value));
-		
-		vbox.getChildren().addAll(leftPanelHeader, hostInfoBox);
-		rightPane.getChildren().add(vbox);
+		hostInfoBox.getChildren().addAll(infoTotalBox, infoUnavailableBox, infoFreeBox);
+		rightPaneBox.getChildren().addAll(rightPanelHeader, hostInfoBox);
+		rightPane.getChildren().add(rightPaneBox);
 		return rightPane;
 	}
 }
