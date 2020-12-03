@@ -22,7 +22,6 @@ public class Wall extends UIObjects {
 		super(ID, x, y, x2, y2);
 	}
 	
-	
 	@Override
 	public String toString() {
 		if(super.getId() < 10) {

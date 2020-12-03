@@ -3,9 +3,8 @@ package Model;
 import java.io.Serializable;
 import java.lang.Cloneable;
 
-/*
+/**
  * main class for all objects
- * param: the ID of the object to keep track of and the initial coordinates of the shapes
  */
 public abstract class UIObjects implements Serializable, Cloneable {
 	
@@ -20,7 +19,7 @@ public abstract class UIObjects implements Serializable, Cloneable {
 	/**
 	 * UIObjects constructor
 	 *
-	 * @param ID integer
+	 * @param ID the ID of the object to keep track of and the initial coordinates of the shapes
 	 * @param x  double
 	 * @param y  double
 	 * @param x2 double
@@ -59,6 +58,11 @@ public abstract class UIObjects implements Serializable, Cloneable {
 		isHighlighted = highlight;
 	}
 	
+	/**
+	 * Sets the value of the isSafe boolean to the given value
+	 *
+	 * @param safety boolean
+	 */
 	public void setSafety(boolean safety) {
 		isSafe = safety;
 	}
@@ -111,10 +115,8 @@ public abstract class UIObjects implements Serializable, Cloneable {
 	@Override
 	public String toString() {
 		String highlightStr = "F";
-		if(isHighlighted) {
+		if(isHighlighted)
 			highlightStr = "T";
-		}
-		
 		return String.format("<%d>(%s)  [%.2f, %.2f, %.2f, %.2f]", ID, highlightStr, x, y, x2, y2);
 	}
 }

@@ -1,12 +1,11 @@
 package Controller;
 
 import Model.*;
+import javafx.scene.shape.Circle;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Stack;
 import java.util.EmptyStackException;
-import java.util.List;
 
 /**
  * Get commands from the View and controls the Model
@@ -16,6 +15,11 @@ public class Controller {
 	private final Model model;
 	private String currentFilePath;
 	
+	/**
+	 * Controller constructor
+	 *
+	 * @param model Model
+	 */
 	public Controller(Model model) {
 		this.model = model;
 	}
@@ -30,7 +34,7 @@ public class Controller {
 	 * @param y2   the new object's radius
 	 */
 	public void createNewObject(String type, double x, double y, double x2, double y2) {
-		UIObjects newObj = null;
+		UIObjects newObj;
 		int ID = model.nextID();
 		switch(type) {
 			case "wall":
@@ -59,7 +63,6 @@ public class Controller {
 			model.updateItemList(objs);
 		} catch(EmptyStackException ese) {
 			System.out.println("Undo stack is empty");
-			return;
 		}
 	}
 
@@ -73,7 +76,6 @@ public class Controller {
 			model.updateItemList(objs);
 		} catch(EmptyStackException ese) {
 			System.out.println("Redo stack is empty");
-			return;
 		}
 	}
 	
@@ -317,10 +319,8 @@ public class Controller {
 	 * @return the spot object that is considered most safe.
 	 */
 	public Spots getBestSpot() {
-		int id[] = model.bestSpot(0);
-//		if (id == -1) {
-//			return null;
-//		}
+		int[] id = model.bestSpot(0);
+		// TODO: Make sure to take into account when there are no more objects left
 		Spots spot = (Spots) model.getObject(id[0]); //get the spot
 		spot.setSafety(true);
 
@@ -329,11 +329,10 @@ public class Controller {
 
 	/**
 	 * Marks spot at x and y as occupied.
-	 * @param x
-	 * @param y
+	 * @param circle The circle shape in the floor plan
 	 */
-	public void occupySpot(double x, double y) {
-		UIObjects uio = getObject(x,y);
+	public void occupySpot(Circle circle) {
+		UIObjects uio = getObject(circle.getCenterX(), circle.getCenterY());
 		updateAvailable(uio.getId());
 	}
 	
@@ -360,7 +359,7 @@ public class Controller {
 	 * @return risk if a user clicks a spot that is considered risky it will return true.
 	 */
 	boolean updateSpot(int ID) {
-		boolean risk = false;
+		boolean risk;
 		risk = model.giveGetSeat(ID);
 		return risk;
 	}

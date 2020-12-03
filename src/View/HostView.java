@@ -52,10 +52,12 @@ public class HostView {
 	private final Controller controller;
 	private final BorderPane root;
 	private final Pane drawPane;
+	
 	static Label info1Value;
 	static Label info2Value;
 	static Label info3Value;
 	static ToggleButton distanceToggle;
+	
 	File currentFile;
 	String currentFileName;
 	FileChooser fc;
@@ -68,8 +70,8 @@ public class HostView {
 	 * @param controller the controller of the product
 	 * @param drawPane the canvas to draw on
 	 */
-	public HostView(View view, Stage stage, BorderPane root, Model model, Controller controller,
-					Pane drawPane) {
+	public HostView(View view, Stage stage, BorderPane root,
+					Model model, Controller controller, Pane drawPane) {
 		super();
 		this.view = view;
 		this.controller = controller;
@@ -80,16 +82,14 @@ public class HostView {
 		fc = new FileChooser();
 		fc.setInitialDirectory(new File(System.getProperty("user.dir")));
 		fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text", "*.txt"));
-		
-//		 Initialize border pane's panels
+		// Initialize border pane's panels
 		root.setCenter(initCenterPanel());
 		root.setTop(initTopPanel(stage));
 		root.setLeft(initLeftPanel());
 		root.setRight(initRightPanel());
-		
-		controller.displayModel(); // Call the controller to display the current state of the model
+		// Call the controller to display the current state of the model
+		controller.displayModel();
 	}
-	
 	
 	/**
 	 * Initializes the top panel of the border pane
@@ -98,21 +98,20 @@ public class HostView {
 	 * Auxiliary features like manipulating the canvas and other things.
 	 */
 	private Pane initTopPanel(Stage stage) {
-		Pane result = new Pane();
-		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefHeight(TOP_HEIGHT);
-		
+		Pane topPane = new Pane();
 		HBox hBox = new HBox();
 		Label topHeader = new Label("Hosting");
-		topHeader.setFont(new Font("Arial", 30));
+		HBox menuBar = initTopControls(stage);
+		
+		topPane.setBackground(TOP_BG);
+		topPane.setPrefHeight(TOP_HEIGHT);
+		topHeader.setFont(new Font(View.HEADER_FONT, View.HEADER_FONT_SIZE));
 		topHeader.setPadding(new Insets(0, 0, 0, 100));
 		topHeader.setStyle("-fx-font-weight: bold;");
 		
-		HBox menuBar = initTopControls(stage);
 		hBox.getChildren().addAll(menuBar, topHeader);
-		result.getChildren().add(hBox);
-		return result;
+		topPane.getChildren().add(hBox);
+		return topPane;
 	}
 	
 	/**
@@ -124,20 +123,20 @@ public class HostView {
 	 * @return HBox
 	 */
 	private HBox initTopControls(Stage stage) {
-		
-		// Set up the menu bar
 		MenuBar menuBar = new MenuBar();
 		MenuItem menuNew = new MenuItem("New");
 		menuNew.setOnAction(menuEvent -> {
 			// TODO: Implement "New" menu button for the host view
+			System.out.println("Menu item \"New\" selected in Host View");
 		});
+		
 		View.setupMenuBar(menuBar, stage, menuNew, controller, false);
 		HBox zoomBox = View.setupZoomButtons(drawPane);
-		HBox result = new HBox();
-		result.setSpacing(25);
-		result.getChildren().addAll(menuBar, zoomBox);
 		
-		return result;
+		HBox hBox = new HBox();
+		hBox.setSpacing(25);
+		hBox.getChildren().addAll(menuBar, zoomBox);
+		return hBox;
 	}
 	
 	/**
@@ -146,16 +145,16 @@ public class HostView {
 	 * This panel is responsible for performing the user's mouse actions.
 	 */
 	private Pane initCenterPanel() {
-		Pane result = new Pane();
-		Pane child = drawPane; // Draw panel
-		result.setPrefWidth(CENTER_WIDTH);
-		result.setPrefHeight(CENTER_HEIGHT);
-		result.setBackground(CENTER_BG);
-		result.getChildren().add(child);
-		
+		Pane centerOuter = new Pane();
+		Pane centerInner = drawPane; // Draw panel
+		centerOuter.setPrefWidth(CENTER_WIDTH);
+		centerOuter.setPrefHeight(CENTER_HEIGHT);
+		centerOuter.setBackground(CENTER_BG);
 		// Allows right mouse drag to pan the child.
-		View.setupCenterMouse(result, child);
-		return result;
+		View.setupCenterMouse(centerOuter, centerInner);
+		
+		centerOuter.getChildren().add(centerInner);
+		return centerOuter;
 	}
 	
 	/**
@@ -164,14 +163,13 @@ public class HostView {
 	 * This panel has the buttons for the features the "Host" view is responsible for performing.
 	 */
 	private Pane initLeftPanel() {
-		Pane result = new Pane();
-		result.setPrefWidth(LEFT_WIDTH);
-		result.setBackground(LEFT_BG);
-		
+		Pane leftPane = new Pane();
 		VBox vbox = new VBox();
 		VBox buttonBox = new VBox();
 		Label leftPanelHeader = new Label("Host Elements");
 		
+		leftPane.setPrefWidth(LEFT_WIDTH);
+		leftPane.setBackground(LEFT_BG);
 		buttonBox.setSpacing(5);
 		leftPanelHeader.setFont(new Font(View.HEADER_FONT, View.HEADER_FONT_SIZE));
 		leftPanelHeader.setPadding(new Insets(0, 0, 0, 0));
@@ -181,63 +179,68 @@ public class HostView {
 		Button assignGuestButton = new Button("Assign Guest");
 		Button removeGuestButton = new Button("Remove Guest");
 		ToggleButton distanceToggle = new ToggleButton("6 Foot Radius");
-//		tb1.setToggleGroup(group);
-		distanceToggle.setSelected(false);
 		
 		getSafePosButton.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
 		assignGuestButton.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
 		removeGuestButton.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
 		distanceToggle.setPrefSize(View.BUTTON_WIDTH, View.BUTTON_HEIGHT);
-		
+		distanceToggle.setSelected(false);
+		// Event handling for "Get Safe Position" button
 		getSafePosButton.setOnAction(e -> {
 			System.out.println("\"Get Safe Position\" button clicked");
 			Spots spot = controller.getBestSpot();
 			controller.getBestSpot();
 			controller.displayModel();
 		});
+		// Event handling for "Assign Guest" button
 		assignGuestButton.setOnAction(e -> {
 			System.out.println("\"Assign Guest\" button clicked");
 			view.isAssigningSeat = true;
 			view.isRemovingSeat = false;
-			// TODO: Implement assigning a guest to a chair/spot on the floor
 		});
+		// Event handling for "Remove Guest" button
 		removeGuestButton.setOnAction(e -> {
 			System.out.println("\"Remove Guest\" button clicked");
 			view.isAssigningSeat = false;
 			view.isRemovingSeat = true;
-			// TODO: Implement removing a guest from the list of occupants in the floor
 		});
-		
+		// Event handling for "6 Foot Radius" button
 		distanceToggle.setOnAction(clickEvent -> {
-			List<Circle> rings = new ArrayList<>();
 			System.out.println("Distance toggle pressed");
+			
+			List<Circle> rings = new ArrayList<>();
+			
 			if(distanceToggle.isSelected()) {
 				for(Node child : drawPane.getChildren()) {
 					if(child instanceof Circle) {
 						Circle circle = (Circle) child;
+						
+						// Distinguish from the circles used for handling the walls
 						if(circle.getFill() != Color.TRANSPARENT) {
 							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
-							ring.setFill(Color.rgb(0,0,0,0));
 							ring.setStroke(Color.rgb(130,132,161,0.5));
 							ring.setStrokeWidth(4);
+							ring.setFill(Color.rgb(0,0,0,0));
 							rings.add(ring);
 						}
 					}
 				}
+				// Add the rings to the canvas
 				for(Circle ring : rings) {
 					drawPane.getChildren().add(ring);
 				}
 			} else {
-				// Remove rings
+				// Remove the rings
 				drawPane.getChildren().removeIf(child -> child instanceof Circle &&
 						((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
 			}
 		});
 		
-		buttonBox.getChildren().addAll(getSafePosButton, assignGuestButton, removeGuestButton, distanceToggle);
+		buttonBox.getChildren().addAll(getSafePosButton, assignGuestButton,
+				removeGuestButton, distanceToggle);
 		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
-		result.getChildren().add(vbox);
-		return result;
+		leftPane.getChildren().add(vbox);
+		return leftPane;
 	}
 	
 	/**
@@ -246,10 +249,9 @@ public class HostView {
 	 * This panel shows the user the current values for various product attributes.
 	 */
 	private Pane initRightPanel() {
-		Pane result = new Pane();
-		result.setPrefWidth(RIGHT_WIDTH);
-		result.setBackground(RIGHT_BG);
-		
+		Pane rightPane = new Pane();
+		rightPane.setPrefWidth(RIGHT_WIDTH);
+		rightPane.setBackground(RIGHT_BG);
 		Label leftPanelHeader = new Label("Host Info");
 		VBox hostInfoBox = new VBox();
 		VBox vbox = new VBox();
@@ -264,7 +266,7 @@ public class HostView {
 		Label info3Label = new Label("Free: ");
 		String str1 = String.valueOf(controller.countSpotType("total"));
 		String str2 = String.valueOf(controller.countSpotType("unavailable"));
-		String str3= String.valueOf(controller.countSpotType("free"));
+		String str3 = String.valueOf(controller.countSpotType("free"));
 		
 		info1Value = new Label(str1);
 		info2Value = new Label(str2);
@@ -280,7 +282,7 @@ public class HostView {
 				new HBox(info3Label, info3Value));
 		
 		vbox.getChildren().addAll(leftPanelHeader, hostInfoBox);
-		result.getChildren().add(vbox);
-		return result;
+		rightPane.getChildren().add(vbox);
+		return rightPane;
 	}
 }
