@@ -1,34 +1,29 @@
 package Model;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Observable;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * The state of the application
  *
  * @author Ben Taylor
  */
-
 public class Model extends Observable {
-	private final int SIZE = 20;
-	private final int BUFFER = 90; //15px = 1 foot
+	public Stack<ArrayList<UIObjects>> undoStack;
+	public Stack<ArrayList<UIObjects>> redoStack;
 	public ArrayList<UIObjects> itemList;
 	public UIObjects lastObject;
 	
-	public Stack<ArrayList<UIObjects>> undoStack;
-	public Stack<ArrayList<UIObjects>> redoStack;
-
+	private final int SIZE = 20;
+	private final int BUFFER = 90; // 15px = 1 foot
+	
 	/**
-	 * Constructor class
+	 * Model constructor
 	 */
 	public Model() {
 		undoStack = new Stack<ArrayList<UIObjects>>();
 		redoStack = new Stack<ArrayList<UIObjects>>();
-		
 		itemList = new ArrayList<>();
-    
 		setChanged();
 		notifyObservers();
 	}
@@ -130,7 +125,7 @@ public class Model extends Observable {
 	}
 
 	/**
-	 * updates the model'a itemList with the given new list
+	 * updates the model's itemList with the given new list
 	 *
 	 * @param newItemList is the new list to be set
 	 */
@@ -262,8 +257,10 @@ public class Model extends Observable {
 	 * unlike take we need to make give recursive. this is because unlike take all surrounding
 	 * spots need to be clear instead of just taking if 1 is within range.
 	 *
-	 * @param ID
-	 * @param element
+	 * Distance Formula: (x2 - x1)^2 + (y2 - y1)^2 = z^2
+	 *
+	 * @param ID ID
+	 * @param element element
 	 * @return avail true or false of if the give availability permission is allowed
 	 */
 	public boolean giveCalculator(int ID, int element) {
@@ -280,8 +277,8 @@ public class Model extends Observable {
 		//recursive case
 		else if(itemList.get(element) instanceof Spots) {
 			Spots spot = (Spots) itemList.get(element);
-			//distance formula (x2-x1)^2+(y2-y1)^2=z^2
-			double distance = Math.sqrt(Math.pow(nSpot.x - spot.x,2) + Math.pow(nSpot.y - spot.y,2));
+			double distance = Math.sqrt(
+					Math.pow(nSpot.x - spot.x, 2) + Math.pow(nSpot.y - spot.y, 2));
 			//if one is but not the other. prevents possible case for cluster
 			//or group sitting at the same table
 			if(spot.occupied) {
@@ -289,8 +286,7 @@ public class Model extends Observable {
 				return (!(distance <= BUFFER) && giveCalculator(ID, element+1));
 			}
 		}
-		
-		return (true && giveCalculator(ID, element+1));
+		return giveCalculator(ID, element + 1);
 	}
 	
 	/**
@@ -312,9 +308,8 @@ public class Model extends Observable {
 				takeCalculator(ID);
 				itemList.set(spot.ID, spot);
 			}
-			
 			//if spot is taken remove occupancy
-			else if(spot.occupied) {
+			else {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
 				for(int i = 0; i < itemList.size(); i++) {
@@ -358,9 +353,8 @@ public class Model extends Observable {
 					risk = true;
 				}
 			}
-			
 			//if spot is taken remove occupancy
-			else if(spot.occupied) {
+			else {
 				spot.updateOccupancy();
 				//need to loop through all elements to give back availability
 				for(int i = 0; i < itemList.size(); i++) {
@@ -448,19 +442,19 @@ public class Model extends Observable {
 	 * @return int
 	 */
 	public int[] bestSpot(int i) {
-		int cur[];
+		int[] cur;
 		//base case
 		if(i == itemList.size()) {
-			int arr[]= {i,99999999};
-			return arr;
+			return new int[]{i,99999999};
 		}
 		//rest is recursive case
 		ArrayList<UIObjects> checker = new ArrayList<>(itemList);
 		cur = numSpotsNear(checker, i);
-		int next[] = bestSpot(i + 1);
+		int[] next = bestSpot(i + 1);
 		
-		System.out.println("checking spot "+i+" cur = "+cur+" next = "+ next);
-		System.out.println("returning "+((cur[1] <= next[1]) ? i : i + 1));
+		System.out.println("checking spot "+ i +" cur = "+
+				Arrays.toString(cur) + " next = " + Arrays.toString(next));
+		System.out.println("returning " + ((cur[1] <= next[1]) ? i : i + 1));
 		//return either the next or the current based on what is larger
 		return (cur[1] <= next[1]) ? cur : next;
 	}
@@ -486,13 +480,11 @@ public class Model extends Observable {
 		
 		//not a spot or spot is occupied or unsafe object return
 		if(!(checker.get(ID) instanceof Spots)) {
-			int arr[]= {ID,99999999};
-			return arr;
+			return new int[]{ID,99999999};
 		}
 		Spots temp = (Spots) checker.get(ID);
 		if(!temp.available || temp.occupied) {
-			int arr[]= {ID,99999999};
-			return arr; //checks if it is a valid spot to sit somebody at
+			return new int[]{ID,99999999}; //checks if it is a valid spot to sit somebody at
 		}
 		
 		for(int i = 0; i < checker.size(); i++) {
@@ -505,18 +497,16 @@ public class Model extends Observable {
 					System.out.println("self");//skip this iteration
 				else {
 					//distance equation
-					//System.out.println(Math.sqrt(Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
-					//		+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0)));
-					if(Math.sqrt(Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
-							+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0))
-							<= BUFFER) {
+					double distance = Math.sqrt(
+							Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
+							+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0));
+					if(distance <= BUFFER) {
 						spots++;
 					}
 				}
 			}
 		}
-		int arr[]= {ID,spots};
-		return arr;
+		return new int[]{ID,spots};
 	}
 	
 	

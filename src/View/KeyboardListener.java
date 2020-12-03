@@ -9,12 +9,14 @@ import javafx.scene.layout.Pane;
 /**
  * This class is used to perform keyboard shortcuts
  *
- *     undo: CTRL + Z
- *     redo: CTRL + Y
- *     zoom in: CTRL + +
- *     zoom out: CTRL + -
- *     zoom reset: CTRL + 0
- *     delete: Delete
+ * <ul>
+ *     <li>undo: CTRL Z</li>
+ *     <li>redo: CTRL Y</li>
+ *     <li>zoom in: CTRL +</li>
+ *     <li>zoom out: CTRL -</li>
+ *     <li>zoom reset: CTRL 0</li>
+ *     <li>delete: Delete</li>
+ * </ul>
  *
  */
 public class KeyboardListener {
