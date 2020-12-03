@@ -1,8 +1,6 @@
 package View;
 
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
@@ -11,6 +9,7 @@ import java.io.FileNotFoundException;
  *
  */
 public class ImageLoader {
+	final static String floorPlanDir = "Saved/";
 	
 	/**
 	 * Gets an image from the "images" folder and return an Image object with the given filename
@@ -20,7 +19,7 @@ public class ImageLoader {
 	 */
 	public static Image getImage(String fileName) {
 		Image result;
-		FileInputStream inputStream = null;
+		FileInputStream inputStream;
 		try {
 			
 			inputStream = new FileInputStream("src/images/"+ fileName);

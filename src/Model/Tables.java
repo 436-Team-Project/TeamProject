@@ -7,10 +7,9 @@ import java.util.ArrayList;
  */
 public class Tables extends UIObjects {
 	
-	
+	ArrayList<Spots> availableSpots = new ArrayList<Spots>();
 	boolean available = true;
 	int numberOfSpots;
-	ArrayList<Spots> availableSpots = new ArrayList<Spots>();
 	
 	/**
 	 * Table constructor

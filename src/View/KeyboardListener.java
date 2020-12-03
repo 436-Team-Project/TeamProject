@@ -9,12 +9,14 @@ import javafx.scene.layout.Pane;
 /**
  * This class is used to perform keyboard shortcuts
  *
- *     undo: CTRL + Z
- *     redo: CTRL + Y
- *     zoom in: CTRL + +
- *     zoom out: CTRL + -
- *     zoom reset: CTRL + 0
- *     delete: Delete
+ * <ul>
+ *     <li>undo: CTRL Z</li>
+ *     <li>redo: CTRL Y</li>
+ *     <li>zoom in: CTRL +</li>
+ *     <li>zoom out: CTRL -</li>
+ *     <li>zoom reset: CTRL 0</li>
+ *     <li>delete: Delete</li>
+ * </ul>
  *
  */
 public class KeyboardListener {
@@ -39,7 +41,6 @@ public class KeyboardListener {
 		this.controller = controller;
 		this.drawPane = drawPane;
 		scene.setOnKeyPressed(this::keyPressed);
-		scene.setOnKeyTyped(this::keyTyped);
 		scene.setOnKeyReleased(this::keyReleased);
 	}
 	
@@ -72,35 +73,6 @@ public class KeyboardListener {
 	}
 	
 	/**
-	 * When a key is typed (ignore for now)
-	 *
-	 * @param keyEvent KeyEvent
-	 */
-	private void keyTyped(KeyEvent keyEvent) {
-		String character = keyEvent.getCharacter();
-		System.out.println("Char Typed: " + character);
-		
-		switch(character) {
-			case "z":
-				break;
-			case "y":
-				break;
-			case "b":
-				break;
-			case "k":
-				break;
-			case "R":
-				break;
-			case "G":
-				break;
-			case "B":
-				break;
-			case "K":
-				break;
-		}
-	}
-	
-	/**
 	 * This is called each time the user presses a key while the window has the input focus.
 	 *
 	 * @param keyEvent key event
@@ -122,7 +94,7 @@ public class KeyboardListener {
 		} else if(key == KeyCode.S) {
 			if(CONTROL_PRESSED) {
 				System.out.println("\tSave");
-				controller.save(View.currentFile);
+				controller.save(View.CURR_FILE);
 			}
 		} else if(key == KeyCode.DELETE) {
 			System.out.println("\tDelete");

@@ -1,12 +1,11 @@
 package Controller;
 
 import Model.*;
+import javafx.scene.shape.Circle;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Stack;
 import java.util.EmptyStackException;
-import java.util.List;
 
 /**
  * Get commands from the View and controls the Model
@@ -16,6 +15,11 @@ public class Controller {
 	private final Model model;
 	private String currentFilePath;
 	
+	/**
+	 * Controller constructor
+	 *
+	 * @param model Model
+	 */
 	public Controller(Model model) {
 		this.model = model;
 	}
@@ -30,7 +34,7 @@ public class Controller {
 	 * @param y2   the new object's radius
 	 */
 	public void createNewObject(String type, double x, double y, double x2, double y2) {
-		UIObjects newObj = null;
+		UIObjects newObj;
 		int ID = model.nextID();
 		switch(type) {
 			case "wall":
@@ -59,7 +63,6 @@ public class Controller {
 			model.updateItemList(objs);
 		} catch(EmptyStackException ese) {
 			System.out.println("Undo stack is empty");
-			return;
 		}
 	}
 
@@ -73,22 +76,21 @@ public class Controller {
 			model.updateItemList(objs);
 		} catch(EmptyStackException ese) {
 			System.out.println("Redo stack is empty");
-			return;
 		}
 	}
 	
 	/**
 	 * Deselect all the objects that are currently highlighted
 	 */
-	public void deselectAll() {
+	public void deselectAll(boolean displayNow) {
+//		System.out.println("Controller.deselectAll");
 		boolean highlightedPresent = false;
 		for(UIObjects object : model.getObjects()) {
-			if(object.isHighlighted()) {
+//			System.out.println("object.getId() = " + object.getId());
 				object.setHighlighted(false);
 				highlightedPresent = true;
-			}
 		}
-		if(highlightedPresent) {
+		if(displayNow) {
 			displayModel();
 		}
 	}
@@ -188,6 +190,39 @@ public class Controller {
 		return model.printItems();
 	}
 	
+	public int countSpotType(String type) {
+		int count = 0;
+		for(UIObjects object : model.getObjects()) {
+			if(object instanceof Spots) {
+				Spots spot = (Spots) object;
+				if(type.equals("occupied") && spot.isOccupied()){
+					count++;
+				} else if(type.equals("unavailable") && !spot.isAvailable()) {
+					count++;
+				}else if(type.equals("free") && spot.isAvailable() && !spot.isOccupied()) {
+					count++;
+				}else if(type.equals("total") ) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+	
+	/**
+	 * Undoes the state changes from hosting. If the user wants to return to the construct view.
+	 */
+	public void resetFromHosting(){
+		for(UIObjects object : model.getObjects()) {
+			if(object instanceof Spots) {
+				Spots current = (Spots)object;
+				current.setSafety(false);
+				current.setOccupancy(false);
+				current.makeAvailable();
+			}
+		}
+	}
+	
 	/**
 	 * Remove all the objects in the model that are currently highlighted
 	 */
@@ -200,7 +235,22 @@ public class Controller {
 		model.updateIndices();
 		model.display();
 	}
-
+	/**
+	 * Updates the indices of the highlighted objects
+	 */
+	public void updateHighlightIndex() {
+		ArrayList<UIObjects> unHighlighted = new ArrayList<>(); // list to remove
+		ArrayList<UIObjects> highlighted = getHighlightedObjects();
+		for(UIObjects object : model.getObjects()){
+			if(!object.isHighlighted()){
+				unHighlighted.add(object);
+			}
+		}
+		unHighlighted.addAll(highlighted);
+		model.itemList = unHighlighted;
+		model.updateIndices();
+		model.display();
+	}
 	/**
 	 * gets a list of the model's highlighted objects
 	 *
@@ -262,7 +312,7 @@ public class Controller {
 					&& model.getObject(i).getY() <= y2) {
 				
 				model.getObject(i).setHighlighted(true);
-				System.out.println("highlighted object with ID: " + (i));
+//				System.out.println("highlighted object with ID: " + (i));
 				buffer++;
 			}
 			model.display();
@@ -284,22 +334,20 @@ public class Controller {
 	 * @return the spot object that is considered most safe.
 	 */
 	public Spots getBestSpot() {
-		int id[] = model.bestSpot(0);
-		/*if (id == -1) {
-			return null;
-		}*/
+		int[] id = model.bestSpot(0);
+		// TODO: Make sure to take into account when there are no more objects left
 		Spots spot = (Spots) model.getObject(id[0]); //get the spot
-		spot.setHighlighted(true);
+		spot.setSafety(true);
+
 		return spot;
 	}
 
 	/**
 	 * Marks spot at x and y as occupied.
-	 * @param x
-	 * @param y
+	 * @param circle The circle shape in the floor plan
 	 */
-	public void occupySpot(double x, double y) {
-		UIObjects uio = getObject(x,y);
+	public void occupySpot(Circle circle) {
+		UIObjects uio = getObject(circle.getCenterX(), circle.getCenterY());
 		updateAvailable(uio.getId());
 	}
 	
@@ -326,7 +374,7 @@ public class Controller {
 	 * @return risk if a user clicks a spot that is considered risky it will return true.
 	 */
 	boolean updateSpot(int ID) {
-		boolean risk = false;
+		boolean risk;
 		risk = model.giveGetSeat(ID);
 		return risk;
 	}

@@ -4,7 +4,6 @@ import Controller.Controller;
 import Model.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -26,9 +25,30 @@ import java.util.*;
 /**
  * Displays what the user sees
  * <p>
- * CuCurrent colors of the panels inside the main border pane are temporary.
  */
 public class View extends Application implements Observer {
+	// Pane Backgrounds
+	static String topPaneStyle = "-fx-background-color: #C2988E;-fx-pref-width: 1200px;" +
+			"-fx-pref-height: 50px;";
+	static String leftPaneStyle = "-fx-background-color: #6DA08C;-fx-pref-width: 250px;" +
+			"-fx-pref-height: 700px;-fx-alignment: center";
+	static String centerOuterStyle = "-fx-background-color: #D1D1D1;";
+	static String centerInnerStyle = "-fx-background-color: #FFFFFF;";
+	static String bottomPaneStyle = "-fx-background-color: #C2988E;-fx-pref-width: 1200px;" +
+			"-fx-pref-height: 50px;";
+	static String labelStyle = "-fx-font-family: Arial, sans-serif; -fx-font-weight: bold;" +
+			"-fx-font-size: 20px;";
+	static String viewHeader = "-fx-font-family: Arial, sans-serif; -fx-font-weight: bold;" +
+			"-fx-font-size: 30px;-fx-alignment: center;";
+	static String buttonBoxStyle = "-fx-pref-height: 50px;-fx-alignment: center;-fx-spacing: 2px;";
+	static String buttonStyle = "-fx-pref-width: 120px; -fx-pref-height: 40px;";
+	
+	// Colors
+	static Color HIGHLIGHT = Color.web("#FDD500");
+	static Color OCCUPIED = Color.web("#A8A8A8");
+	static Color UNAVAILABLE = Color.web("#FD0000");
+	static Color FREE = Color.web("#FFFFFF");
+	static Color Safe = Color.web("#ACD6E4");
 	
 	// The dimensions of the entire application
 	final static int APP_HEIGHT = 800;
@@ -42,43 +62,34 @@ public class View extends Application implements Observer {
 	final static int CENTER_HEIGHT = (APP_HEIGHT - (TOP_HEIGHT + BOT_HEIGHT));
 	
 	// Default dimensions for objects created from buttons
-	final static double WALL_WIDTH = 25;
-	final static double WALL_HEIGHT = 25;
-	final static double CHAIR_WIDTH = 25;
-	final static double CHAIR_HEIGHT = 25;
-	final static double TABLE_WIDTH = 60;
-	final static double TABLE_HEIGHT = 60;
-	static String currentFileName;
-	static File currentFile;
+	static double WALL_SIZE = 25;
+	static double CHAIR_SIZE = 25;
+	static double TABLE_SIZE = 60;
 	
-	boolean selecting = false;
-	boolean drawingWall = false;
-	boolean placingChair = false;
-	boolean placingObject = false;
+	// Utility Values
+	static String CURR_FILE_NAME;
+	static File CURR_FILE;
+	static FileChooser FC;
+	static KeyboardListener KBL;
+	
+	// Application States
+	boolean isSelecting = false;
+	boolean isDrawingWall = false;
+	boolean isPlacingChair = false;
+	boolean isPlacingObject = false;
 	boolean isHosting = false;
-	boolean assigningSeat = false;
-	boolean removingSeat = false;
-
+	boolean isAssigningSeat = false;
+	boolean isRemovingSeat = false;
 	boolean updatingSelection = false;
+	boolean toggleSelected = false;
 	
-	FileChooser fc;
-	
+	// JavaFx Objects
 	Scene scene;
 	Controller controller; // Controller of MVC
 	Model model; // model of MVC
-	KeyboardListener kbListener;
-	
 	BorderPane root; // Main pane
 	Pane drawPane; // Drawing Canvas
 	Canvas grid; // Grid overlaying canvas
-	
-	/**
-	 * Initialize
-	 */
-	@Override
-	public void init() {
-		// controller = new Controller();
-	}
 	
 	/**
 	 * Call this once
@@ -91,9 +102,9 @@ public class View extends Application implements Observer {
 		model.addObserver(this);
 		controller = new Controller(model);
 		
-		fc = new FileChooser();
-		fc.setInitialDirectory(new File(System.getProperty("user.dir")));
-		fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text", "*.txt"));
+		FC = new FileChooser();
+		FC.setInitialDirectory(new File(System.getProperty("user.dir")));
+		FC.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text", "*.txt"));
 		
 		root = new BorderPane();
 		root.setCenter(initCenterPanel());
@@ -102,7 +113,7 @@ public class View extends Application implements Observer {
 		root.setBottom(initBottomPanel(primaryStage));
 		
 		scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
-		kbListener = new KeyboardListener(scene, controller, drawPane);
+		KBL = new KeyboardListener(scene, controller, drawPane);
 		
 		primaryStage.getIcons().add(ImageLoader.getImage("app_icon_black_60px.png"));
 		primaryStage.setTitle("Covid Calc");
@@ -113,68 +124,63 @@ public class View extends Application implements Observer {
 	/**
 	 * Update the view
 	 *
+	 * leftEnd and rightEnd are invisible circular regions acting as endpoints of the line to allow
+	 * dragging of on end.
+	 *
+	 *
 	 * @param observable Observable
 	 * @param object     Object
 	 */
 	@Override
 	public void update(Observable observable, Object object) {
-		
-		ArrayList<UIObjects> itemList = model.getObjects();        // items to be placed
+		ArrayList<UIObjects> itemList = model.getObjects(); // items to be placed
 		ArrayList<Label> labels = new ArrayList<>();
 		
-		drawPane.getChildren().clear(); // - clear central panel
-		drawPane.getChildren().add(grid); // - redraw all items
+		drawPane.getChildren().clear(); // Clear central panel
+		drawPane.getChildren().add(grid); // Redraw all items
 		
 		for(UIObjects obj : itemList) {
 			if(obj instanceof Wall) {
 //				System.out.println("Drawing wall");
-				Line wall = initLine(obj.getX(), obj.getY(), obj.getX2(), obj.getY2(),
-						obj.isHighlighted());
-				
-				// These are invisible circular regions acting as endpoints of the line
-				// to allow dragging of on end.
+				Line wall = setLine((Wall) obj);
 				Circle leftEnd = new Circle(obj.getX(), obj.getY(), 10);
 				Circle rightEnd = new Circle(obj.getX2(), obj.getY2(), 10);
 				
 				leftEnd.setFill(Color.TRANSPARENT);
 				rightEnd.setFill(Color.TRANSPARENT);
 				
-				setEndPointMouseAction(leftEnd, wall, obj, true);     // last argument is flag
-				setEndPointMouseAction(rightEnd, wall, obj, false);  // for left or right
+				setEndPointMouseAction(leftEnd, wall, obj, true); // last argument is flag
+				setEndPointMouseAction(rightEnd, wall, obj, false); // for left or right
 				setMouseAction(wall, obj);
 				
-				Label measure = new Label(String.valueOf(lineLength(wall)));
+				Label measure = new Label();
+				String length = String.format("%.1f", lineLength(wall) / 15);
+				measure.setText(length);
 				measure.setTranslateX((wall.getEndX() - wall.getStartX()) / 2 + wall.getStartX());
 				measure.setTranslateY((wall.getEndY() - wall.getStartY()) / 2 + wall.getStartY());
 				measure.setMouseTransparent(true);
 				measure.setAlignment(Pos.CENTER);
 				measure.setTextFill(Color.RED);
-				labels.add(measure); // Keep track of this label so that it can be brought to the front
+				labels.add(measure); // Keep track of this label to bring to the front
 				
-				drawPane.getChildren().add(wall);
-				drawPane.getChildren().add(leftEnd);
-				drawPane.getChildren().add(rightEnd);
-				drawPane.getChildren().add(measure);
+				drawPane.getChildren().addAll(wall, leftEnd, rightEnd, measure);
 			} else if(obj instanceof Spots) {
-				Spots s = (Spots) obj;
 //				System.out.println("Drawing chair");
-				double radius = obj.getWidth() / 2;
-				Circle chair = initChair(obj.getX() + radius, obj.getY() + radius, radius,
-						obj.isHighlighted(), s.isOccupied(), s.isAvailable());
-				
+				Circle chair = setChair((Spots) obj);
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
+				distanceToggle.setSelected(false);
+			
 			} else {
 //				System.out.println("Drawing object");
-				Rectangle o = initObject(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight(),
-						obj.isHighlighted());
-				
-				setMouseAction(o, obj);
-				drawPane.getChildren().add(o);
+				Rectangle rectangle = setObject(obj);
+				setMouseAction(rectangle, obj);
+				drawPane.getChildren().add(rectangle);
 			}
 		}
-		for(Label l : labels) {
-			l.toFront();
+		// Bring the labels to the front
+		for(Label label : labels) {
+			label.toFront();
 		}
 	}
 	
@@ -183,46 +189,50 @@ public class View extends Application implements Observer {
 	 *
 	 * @param endPoint the circle to set the handlers for
 	 * @param wall     the wall for which the circle is an endpoint
-	 * @param uio      the UIObjects associated with the wall
+	 * @param uiObj      the UIObjects associated with the wall
 	 * @param isLeft   flag to determine whether it's left of right endpoint
 	 */
-	private void setEndPointMouseAction(Circle endPoint, Line wall, UIObjects uio, boolean isLeft) {
+	private void setEndPointMouseAction(Circle endPoint, Line wall, UIObjects uiObj, boolean isLeft) {
 		// drag left end of wall
 		if (!isHosting) {
-			endPoint.setOnMousePressed(event -> {
-				selecting = false;
-				drawingWall = false;
-				placingChair = false;
-				placingObject = false;
+			
+			// When the mouse releases from a presses on end point circle
+			endPoint.setOnMousePressed(pressEvent -> {
+				isSelecting = false;
+				isDrawingWall = false;
+				isPlacingChair = false;
+				isPlacingObject = false;
 				
-				endPoint.setOnMouseDragged(event2 -> {
+				endPoint.setOnMouseDragged(dragEvent -> {
 					if(isLeft) {
-						wall.setStartX(event2.getX());
-						wall.setStartY(event2.getY());
+						wall.setStartX(dragEvent.getX());
+						wall.setStartY(dragEvent.getY());
 					} else {
-						wall.setEndX(event2.getX());
-						wall.setEndY(event2.getY());
+						wall.setEndX(dragEvent.getX());
+						wall.setEndY(dragEvent.getY());
 					}
-					endPoint.setCenterX(event2.getX());
-					endPoint.setCenterY(event2.getY());
+					endPoint.setCenterX(dragEvent.getX());
+					endPoint.setCenterY(dragEvent.getY());
 				});
 			});
-			
-			endPoint.setOnMouseReleased(event -> {
+			// When the mouse releases from end point circle
+			endPoint.setOnMouseReleased(releaseEvent -> {
 				boolean inDrawPane = (endPoint.getCenterX() > 0
 						&& endPoint.getCenterX() < drawPane.getWidth())
 						&& (endPoint.getCenterY() > 0 && endPoint.getCenterY() < drawPane.getHeight());
 				
 				if(!inDrawPane) {
-					System.out.println("Outside of central panel");
+					System.out.println("Outside of central panel (setEndPointMouseAction)");
 					controller.displayModel();
 				} else {
 					if(isLeft) {
-						controller.updateCurrentObject(event.getX(), event.getY(), uio.getX2(),
-								uio.getY2(), uio.getId());
+						controller.updateCurrentObject(
+								releaseEvent.getX(), releaseEvent.getY(),
+								uiObj.getX2(), uiObj.getY2(), uiObj.getId());
 					} else {
-						controller.updateCurrentObject(uio.getX(), uio.getY(), event.getX(),
-								event.getY(), uio.getId());
+						controller.updateCurrentObject(
+								uiObj.getX(), uiObj.getY(),
+								releaseEvent.getX(), releaseEvent.getY(), uiObj.getId());
 					}
 				}
 			});
@@ -232,139 +242,217 @@ public class View extends Application implements Observer {
 	/**
 	 * Set the event handling of mouse actions for a object
 	 *
-	 * @param obj the object to set the handlers for
-	 * @param uio the UIObjects associated with the given object
+	 * @param shape the object to set the handlers for
+	 * @param uiObj the UIObjects associated with the given object
 	 */
-	private void setMouseAction(Shape obj, UIObjects uio) {
+	private void setMouseAction(Shape shape, UIObjects uiObj) {
+		// When the mouse actions happen in the Construct view
 		if (!isHosting) {
-			obj.setOnMousePressed(event -> {
-				selecting = false;
-				drawingWall = false;
-				placingChair = false;
-				placingObject = false;
+			// When the mouse enters the shape
+			shape.setOnMouseEntered(enterEvent -> {
+				shape.setStrokeWidth(shape.getStrokeWidth() + 1);
+			});
+			// When the mouse exits the shape
+			shape.setOnMouseExited(exitedEvent -> {
+				shape.setStrokeWidth(shape.getStrokeWidth() - 1);
+			});
+			// When the mouse presses the shape
+			shape.setOnMousePressed(pressedEvent -> {
+				// Update UI object's highlight value and circle's appearance
+				if(!KBL.isKeyPressed(KeyCode.CONTROL)) {
+					controller.deselectAll(false);
+					clearSelectionUpdate();
+				}
+				uiObj.setHighlighted(!uiObj.isHighlighted());
+				showSelectionUpdate();
 				
-				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
+				shape.setStroke(Color.PINK);
+				shape.setStrokeWidth(shape.getStrokeWidth() + 2);
+				// Update application states
+				isSelecting = false;
+				isDrawingWall = false;
+				isPlacingChair = false;
+				isPlacingObject = false;
+				
+				Point2D p = drawPane.sceneToLocal(
+						pressedEvent.getSceneX(),
+						pressedEvent.getSceneY());
 				double mouseX = p.getX();
 				double mouseY = p.getY();
-				double objTransX = obj.getTranslateX();
-				double objTransY = obj.getTranslateY();
+				double objTransX = shape.getTranslateX();
+				double objTransY = shape.getTranslateY();
+				Circle ring = null;
 				
-				obj.setOnMouseDragged(event2 -> {
-					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
-					obj.setTranslateX(objTransX + (p2.getX() - mouseX));
-					obj.setTranslateY(objTransY + (p2.getY() - mouseY));
+				if(shape instanceof Circle && toggleSelected) {
+					drawPane.getChildren().removeIf(child -> child instanceof Circle &&
+							((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)) &&
+							((Circle) child).getCenterX() == ((Circle)shape).getCenterX() &&
+							((Circle) child).getCenterY() == ((Circle)shape).getCenterY()
+					);
+					ring = setRing((Circle) shape);
+					drawPane.getChildren().add(ring);
+				}
+				
+				// When the mouse releases from a press on the shape
+				Circle finalRing = ring;
+				shape.setOnMouseDragged(dragEvent -> {
+					Point2D p2 = drawPane.sceneToLocal(dragEvent.getSceneX(), dragEvent.getSceneY());
+					
+					if(shape instanceof Circle && toggleSelected&&shape.getFill() != Color.TRANSPARENT) {
+						finalRing.setTranslateX(objTransX + (p2.getX() - mouseX));
+						finalRing.setTranslateY(objTransY + (p2.getY() - mouseY));
+					}
+					shape.setTranslateX(objTransX + (p2.getX() - mouseX));
+					shape.setTranslateY(objTransY + (p2.getY() - mouseY));
 				});
 			});
-			
-			obj.setOnMouseReleased(event -> {
+			// When the mouse releases the press on the shape
+			shape.setOnMouseReleased(releaseEvent -> {
+				controller.updateHighlightIndex();
+				shape.setStrokeWidth(shape.getStrokeWidth() - 2);
 				
 				// check if placed within the draw pane
-				Bounds objBounds = obj.getBoundsInParent();
-				
+				Bounds objBounds = shape.getBoundsInParent();
 				boolean inDrawPane = (objBounds.getMinX() > 0
 						&& objBounds.getMaxX() < drawPane.getWidth())
 						&& (objBounds.getMinY() > 0 && objBounds.getMaxY() < drawPane.getHeight());
 				
 				if(!inDrawPane) {
-					System.out.println("Outside of central panel");
+					System.out.println("Outside of central panel (setMouseAction)");
 					controller.displayModel();
 				} else {
-					double transX = obj.getTranslateX();
-					double transY = obj.getTranslateY();
 					
-					controller.updateCurrentObject(uio.getX() + transX, uio.getY() + transY,
-							uio.getX2() + transX, uio.getY2() + transY, uio.getId());
+					double transX = shape.getTranslateX();
+					double transY = shape.getTranslateY();
+					controller.updateCurrentObject(uiObj.getX() + transX, uiObj.getY() + transY,
+							uiObj.getX2() + transX, uiObj.getY2() + transY, uiObj.getId());
 				}
 			});
 		}
-		if (isHosting && obj instanceof Circle) {
-			Circle c = (Circle) obj;
-			obj.setOnMouseClicked(e -> {
-				if (assigningSeat) {
-					controller.occupySpot(c.getCenterX(), c.getCenterY());
+		
+		// When the mouse action happen in the Host view and on a Circle
+		if (isHosting && shape instanceof Circle) {
+			Circle circle = (Circle) shape;
+			shape.setOnMouseClicked(e -> {
+				Spots spot = ((Spots) uiObj);
+				if (isAssigningSeat) {
+					controller.occupySpot(circle);
 					System.out.println("occupied");
-				} else if (removingSeat) {
+				} else if (isRemovingSeat) {
+					controller.occupySpot(circle);
+//					spot.setSafety(false);
 					System.out.println("freed");
 				}
+				HostView.info1Value.setText(String.valueOf(controller.countSpotType("total")));
+				HostView.info2Value.setText(String.valueOf(controller.countSpotType("unavailable")));
+				HostView.info3Value.setText(String.valueOf(controller.countSpotType("free")));
+				controller.displayModel();
 			});
 		}
 	}
 	
 	/**
-	 * Initializes the bottom panel in the root border pane
+	 * Initializes the top panel in the root border pane
 	 *
 	 * @return Pane
 	 */
-	private Pane initBottomPanel(Stage stage) {
-		Pane result = new Pane();
-		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+	private Pane initTopPanel(Stage stage) {
+		Pane topPane = new Pane();
+		topPane.setStyle(topPaneStyle);
+		// Event handling for the top panel
+		topPane.setOnMouseClicked(mouseEvent -> {
+			controller.deselectAll(true);
 			clearSelectionUpdate();
 		});
-		result.setPrefHeight(BOT_HEIGHT);
-		result.getChildren().add(initBottomControls(stage));
-		return result;
+		
+		topPane.getChildren().add(initTopControls(stage));
+		return topPane;
 	}
 	
 	/**
-	 * Initializes the controls for the bottom panel
+	 * Initializes the controls in the top panel of the main border pane
 	 *
 	 * @return HBox
 	 */
-	private HBox initBottomControls(Stage stage) {
-		HBox result = new HBox();
-		Button hostButton = new Button("Host");
-		Button constructButton = new Button("Construct");
-		
-		hostButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
-		constructButton.setStyle("-fx-pref-width: 120px; -fx-pref-height: 45px;");
-		
-		hostButton.setOnMouseClicked(e -> {
-			isHosting = true;
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = false;
-			assigningSeat = false;
-			removingSeat = false;
-			updatingSelection = false;
-			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
-			root.setBottom(initBottomPanel(stage));
+	private HBox initTopControls(Stage stage) {
+		// Set up menu bar on the top pane
+		MenuBar menuBar = new MenuBar();
+		MenuItem menuNew = new MenuItem("New");
+		menuNew.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"New\" Selected");
+			TextInputDialog dialog = new TextInputDialog();
+			dialog.setTitle("New Floor Plan");
+			dialog.setHeaderText("What is the name of your new floor plan?");
+			dialog.setContentText("Floor plan name:");
+			Optional<String> dialogResult = dialog.showAndWait();
+			// User provided filename and clicked "ok"; create temporary file
+			if(dialogResult.isPresent()) {
+				dialogResult.ifPresent(fileName -> CURR_FILE_NAME = fileName);
+				FC.setInitialFileName(CURR_FILE_NAME);
+				model = new Model();
+				model.addObserver(this);
+				controller = new Controller(model);
+				KBL.setController(controller);
+				try {
+					File tempFile = new File(ImageLoader.floorPlanDir + CURR_FILE_NAME);
+					if(tempFile.createNewFile()) {
+						System.out.println("Temp file created: " + tempFile.getName());
+						controller.save(tempFile);
+						controller.load(tempFile);
+					} else {
+						System.out.println("File already exists.");
+					}
+				} catch(IOException ioException) {
+					ioException.printStackTrace();
+				}
+			}
 		});
+		setupMenuBar(menuBar, stage, menuNew, controller, true);
 		
-		constructButton.setOnMouseClicked(e -> {
-			isHosting = false;
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = false;
-			assigningSeat = false;
-			removingSeat = false;
-			updatingSelection = false;
-			root.setCenter(initCenterPanel());
-			root.setTop(initTopPanel(stage));
-			root.setLeft(initLeftPanel());
-			root.setRight(initRightPanel());
-			controller.displayModel();
-			root.setBottom(initBottomPanel(stage));
+		// Set up the zoom control buttons
+		HBox zoomBox = setupZoomButtons(drawPane);
+		
+		// Set up buttons for Delete
+		HBox manipulateBox = new HBox();
+		manipulateBox.setStyle(buttonBoxStyle);
+		
+		Button deleteButton = new Button("Delete");
+		deleteButton.setStyle(buttonStyle);
+		deleteButton.setOnMouseClicked(e -> {
+			System.out.println("\"Delete\" button clicked");
+			controller.removeHighlighted();
+			clearSelectionUpdate();
 		});
+		manipulateBox.getChildren().addAll(deleteButton);
 		
-		if(!isHosting) {
-			hostButton.setVisible(true);
-			constructButton.setVisible(false);
-		} else {
-			hostButton.setVisible(false);
-			constructButton.setVisible(true);
-		}
+		// Set up the buttons for redo and undo
+		HBox undoRedoBox = new HBox();
+		Button undoButton = new Button();
+		Button redoButton = new Button();
 		
-		result.getChildren().addAll(hostButton, constructButton);
+		undoRedoBox.setStyle(buttonBoxStyle);
+		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
+		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));
+		undoButton.setOnMouseClicked(e -> {
+			System.out.println("\"Undo\" button clicked");
+			controller.undo();
+		});
+		redoButton.setOnMouseClicked(e -> {
+			System.out.println("\"Redo\" button clicked");
+			controller.redo();
+		});
+		undoRedoBox.getChildren().addAll(undoButton, redoButton);
 		
-		HBox.setHgrow(result, Priority.ALWAYS);
-		return result;
+		Label topHeader = new Label("Floor Plan Creator");
+		topHeader.setStyle(viewHeader + "-fx-pref-width: 400px;-fx-pref-height: 50px;");
+		
+		// Setup the resulting box
+		HBox topControlBox = new HBox();
+		topControlBox.setStyle("-fx-pref-width: 1200px;-fx-pref-height: 50px;-fx-spacing: 25px;");
+		topControlBox.getChildren().addAll(menuBar, undoRedoBox, zoomBox, manipulateBox, topHeader);
+		return topControlBox;
 	}
-	
+	ToggleButton distanceToggle;
 	/**
 	 * Initializes the left panel in the root border pane
 	 * <p>
@@ -373,67 +461,81 @@ public class View extends Application implements Observer {
 	 * @return Pane
 	 */
 	private Pane initLeftPanel() {
-		Pane result = new Pane();
-		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(110, 161, 141, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(LEFT_WIDTH);
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+		Pane leftPane = new Pane();
+		VBox leftControlBox = new VBox();
+		VBox buttonBox = new VBox();
+		Label leftPanelHeader = new Label("Canvas Elements");
+		
+		leftPane.setStyle(leftPaneStyle);
+		leftControlBox.setStyle("-fx-pref-width: 250px;-fx-pref-height: 700px;" +
+				"-fx-alignment: top-center;");
+		leftPanelHeader.setStyle(labelStyle+"-fx-pref-width: 250px;-fx-alignment: top-center;" +
+				"-fx-padding: 20 0 60 0;");
+		buttonBox.setStyle("-fx-pref-width: 250px;-fx-alignment: center;-fx-spacing: 20px;");
+		
+		// Event handling for the left panel
+		leftPane.setOnMouseClicked(mouseEvent -> {
+			controller.deselectAll(true);
 			clearSelectionUpdate();
 		});
-		VBox vbox = new VBox();
-		VBox buttonBox = new VBox();
-		
-		Label leftPanelHeader = new Label("Canvas Elements");
 		
 		Button selection = new Button("Select");
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
 		Button placeObject = new Button("Place Table");
+		distanceToggle = new ToggleButton("6 Foot Radius");
+		selection.setStyle(buttonStyle);
+		placeWall.setStyle(buttonStyle);
+		placeChair.setStyle(buttonStyle);
+		placeObject.setStyle(buttonStyle);
+		distanceToggle.setStyle(buttonStyle);
+		distanceToggle.setSelected(false);
 		
-		leftPanelHeader.setStyle("-fx-font-weight: bold;-fx-font-size: 20px;" +
-				"-fx-padding: 10px 50px 20px 50px;");
-		buttonBox.setStyle("-fx-alignment: center;-fx-spacing: 5px");
-		selection.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
-		placeWall.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px;");
-		placeChair.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
-		placeObject.setStyle("-fx-pref-width: 100px; -fx-pref-height: 40px");
-		
+		// Event handling for "Select" button
 		selection.setOnMouseClicked(event -> {
-			selecting = true;
-			drawingWall = false;
-			placingObject = false;
-			placingChair = false;
+			isSelecting = true;
+			isDrawingWall = false;
+			isPlacingObject = false;
+			isPlacingChair = false;
 		});
-		// --- Event handling "Place Wall" button ---\
+		// Event handling for "Place Wall" button
 		placeWall.setOnMouseClicked(event -> {
-			selecting = false;
-			drawingWall = true;
-			placingObject = false;
-			placingChair = false;
+			isSelecting = false;
+			isDrawingWall = true;
+			isPlacingObject = false;
+			isPlacingChair = false;
 		});
-		
-		// --- Event handling "Place Chair" button ---
+		// Event handling for "Place Chair" button
 		placeChair.setOnMousePressed(event -> {
-			selecting = false;
-			drawingWall = false;
-			placingObject = false;
-			placingChair = true;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingObject = false;
+			isPlacingChair = true;
 		});
-		
-		// --- Event handling "Place Object" button ---
+		// Event handling for "Place Object" button
 		placeObject.setOnMousePressed(event -> {
-			selecting = false;
-			drawingWall = false;
-			placingChair = false;
-			placingObject = true;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingChair = false;
+			isPlacingObject = true;
 		});
-		
-		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject);
-		vbox.getChildren().addAll(leftPanelHeader, buttonBox);
-		result.getChildren().add(vbox);
-		return result;
+		// Event handling for "6 Foot Radius" button
+		distanceToggle.setOnAction(clickEvent -> {
+			System.out.println("Distance toggle pressed");
+			if(distanceToggle.isSelected()) {
+				toggleSelected = true;
+			} else {
+				toggleSelected = false;
+			}
+			toggleRings(toggleSelected);
+		});
+		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject, distanceToggle);
+		leftControlBox.getChildren().addAll(leftPanelHeader, buttonBox);
+		leftPane.getChildren().add(leftControlBox);
+		return leftPane;
 	}
+	
+
 	
 	/**
 	 * Just returns null, could be used to add more features in the future
@@ -450,55 +552,26 @@ public class View extends Application implements Observer {
 	 * @return Pane
 	 */
 	private Pane initCenterPanel() {
-		Pane result = new Pane();
-		Pane child = initCenterInnerPanel(); // Draw panel
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
-			clearSelectionUpdate();
-		});
-		result.setBackground(new Background(
-				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(CENTER_WIDTH);
-		result.setPrefHeight(CENTER_HEIGHT);
-		result.getChildren().add(child);
+		Pane centerOuter = new Pane();
+		Pane centerInner = initCenterInnerPanel(); // Draw panel
+		
+		
+		centerOuter.setId("Center Outer");
+		centerInner.setId("Stack pane");
+		centerOuter.setStyle(centerOuterStyle);
+		centerOuter.setPrefWidth(CENTER_WIDTH);
+		centerOuter.setPrefHeight(CENTER_HEIGHT);
 		
 		// Allows right mouse drag to pan the child.
-		result.setOnMousePressed((event) -> {
-			if(event.isPrimaryButtonDown())
-				return;
-			double mouseX = event.getSceneX();
-			double mouseY = event.getSceneY();
-			double paneX = child.getTranslateX();
-			double paneY = child.getTranslateY();
-			
-			result.setOnMouseDragged((event2) -> {
-				if(event2.isPrimaryButtonDown())
-					return;
-				child.setTranslateX(paneX + (event2.getSceneX() - mouseX));
-				child.setTranslateY(paneY + (event2.getSceneY() - mouseY));
-			});
+		setupCenterMouse(centerOuter, centerInner);
+		
+		centerOuter.getChildren().add(centerInner);
+		centerOuter.setOnMouseClicked(pressEvent -> {
+			controller.deselectAll(true);
+			clearSelectionUpdate();
 		});
 		
-		// Allows mouse scroll wheel to zoom in and out the child
-		result.setOnScroll((event) -> {
-			double changeScale = 0;
-			Bounds bounds = child.localToScene(child.getBoundsInLocal());
-			double changeX = event.getSceneX() - (bounds.getWidth() / 2 + bounds.getMinX());
-			double changeY = event.getSceneY() - (bounds.getHeight() / 2 + bounds.getMinY());
-			if(event.getDeltaY() < 0 && child.getScaleX() > 0.1) {
-				changeScale = -0.1;
-				child.setScaleX(child.getScaleX() * (1 + changeScale));
-				child.setScaleY(child.getScaleY() * (1 + changeScale));
-			} else if(event.getDeltaY() > 0 && child.getScaleX() < 5) {
-				changeScale = 0.1;
-				child.setScaleX(child.getScaleX() * (1 + changeScale));
-				child.setScaleY(child.getScaleY() * (1 + changeScale));
-			}
-			child.setTranslateX(child.getTranslateX() - changeScale * changeX);
-			child.setTranslateY(child.getTranslateY() - changeScale * changeY);
-		});
-		
-		return result;
+		return centerOuter;
 	}
 	
 	/**
@@ -507,151 +580,175 @@ public class View extends Application implements Observer {
 	 * @return pane
 	 */
 	private Pane initCenterInnerPanel() {
-		Pane result = new Pane();
-		drawPane = result;
-		result.setBackground(
-				new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefWidth(CENTER_WIDTH * 3.0 / 4.0);
-		result.setPrefHeight(CENTER_HEIGHT * 3.0 / 4.0);
-		result.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-		result.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-		result.setClip(new Rectangle(result.getPrefWidth(), result.getPrefHeight()));
+		Pane centerInner = new Pane();
+		drawPane = centerInner;
+		centerInner.setStyle(centerInnerStyle);
+		
+		double INNER_WIDTH = 2100;
+		double INNER_HEIGHT = 2100;
+		centerInner.setPrefSize(INNER_WIDTH, INNER_HEIGHT);
+		centerInner.setTranslateX(-((INNER_WIDTH / 2.0) - (CENTER_WIDTH / 2.0)));
+		centerInner.setTranslateY(-((INNER_HEIGHT / 2.0) - (CENTER_HEIGHT / 2.0)));
+		
+		centerInner.setClip(new Rectangle(centerInner.getPrefWidth(), centerInner.getPrefHeight()));
 		grid = initializeGrid();
-		result.getChildren().add(grid);
+		centerInner.getChildren().add(grid);
 		
 		// Event-handling for mouse on drawing canvas depending on which tool is selected.
-		result.setOnMousePressed(event -> {
+		centerInner.setOnMousePressed(pressEvent -> {
 			boolean inDrawPane = drawPane.getBoundsInParent().intersects(
-					event.getSceneX() - LEFT_WIDTH, event.getSceneY() - TOP_HEIGHT, 1, 1);
+					pressEvent.getSceneX() - LEFT_WIDTH,
+					pressEvent.getSceneY() - TOP_HEIGHT, 1, 1);
 			
-			if(event.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
-				Point2D click = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-				UIObjects clickedObject = controller.getObject(click.getX(), click.getY());
-				// If ALT is not held down deselect all highlighted
-				if(!kbListener.isKeyPressed(KeyCode.CONTROL)) {
-					controller.deselectAll();
-					clearSelectionUpdate();
-				}
-				if(clickedObject != null) {
-					clickedObject.setHighlighted(!clickedObject.isHighlighted());
-					showSelectionUpdate();
-					System.out.printf("Clicked on: %s\n", clickedObject.toString());
-//					System.out.printf("Items:\n%s\n", controller.printItems());
-				}
+			if(pressEvent.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
 				
-				if(drawingWall) {
-					Line wallBound = initLineBounds(event.getSceneX(), event.getSceneY());
+				if(isDrawingWall) {
+					Line wallBound = setLineBounds(pressEvent);
 					Label measurement = new Label("0");
+					StackPane stackpane = new StackPane();
+					
 					measurement.setMinSize(100, 100);
 					measurement.setAlignment(Pos.CENTER);
 					measurement.setTextFill(Color.RED);
-					StackPane sp = new StackPane();
-					sp.setTranslateX(event.getSceneX());
-					sp.setTranslateY(event.getSceneY());
-					sp.getChildren().add(wallBound);
-					sp.getChildren().add(measurement);
-					sp.setMaxSize(APP_WIDTH, APP_HEIGHT);
-					//root.getChildren().add(wallBound);
-					root.getChildren().add(sp);
 					
-					result.setOnMouseDragged(event2 -> {
-						wallBound.setEndX(event2.getSceneX());
-						wallBound.setEndY(event2.getSceneY());
-						sp.setTranslateX((event2.getSceneX() - event.getSceneX()) / 2 + event.getSceneX());
-						sp.setTranslateY((event2.getSceneY() - event.getSceneY()) / 2 + event.getSceneY());
-						double length = lineLength(wallBound);
-						measurement.setText(String.valueOf(length));
+					stackpane.setTranslateX(pressEvent.getSceneX());
+					stackpane.setTranslateY(pressEvent.getSceneY());
+					stackpane.getChildren().add(wallBound);
+					stackpane.getChildren().add(measurement);
+					stackpane.setMaxSize(APP_WIDTH, APP_HEIGHT);
+					root.getChildren().add(stackpane);
+					
+					// Dragging wall on creation
+					centerInner.setOnMouseDragged(dragEvent -> {
+						wallBound.setEndX(dragEvent.getSceneX());
+						wallBound.setEndY(dragEvent.getSceneY());
 						
-						result.setOnMouseReleased(event3 -> {
-							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
-									event3.getSceneX() - LEFT_WIDTH, event3.getSceneY() - TOP_HEIGHT, 1, 1);
-							if(!inDrawPaneEnd) {
-								System.out.println("Outside of central panel");
-							} else if(event3.getButton() == MouseButton.PRIMARY && drawingWall) {
-								controller.createNewObject("wall", event.getX(), event.getY(),
-										event3.getX(), event3.getY());
-							}
-							root.getChildren().remove(sp);
-							//root.getChildren().remove(wallBound);
-						});
+						stackpane.setTranslateX((dragEvent.getSceneX() - pressEvent.getSceneX()) /
+								2 + pressEvent.getSceneX());
+						stackpane.setTranslateY((dragEvent.getSceneY() - pressEvent.getSceneY()) /
+								2 + pressEvent.getSceneY());
+						
+						String length = String.format("%.1f", lineLength(wallBound) / 15);
+						measurement.setText(length);
+					});
+					// Releasing wall on creation
+					centerInner.setOnMouseReleased(releaseEvent -> {
+						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+								releaseEvent.getSceneX() - LEFT_WIDTH,
+								releaseEvent.getSceneY() - TOP_HEIGHT,
+								1, 1);
+						
+						if(!inDrawPaneEnd) {
+							System.out.println("Outside of central panel (drawing wall)");
+						} else if(releaseEvent.getButton() == MouseButton.PRIMARY && isDrawingWall) {
+							controller.createNewObject("wall",
+									pressEvent.getX(),
+									pressEvent.getY(),
+									releaseEvent.getX(),
+									releaseEvent.getY());
+						}
+						root.getChildren().remove(stackpane);
 					});
 				}
-				if(placingChair) {
-					Rectangle chairBounds = initObjectBounds(CHAIR_WIDTH, CHAIR_HEIGHT);
-					updateBound(event, chairBounds);
+				if(isPlacingChair) {
+					Rectangle chairBounds = setObjectBounds(CHAIR_SIZE, CHAIR_SIZE);
+					updateBound(pressEvent, chairBounds, (CHAIR_SIZE / 2));
 					root.getChildren().add(chairBounds);
 					
-					result.setOnMouseDragged(event2 -> {
-						updateBound(event2, chairBounds);
+					// Dragging chair on creation
+					centerInner.setOnMouseDragged(dragEvent -> {
+						updateBound(dragEvent, chairBounds, (CHAIR_SIZE / 2));
 					});
-					
-					result.setOnMouseReleased(event3 -> {
+					// Releasing chair on creation
+					centerInner.setOnMouseReleased(releaseEvent -> {
 						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
-								event3.getSceneX() - LEFT_WIDTH,
-								event3.getSceneY() - TOP_HEIGHT, 1, 1) &&
+								releaseEvent.getSceneX() - LEFT_WIDTH,
+								releaseEvent.getSceneY() - TOP_HEIGHT,
+								1, 1) &&
 								drawPane.getBoundsInParent().intersects(
-										event3.getSceneX() - LEFT_WIDTH + chairBounds.getWidth(),
-										event3.getSceneY() - TOP_HEIGHT + chairBounds.getHeight(), 1, 1);
+										releaseEvent.getSceneX() - LEFT_WIDTH + chairBounds.getWidth(),
+										releaseEvent.getSceneY() - TOP_HEIGHT + chairBounds.getHeight(),
+										1, 1);
 						if(!inDrawPaneEnd) {
-							System.out.println("Outside of central panel");
+							System.out.println("Outside of central panel (placing chair)");
 							root.getChildren().remove(chairBounds);
-						} else if(placingChair && event3.getButton() == MouseButton.PRIMARY) {
-							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-							double x2 = p.getX() + CHAIR_WIDTH;
-							double y2 = p.getY() + CHAIR_HEIGHT;
-							controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
+						} else if(isPlacingChair && releaseEvent.getButton() == MouseButton.PRIMARY) {
+							Point2D p = drawPane.sceneToLocal(
+									releaseEvent.getSceneX(),
+									releaseEvent.getSceneY());
+							
+							double x2 = p.getX() + CHAIR_SIZE;
+							double y2 = p.getY() + CHAIR_SIZE;
+							
+							controller.createNewObject(
+									"chair",
+									p.getX() - (CHAIR_SIZE / 2),
+									p.getY() - (CHAIR_SIZE / 2),
+									x2 - (CHAIR_SIZE / 2),
+									y2 - (CHAIR_SIZE / 2));
 							root.getChildren().remove(chairBounds);
 						}
 					});
 				}
-				if(placingObject) {
-					Rectangle objectBounds = initObjectBounds(TABLE_WIDTH, TABLE_HEIGHT);
-					drawingWall = false;
-					placingChair = false;
-					placingObject = true;
-					updateBound(event, objectBounds);
+				if(isPlacingObject) {
+					Rectangle objectBounds = setObjectBounds(TABLE_SIZE, TABLE_SIZE);
+					isDrawingWall = false;
+					isPlacingChair = false;
+					isPlacingObject = true;
+					updateBound(pressEvent, objectBounds, (TABLE_SIZE / 2));
 					root.getChildren().add(objectBounds);
 					
-					result.setOnMouseDragged(event2 -> {
-						updateBound(event2, objectBounds);
+					// Dragging object on creation
+					centerInner.setOnMouseDragged(dragEvent -> {
+						updateBound(dragEvent, objectBounds, (TABLE_SIZE / 2));
 					});
-					
-					result.setOnMouseReleased(event3 -> {
+					// Releasing object on creation
+					centerInner.setOnMouseReleased(releaseEvent -> {
 						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
-								event3.getSceneX() - LEFT_WIDTH,
-								event3.getSceneY() - TOP_HEIGHT, 1, 1) &&
+								releaseEvent.getSceneX() - LEFT_WIDTH,
+								releaseEvent.getSceneY() - TOP_HEIGHT, 1, 1) &&
 								drawPane.getBoundsInParent().intersects(
-										event3.getSceneX() - LEFT_WIDTH + objectBounds.getWidth(),
-										event3.getSceneY() - TOP_HEIGHT + objectBounds.getHeight(), 1, 1);
+										releaseEvent.getSceneX() - LEFT_WIDTH + objectBounds.getWidth(),
+										releaseEvent.getSceneY() - TOP_HEIGHT + objectBounds.getHeight(),
+										1, 1);
 						if(!inDrawPaneEnd) {
-							System.out.println("Outside of central panel");
+							System.out.println("Outside of central panel (placing object)");
 							root.getChildren().remove(objectBounds);
-						} else if(placingObject && event3.getButton() == MouseButton.PRIMARY) {
-							Point2D p = drawPane.sceneToLocal(event3.getSceneX(), event3.getSceneY());
-							double x2 = p.getX() + TABLE_WIDTH;
-							double y2 = p.getY() + TABLE_HEIGHT;
-							controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
+						} else if(isPlacingObject && releaseEvent.getButton() == MouseButton.PRIMARY) {
+							Point2D p = drawPane.sceneToLocal(
+									releaseEvent.getSceneX(),
+									releaseEvent.getSceneY());
+							
+							double x2 = p.getX() + TABLE_SIZE;
+							double y2 = p.getY() + TABLE_SIZE;
+							
+							controller.createNewObject("object",
+									p.getX() - (TABLE_SIZE / 2),
+									p.getY() - (TABLE_SIZE / 2),
+									x2 - (TABLE_SIZE / 2),
+									y2 - (TABLE_SIZE / 2));
 							root.getChildren().remove(objectBounds);
 						}
 					});
 				}
 			}
-			
 			// When the user drags with LMB to select multiple items
-			if(selecting && event.isPrimaryButtonDown() && inDrawPane) {
+			if(isSelecting && pressEvent.isPrimaryButtonDown() && inDrawPane) {
 				System.out.println("Selecting");
-				Point2D p = drawPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-				Rectangle rectBound = initRectBounds(p.getX(), p.getY());
+				Point2D p1 = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
 				
-				double startX = p.getX();
-				double startY = p.getY();
+				// Pressing the rectangular selection
+				Rectangle rectBound = setRectBounds(p1);
 				drawPane.getChildren().add(rectBound);
 				
-				result.setOnMouseDragged(event2 -> {
-					Point2D p2 = drawPane.sceneToLocal(event2.getSceneX(), event2.getSceneY());
+				double startX = p1.getX();
+				double startY = p1.getY();
+				
+				// Dragging the rectangular selection
+				centerInner.setOnMouseDragged(dragEvent -> {
+					Point2D p2 = drawPane.sceneToLocal(dragEvent.getSceneX(), dragEvent.getSceneY());
 					double endX = p2.getX();
 					double endY = p2.getY();
-					
 					double height = endX - startX;
 					double width = endY - startY;
 					
@@ -669,18 +766,15 @@ public class View extends Application implements Observer {
 					} else {
 						rectBound.setHeight(width);
 					}
-					result.setOnMouseReleased(event3 -> {
-						if(event2.isPrimaryButtonDown() && selecting) {
+					// Releasing the rectangular selection
+					centerInner.setOnMouseReleased(releaseEvent -> {
+						if(dragEvent.isPrimaryButtonDown() && isSelecting) {
 							double heightFinal = endX - startX;
 							double widthFinal = endY - startY;
 							double x1 = rectBound.getX();
 							double y1 = rectBound.getY();
 							double y2 = rectBound.getY() + rectBound.getHeight();
 							double x2 = rectBound.getX() + rectBound.getWidth();
-							System.out.printf("Width[%.1f], Height[%.1f] | " +
-											"x1[%.1f], y1[%.1f], x2[%.1f], y2[%.1f]\n",
-									heightFinal, widthFinal, x1, y1, x2, y2);
-							
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
 							drawPane.getChildren().remove(rectBound);
@@ -689,7 +783,83 @@ public class View extends Application implements Observer {
 				});
 			}
 		});
-		return result;
+		return centerInner;
+	}
+
+	
+	/**
+	 * Initializes the bottom panel in the root border pane
+	 *
+	 * @return Pane
+	 */
+	private Pane initBottomPanel(Stage stage) {
+		Pane bottomPane = new Pane();
+		bottomPane.setStyle(bottomPaneStyle);
+		bottomPane.setOnMousePressed(pressEvent -> {
+			controller.deselectAll(true);
+			clearSelectionUpdate();
+		});
+		bottomPane.getChildren().add(initBottomControls(stage));
+		return bottomPane;
+	}
+	
+	/**
+	 * Initializes the controls for the bottom panel
+	 *
+	 * @return HBox
+	 */
+	private HBox initBottomControls(Stage stage) {
+		HBox bottomControlsBox = new HBox();
+		Button hostButton = new Button("Host");
+		Button constructButton = new Button("Construct");
+		
+		bottomControlsBox.setStyle("-fx-pref-width: 1200px;-fx-pref-height: 50px;" +
+				"-fx-alignment: center;-fx-spacing: 50px;");
+		hostButton.setStyle(buttonStyle);
+		constructButton.setStyle(buttonStyle);
+		
+		// Construct Button clicked
+		constructButton.setOnMouseClicked(e -> {
+			isHosting = false;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingChair = false;
+			isPlacingObject = false;
+			isAssigningSeat = false;
+			isRemovingSeat = false;
+			updatingSelection = false;
+			root.setCenter(initCenterPanel());
+			root.setTop(initTopPanel(stage));
+			root.setLeft(initLeftPanel());
+			root.setRight(initRightPanel());
+			controller.displayModel();
+			root.setBottom(initBottomPanel(stage));
+		});
+		// Host Button clicked
+		hostButton.setOnMouseClicked(e -> {
+			isHosting = true;
+			isSelecting = false;
+			isDrawingWall = false;
+			isPlacingChair = false;
+			isPlacingObject = false;
+			isAssigningSeat = false;
+			isRemovingSeat = false;
+			updatingSelection = false;
+			controller.deselectAll(true);
+			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
+			root.setBottom(initBottomPanel(stage));
+		});
+		// Setting the visibility for the Construct and Host buttons
+		if(!isHosting) {
+			hostButton.setVisible(true);
+			constructButton.setVisible(false);
+		} else {
+			hostButton.setVisible(false);
+			constructButton.setVisible(true);
+		}
+		
+		bottomControlsBox.getChildren().addAll(constructButton, hostButton);
+		return bottomControlsBox;
 	}
 	
 	/**
@@ -703,7 +873,7 @@ public class View extends Application implements Observer {
 		Canvas grid = new Canvas(width, height);
 		grid.setMouseTransparent(true);
 		GraphicsContext gc = grid.getGraphicsContext2D();
-		gc.setStroke(Color.GRAY);
+		gc.setStroke(Color.rgb(100,100,100,0.1));
 		gc.setLineWidth(1);
 		double offset = 30;
 		for(double i = offset; i < width; i += offset) {
@@ -714,193 +884,60 @@ public class View extends Application implements Observer {
 	}
 	
 	/**
-	 * Initializes the top panel in the root border pane
+	 * Show the rings
 	 *
-	 * @return Pane
+	 * @param showRings boolean
 	 */
-	private Pane initTopPanel(Stage stage) {
-		Pane result = new Pane();
-		result.setBackground(new Background(
-				new BackgroundFill(Color.rgb(196, 153, 143, 1), CornerRadii.EMPTY, Insets.EMPTY)));
-		result.setPrefHeight(TOP_HEIGHT);
-		
-		result.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
-			clearSelectionUpdate();
-		});
-		
-		HBox hBox = new HBox();
-		Label topHeader = new Label("Floor Plan Creator");
-		topHeader.setStyle(
-				"-fx-font-weight: bold;-fx-font-size: 30px;" + "-fx-padding: 0px 0px 0px 100px;");
-		
-		HBox menuBar = initTopControls(stage);
-		hBox.getChildren().addAll(menuBar, topHeader);
-		result.getChildren().add(hBox);
-		return result;
-	}
-	
-	/**
-	 * Initializes the controls in the top panel of the main border pane
-	 *
-	 * @return HBox
-	 */
-	private HBox initTopControls(Stage stage) {
-		HBox result = new HBox();
-		HBox undoRedoBox = new HBox();
-		HBox zoomBox = new HBox();
-		HBox manipulateBox = new HBox();
-		MenuBar menuBar = new MenuBar();
-		
-		Menu menu = new Menu("File");
-		MenuItem menuItemNew = new MenuItem("New");
-		MenuItem menuItemOpen = new MenuItem("Open");
-		MenuItem menuItemSave = new MenuItem("Save");
-		MenuItem menuItemSaveAs = new MenuItem("Save As");
-		MenuItem menuItemClose = new MenuItem("Close");
-		
-		result.setStyle("-fx-spacing: 25px;");
-		undoRedoBox.setStyle("-fx-spacing: 2px;");
-		zoomBox.setStyle("-fx-spacing: 2px;");
-		zoomBox.setStyle("-fx-spacing: 2px;");
-		
-		menuItemNew.setOnAction(e -> {
-			System.out.println("Menu Item \"New\" Selected");
-			
-			TextInputDialog dialog = new TextInputDialog();
-			dialog.setTitle("New Floor Plan");
-			dialog.setHeaderText("What is the name of your new floor plan?");
-			dialog.setContentText("Floor plan name:");
-			Optional<String> dialogResult = dialog.showAndWait();
-			
-			// User provided filename and clicked "ok"; create temporary file
-			if(dialogResult.isPresent()) {
-				dialogResult.ifPresent(fileName -> currentFileName = fileName);
-				fc.setInitialFileName(currentFileName);
-				model = new Model();
-				model.addObserver(this);
-				controller = new Controller(model);
-				kbListener.setController(controller);
-				try {
-					File tempFile = new File("Saved/" + currentFileName);
-					if(tempFile.createNewFile()) {
-						System.out.println("Temp file created: " + tempFile.getName());
-						controller.save(tempFile);
-						controller.load(tempFile);
-					} else {
-						System.out.println("File already exists.");
-					}
-				} catch(IOException ioException) {
-					ioException.printStackTrace();
+	private void toggleRings(boolean showRings) {
+		List<Circle> rings = new ArrayList<>();
+		if(showRings) {
+			for(Node child : drawPane.getChildren()) {
+				if(child instanceof Circle && ((Circle)child).getFill() != Color.TRANSPARENT) {
+					Circle circle = (Circle) child;
+					// Distinguish from the circles used for handling the walls
+					rings.add(setRing(circle));
 				}
 			}
-		});
-		menuItemOpen.setOnAction(e -> {
-			System.out.println("Menu Item \"Open\" Selected");
-			fc.setTitle("Open");
-			currentFile = fc.showOpenDialog(stage);
-			controller.load(currentFile);
-		});
-		menuItemSave.setOnAction(e -> {
-			System.out.println("Menu Item \"Save\" Selected");
-			File tempFile = new File("Saved/" + currentFileName);
-			tempFile.delete();
-			if(currentFile == null) {
-				fc.setTitle("Save As");
-				currentFile = fc.showSaveDialog(stage);
+			// Add the rings to the canvas
+			for(Circle ring : rings) {
+				drawPane.getChildren().add(ring);
 			}
-			controller.save(currentFile);
-		});
-		menuItemSaveAs.setOnAction(e -> {
-			System.out.println("Menu Item \"Save As\" Selected");
-			fc.setTitle("Save As...");
-			currentFile = fc.showSaveDialog(stage);
-			controller.save(currentFile);
-		});
-		
-		menuItemClose.setOnAction(e -> {
-			System.out.println("Menu Item \"Close\" Selected");
-			Platform.exit();
-		});
-		
-		menu.getItems().add(menuItemNew);
-		menu.getItems().add(menuItemOpen);
-		menu.getItems().add(menuItemSave);
-		menu.getItems().add(menuItemSaveAs);
-		menu.getItems().add(menuItemClose);
-		menuBar.getMenus().add(menu);
-		
-		Button undoButton = new Button();
-		Button redoButton = new Button();
-		Button resetZoomButton = new Button();
-		Button zoomInButton = new Button();
-		Button zoomOutButton = new Button();
-		Button deleteButton = new Button("Delete");
-		Button placeholderButton = new Button("Placeholder");
-		
-		undoButton.setGraphic(new ImageView(ImageLoader.getImage("undo_24px.png")));
-		redoButton.setGraphic(new ImageView(ImageLoader.getImage("redo_24px.png")));
-		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
-		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
-		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
-		
-		undoButton.setOnMouseClicked(e -> {
-			System.out.println("\"Undo\" button clicked");
-			controller.undo();
-		});
-		redoButton.setOnMouseClicked(e -> {
-			System.out.println("\"Redo\" button clicked");
-			// TODO: Implement the redo feature
-			controller.redo();
-			
-		});
-		resetZoomButton.setOnMouseClicked(e -> {
-			System.out.println("\"Reset Zoom\" button clicked");
-			drawPane.setScaleX(1);
-			drawPane.setScaleY(1);
-			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-		});
-		zoomInButton.setOnMouseClicked(e -> {
-			System.out.println("\"Zoom In\" button clicked");
-			drawPane.setScaleX(drawPane.getScaleX() * 1.1);
-			drawPane.setScaleY(drawPane.getScaleY() * 1.1);
-		});
-		zoomOutButton.setOnMouseClicked(e -> {
-			System.out.println("\"Zoom Out\" button clicked");
-			drawPane.setScaleX(drawPane.getScaleX() / 1.1);
-			drawPane.setScaleY(drawPane.getScaleY() / 1.1);
-		});
-		deleteButton.setOnMouseClicked(e -> {
-			System.out.println("\"Delete\" button clicked");
-			controller.removeHighlighted();
-			clearSelectionUpdate();
-		});
-		placeholderButton.setOnMouseClicked(e -> {
-			System.out.println("\"Placeholder\" button clicked");
-			// TODO: Implement a Placeholder feature
-		});
-		undoRedoBox.getChildren().addAll(undoButton, redoButton);
-		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
-		manipulateBox.getChildren().addAll(deleteButton, placeholderButton);
-		result.getChildren().addAll(menuBar, undoRedoBox, zoomBox, manipulateBox);
-		
-		return result;
+		} else {
+			// Remove the rings
+			drawPane.getChildren().removeIf(child -> child instanceof Circle &&
+					((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
+		}
 	}
 	
 	/**
+	 * Sets ring
 	 *
-	 * @param x  the new's object bound's width in pixels
-	 * @param y the new's object bound's height in pixels
+	 * @param circle circle
+	 * @return Circle
+	 */
+	private Circle setRing(Circle circle) {
+		Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
+		ring.setStroke(Color.rgb(130,132,161,0.5));
+		ring.setStrokeWidth(4);
+		ring.getStrokeDashArray().addAll(15d, 25d);
+		ring.setFill(Color.rgb(0,0,0,0));
+		ring.setMouseTransparent(true);
+		return ring;
+	}
+	
+	/**
+	 * Creates the rectangle when the user drags the mouse to select multiple objects
+	 *
+	 * @param point The position in the canvas
 	 * @return rectangle
 	 */
-	private Rectangle initRectBounds(double x, double y) {
-		Rectangle r = new Rectangle(x, y, 0, 0);
-		r.setStroke(Color.rgb(75, 161, 219));
-		r.setStrokeWidth(1);
-		r.getStrokeDashArray().addAll(5.0);
-		r.setFill(Color.rgb(75, 161, 219, 0.5));
-		return r;
+	private Rectangle setRectBounds(Point2D point) {
+		Rectangle rectangle = new Rectangle(point.getX(), point.getY(), 0, 0);
+		rectangle.setStroke(Color.rgb(75, 161, 219));
+		rectangle.setStrokeWidth(1);
+		rectangle.getStrokeDashArray().addAll(5.0);
+		rectangle.setFill(Color.rgb(75, 161, 219, 0.5));
+		return rectangle;
 	}
 	
 	/**
@@ -911,51 +948,50 @@ public class View extends Application implements Observer {
 	 * @param height the new's object bound's height in pixels
 	 * @return rectangle
 	 */
-	private Rectangle initObjectBounds(double width, double height) {
-		Rectangle r = new Rectangle();
-		r.setWidth(width);
-		r.setHeight(height);
-		r.setStroke(Color.BLACK);
-		r.setStrokeWidth(1);
-		r.getStrokeDashArray().addAll(5.0);
-		r.setFill(Color.TRANSPARENT);
-		return r;
+	private Rectangle setObjectBounds(double width, double height) {
+		Rectangle rectangle = new Rectangle();
+		rectangle.setWidth(width);
+		rectangle.setHeight(height);
+		rectangle.setStroke(Color.BLACK);
+		rectangle.setStrokeWidth(1);
+		rectangle.getStrokeDashArray().addAll(5.0);
+		rectangle.setFill(Color.TRANSPARENT);
+		return rectangle;
 	}
 	
 	/**
 	 * Initializes a dashed line representing the bounds of the wall being drawn.
 	 *
-	 * @param x the new's object bound's width in pixels
-	 * @param y the new's object bound's height in pixels
+	 * @param pressEvent The press event
 	 * @return rectangle
 	 */
-	private Line initLineBounds(double x, double y) {
-		Line l = new Line(x, y, x, y);
-		l.setStroke(Color.BLACK);
-		l.setStrokeWidth(1);
-		l.getStrokeDashArray().addAll(5.0);
-		l.setFill(Color.TRANSPARENT);
-		return l;
+	private Line setLineBounds(MouseEvent pressEvent) {
+		double x = pressEvent.getSceneX(); // object bound's width in pixels
+		double y = pressEvent.getSceneY(); // object bound's height in pixels
+		Line line = new Line(x, y, x, y);
+		line.setStroke(Color.BLACK);
+		line.setStrokeWidth(1);
+		line.getStrokeDashArray().addAll(5.0);
+		line.setFill(Color.TRANSPARENT);
+		return line;
 	}
 	
 	/**
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions
 	 *
-	 * @param x      vertical position
-	 * @param y      horizontal position
-	 * @param width  the new object's radius
-	 * @param height the new object's radius
+	 * @param obj iuo
 	 * @return rectangle
 	 */
-	private Rectangle initObject(double x, double y, double width, double height, boolean highlight) {
-		Rectangle r = new Rectangle(x, y, width, height);
-		if(highlight) {
+	private Rectangle setObject(UIObjects obj) {
+		Rectangle r = new Rectangle(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+		
+		// Determine the color of the object
+		if(obj.isHighlighted()) {
 			r.setFill(Color.GOLD);
 		} else {
 			r.setFill(Color.GRAY);
 		}
-		// TODO: EventHandler for selecting, moving, and editing rectangles
 		return r;
 	}
 	
@@ -963,80 +999,80 @@ public class View extends Application implements Observer {
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions (For objects represented as a line)
 	 *
-	 * @param x  vertical start position
-	 * @param y  horizontal start position
-	 * @param x2 vertical end position
-	 * @param y2 horizontal end position
+	 * @param wall  The Wall UIObject
 	 * @return line
 	 */
-	private Line initLine(double x, double y, double x2, double y2, boolean highlight) {
-		Line l = new Line(x, y, x2, y2);
-		l.setStrokeWidth(5);
-		if(highlight) {
-			l.setStroke(Color.GOLD);
+	private Line setLine(Wall wall) {
+		Line line = new Line(wall.getX(), wall.getY(), wall.getX2(), wall.getY2());
+		line.setStrokeWidth(5);
+		
+		// Determine color of the line
+		if(wall.isHighlighted()) {
+			line.setStroke(Color.GOLD);
 		} else {
-			l.setStroke(Color.BLACK);
+			line.setStroke(Color.BLACK);
 		}
-		// TODO: EventHandler for selecting, moving, and editing lines
-		return l;
+		return line;
 	}
 	
 	/**
 	 * Initializes a new UI object at the given coordinates and with the given
 	 * dimensions
 	 *
-	 * @param x      vertical position
-	 * @param y      horizontal position
-	 * @param radius the new object's radius in pixels
+	 * @param spot Spot
 	 * @return rectangle
 	 */
-	private Circle initChair(double x, double y, double radius, boolean highlight, boolean occupied, boolean available) {
-		Circle c = new Circle(x, y, radius);
-		c.setStroke(Color.BLACK);
-		c.setStrokeWidth(1);
+	private Circle setChair(Spots spot) {
+		double radius = spot.getWidth() / 2;
+		Circle circle = new Circle(spot.getX() + radius, spot.getY() + radius, radius);
+		circle.setStroke(Color.BLACK);
+		circle.setStrokeWidth(1);
 		
-		if(highlight) {
-			c.setFill(Color.GOLD);
-		} else if (occupied) {
-			c.setFill(Color.DARKGRAY);
-		} else if (!available) {
-			c.setFill(Color.RED);
+		// Determine the color of the circle
+		if(spot.isHighlighted()) {
+			circle.setFill(HIGHLIGHT);
+		} else if (spot.isOccupied()) {
+			circle.setFill(OCCUPIED);
+		} else if (spot.isSafe()) {
+			circle.setFill(Safe);
+		} else if (!spot.isAvailable()) {
+			circle.setFill(UNAVAILABLE);
 		} else {
-			c.setFill(Color.WHITE);
+			circle.setFill(FREE);
 		}
-		
-		// TODO: EventHandler for selecting, moving, and editing circles
-		return c;
+		return circle;
 	}
 	
 	/**
 	 * Updates position of object to mouse's position.
 	 *
-	 * @param event
-	 * @param objectBounds
+	 * @param event Mouse event
+	 * @param objectBounds Node
 	 */
-	private void updateBound(MouseEvent event, Node objectBounds) {
+	private void updateBound(MouseEvent event, Shape objectBounds, double offset) {
 		objectBounds.setScaleX(drawPane.getScaleX());
 		objectBounds.setScaleY(drawPane.getScaleY());
-		
-		objectBounds.setTranslateX(event.getSceneX() + (objectBounds.getBoundsInLocal().getWidth()
-				/ 2 * (objectBounds.getScaleX() - 1)));
-		objectBounds.setTranslateY(event.getSceneY() + (objectBounds.getBoundsInLocal().getHeight()
-				/ 2 * (objectBounds.getScaleY() - 1)));
+		double translateX = event.getSceneX()
+				+ (objectBounds.getBoundsInLocal().getWidth() / 2 * (objectBounds.getScaleX() - 1))
+				- offset;
+		double translateY = event.getSceneY() +
+				(objectBounds.getBoundsInLocal().getHeight() / 2 * (objectBounds.getScaleY() - 1))
+				- offset;
+		objectBounds.setTranslateX(translateX);
+		objectBounds.setTranslateY(translateY);
 	}
 	
 	/**
 	 * Returns length of a given line in pixels
 	 *
-	 * @param l
+	 * @param l length
 	 */
 	private double lineLength(Line l) {
-		return Math.round(Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
-				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2)));
+		return Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2) + Math.pow(
+				Math.abs(l.getStartY() - l.getEndY()), 2));
 	}
-
-
-
+	
+	
 	/**
 	 * filters a given list of UIObjects to return a new list containing
 	 * objects of only the desired type.
@@ -1046,7 +1082,6 @@ public class View extends Application implements Observer {
 	 */
 	private ArrayList<UIObjects> filterObjs(ArrayList<UIObjects> objs, Class<?> desiredType) {
 		ArrayList<UIObjects> result = new ArrayList<UIObjects>();
-
 		for(UIObjects o : objs) {
 			if(desiredType.isInstance(o)) {
 				result.add(o);
@@ -1054,95 +1089,94 @@ public class View extends Application implements Observer {
 		}
 		return result;
 	}
-
+	
 	/**
 	 * Determines of the given list contains different types of objects
 	 *
 	 * @param objs is the list in question
 	 */
-	 private boolean objectsVary(ArrayList<UIObjects> objs) {
-		 boolean containsTables = false;
-		 boolean containsChairs = false;
-
-		 for(UIObjects o : objs) {
-			 if(o instanceof Tables) {
-				 containsTables = true;
-			 } else if(o instanceof Spots) {
-				 containsChairs = true;
-			 }
-		 }
-
-		 return (containsTables && containsChairs);
-	 }
-
-
+	private boolean objectsVary(ArrayList<UIObjects> objs) {
+		boolean containsTables = false;
+		boolean containsChairs = false;
+		
+		for(UIObjects o : objs) {
+			if(o instanceof Tables) {
+				containsTables = true;
+			} else if(o instanceof Spots) {
+				containsChairs = true;
+			}
+		}
+		return (containsTables && containsChairs);
+	}
+	
+	
 	/**
-	 *
-	 *
-	 * @param objs is a list of the selected objects
+	 * showSelectionUpdate
 	 */
 	private void showSelectionUpdate() {
 		// check if previous call is still in action
 		if(updatingSelection)
 			return;
-
-
-		ArrayList<UIObjects> objs = controller.getHighlightedObjects();
-
+		
+		List<UIObjects> objs = controller.getHighlightedObjects();
+		
 		// Do nothing if the list is empty
 		if(objs.isEmpty())
 			return;
-
+		
 		updatingSelection = true;
-
+		
 		// Setup radio buttons if different types are selected
 		ToggleGroup group    = new ToggleGroup();
 		RadioButton tableBtn = new RadioButton("Tables");
 		RadioButton chairBtn = new RadioButton("Chairs");
-
+		
 		tableBtn.setToggleGroup(group);
 		chairBtn.setToggleGroup(group);
-
-
+		
+		UIObjects first = objs.get(0);
+		if(first instanceof Tables) {
+			tableBtn.setSelected(true);
+		} else if(first instanceof Spots){
+			chairBtn.setSelected(true);
+		}
+		
 		// setup text fields
-		TextField w = createTextField(String.valueOf(objs.get(0).getWidth()));
-		TextField h = createTextField(String.valueOf(objs.get(0).getHeight()));
-
-
-		// setup parant node
+		TextField width = createTextField(String.format("%.2f", objs.get(0).getWidth() / 15));
+		TextField height = createTextField(String.format("%.2f", objs.get(0).getHeight() / 15));
+		
+		// setup parent node
 		VBox vbox = new VBox();
-
+		vbox.setStyle("-fx-alignment: center;-fx-spacing: 5px; -fx-padding: 40px 0px 0px 0px;");
+		
 		vbox.setOnKeyPressed(key -> {
 			if(key.getCode() == KeyCode.ENTER) {
 				ArrayList<UIObjects> toUpdate = controller.getHighlightedObjects();
-
 				String selected = ((RadioButton)group.getSelectedToggle()).getText();
-
+				double newWidth;
+				double newHeight;
+				
+				// Determine which type of object is selected
 				if(selected.equals("Tables")) {
 					toUpdate = filterObjs(toUpdate, Tables.class);
+					newHeight = Double.parseDouble(height.getText()) * 15;
 				} else if(selected.equals("Chairs")) {
 					toUpdate = filterObjs(toUpdate, Spots.class);
+					newHeight = Double.parseDouble(width.getText()) * 15;
 				} else {
 					return;
 				}
-
-				double newWidth  = Double.parseDouble(w.getText());
-				double newHeight = Double.parseDouble(h.getText());
-
+				newWidth  = Double.parseDouble(width.getText()) * 15;
+				
 				controller.resizeAll(toUpdate, newWidth, newHeight);
 			}
 		});
-
-		vbox.setStyle("-fx-alignment: center;-fx-spacing: 5px; -fx-padding: 40px 0px 0px 0px;");
-
+		
 		// display the options of type to be resized
-		vbox.getChildren().addAll(tableBtn, chairBtn);
-
-		vbox.getChildren().addAll(w, h);
-
+		vbox.getChildren().addAll(tableBtn, chairBtn, width, height);
 		((VBox)((Pane)root.getLeft()).getChildren().get(0)).getChildren().add(vbox);
 	}
-
+	
 	/**
 	 * Creates and returns a text field
 	 *
@@ -1150,25 +1184,176 @@ public class View extends Application implements Observer {
 	 */
 	private TextField createTextField(String str) {
 		TextField result = new TextField(str);
-
 		result.setMaxWidth(80);
 		result.setMaxHeight(40);
-		
 		return result;
 	}
-
+	
+	/**
+	 * Clear the selection for the floor plan objects
+	 */
 	private void clearSelectionUpdate() {
 		// Check if showSelectionUpdate has been called
 		if(!updatingSelection)
 			return;
-
-
 		// get the VBox where the text fields are placed
 		VBox left = (VBox)((Pane)root.getLeft()).getChildren().get(0);
-
 		// remove the last added node
 		left.getChildren().remove(left.getChildren().size()-1);
-
 		updatingSelection = false;
+	}
+	
+	/**
+	 * Sets up the top menu bar
+	 *
+	 * @param menuBar         Menu bar
+	 * @param stage           Stage
+	 * @param menuNew         Menu item responsible for the behavior of 'New'
+	 * @param controller      Controller
+	 * @param isConstructView boolean
+	 */
+	static void setupMenuBar(MenuBar menuBar, Stage stage, MenuItem menuNew,
+							 Controller controller, boolean isConstructView) {
+		Menu menu = new Menu("File");
+		MenuItem menuOpen = new MenuItem("Open");
+		MenuItem menuSave = new MenuItem("Save");
+		MenuItem menuSaveAs = new MenuItem("Save As");
+		MenuItem menuClose = new MenuItem("Close");
+		// Open menu option
+		menuOpen.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Open\" Selected");
+			FC.setTitle("Open");
+			CURR_FILE = FC.showOpenDialog(stage);
+			CURR_FILE_NAME = CURR_FILE.getName();
+			System.out.println("open file name: "+ CURR_FILE_NAME);
+			controller.load(CURR_FILE);
+		});
+		// Save menu option
+		menuSave.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Save\" Selected");
+			File tempFile = new File(ImageLoader.floorPlanDir + CURR_FILE_NAME);
+			// Make sure the file name has the text extension
+			if(!CURR_FILE_NAME.contains(".txt"))
+				CURR_FILE_NAME += ".txt";
+			CURR_FILE = new File(ImageLoader.floorPlanDir+CURR_FILE_NAME);
+			// Delete the temporary file
+			if(tempFile.delete()) {
+				System.out.println("Temp file deletion successful");
+			} else {
+				System.out.println("Temp file deletion unsuccessful");
+			}
+			// Make sure the file has been created
+			if(CURR_FILE == null) {
+				FC.setTitle("Save As");
+				CURR_FILE = FC.showSaveDialog(stage);
+			}
+			controller.save(CURR_FILE);
+		});
+		// Save As menu option
+		menuSaveAs.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Save As\" Selected");
+			FC.setTitle("Save As...");
+			CURR_FILE = FC.showSaveDialog(stage);
+			File tempFile = new File(ImageLoader.floorPlanDir + CURR_FILE_NAME);
+			if(tempFile.delete()) {
+				System.out.println("Temp file deletion successful");
+			} else {
+				System.out.println("Temp file deletion unsuccessful");
+			}
+			controller.save(CURR_FILE);
+		});
+		// Close menu option
+		menuClose.setOnAction(menuEvent -> {
+			System.out.println("Menu Item \"Close\" Selected");
+			Platform.exit();
+		});
+		
+		menu.getItems().addAll(menuNew, menuOpen, menuSave, menuSaveAs, menuClose);
+		menuBar.getMenus().add(menu);
+	}
+	
+	/**
+	 * Sets up the mouse controls for the center pane and the inner center pane.
+	 *
+	 * @param center      pane
+	 * @param innerCenter pane
+	 */
+	static void setupCenterMouse(Pane center, Pane innerCenter) {
+		// Allows right mouse drag to pan the child.
+		center.setOnMousePressed((event) -> {
+			if(event.isPrimaryButtonDown())
+				return;
+			double mouseX = event.getSceneX();
+			double mouseY = event.getSceneY();
+			double paneX = innerCenter.getTranslateX();
+			double paneY = innerCenter.getTranslateY();
+			
+			center.setOnMouseDragged((event2) -> {
+				if(event2.isPrimaryButtonDown())
+					return;
+				innerCenter.setTranslateX(paneX + (event2.getSceneX() - mouseX));
+				innerCenter.setTranslateY(paneY + (event2.getSceneY() - mouseY));
+			});
+		});
+		// Allows mouse scroll wheel to zoom in and out the child
+		center.setOnScroll((event) -> {
+			double changeScale = 0;
+			Bounds bounds = innerCenter.localToScene(innerCenter.getBoundsInLocal());
+			double changeX = event.getSceneX() - (bounds.getWidth() / 2 + bounds.getMinX());
+			double changeY = event.getSceneY() - (bounds.getHeight() / 2 + bounds.getMinY());
+			
+			if(event.getDeltaY() < 0 && innerCenter.getScaleX() > 0.1) {
+				changeScale = -0.1;
+				innerCenter.setScaleX(innerCenter.getScaleX() * (1 + changeScale));
+				innerCenter.setScaleY(innerCenter.getScaleY() * (1 + changeScale));
+			} else if(event.getDeltaY() > 0 && innerCenter.getScaleX() < 5) {
+				changeScale = 0.1;
+				innerCenter.setScaleX(innerCenter.getScaleX() * (1 + changeScale));
+				innerCenter.setScaleY(innerCenter.getScaleY() * (1 + changeScale));
+			}
+			
+			innerCenter.setTranslateX(innerCenter.getTranslateX() - changeScale * changeX);
+			innerCenter.setTranslateY(innerCenter.getTranslateY() - changeScale * changeY);
+		});
+	}
+	
+	/**
+	 * Button behavior when the reset zoom button is clicked
+	 *
+	 * @param drawPane The draw pane
+	 */
+	static HBox setupZoomButtons(Pane drawPane) {
+		HBox zoomBox = new HBox();
+		Button zoomInButton = new Button();
+		Button zoomOutButton = new Button();
+		Button resetZoomButton = new Button();
+		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
+		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
+		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
+		zoomBox.setStyle(buttonBoxStyle);
+		
+		// Reset zoom
+		resetZoomButton.setOnMouseClicked(e -> {
+			System.out.println("\"Reset Zoom\" button clicked");
+			drawPane.setScaleX(0.3);
+			drawPane.setScaleY(0.3);
+			drawPane.setTranslateX(-((2100/2.0)-(CENTER_WIDTH/2.0)));
+			drawPane.setTranslateY(-((2100/2.0)-(CENTER_HEIGHT/2.0)));
+		});
+		// Zoom in
+		zoomInButton.setOnMouseClicked(e -> {
+			System.out.println("\"Zoom In\" button clicked");
+			drawPane.setScaleX(drawPane.getScaleX() * 1.1);
+			drawPane.setScaleY(drawPane.getScaleY() * 1.1);
+		});
+		// Zoom out
+		zoomOutButton.setOnMouseClicked(e -> {
+			System.out.println("\"Zoom Out\" button clicked");
+			drawPane.setScaleX(drawPane.getScaleX() / 1.1);
+			drawPane.setScaleY(drawPane.getScaleY() / 1.1);
+		});
+		
+		zoomBox.getChildren().addAll(resetZoomButton, zoomInButton, zoomOutButton);
+		return zoomBox;
 	}
 }
