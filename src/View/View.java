@@ -15,7 +15,6 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -148,6 +147,8 @@ public class View extends Application implements Observer {
 				
 				leftEnd.setFill(Color.TRANSPARENT);
 				rightEnd.setFill(Color.TRANSPARENT);
+//				leftEnd.setFill(Color.ORANGE);
+//				rightEnd.setFill(Color.ORANGE);
 				
 				setEndPointMouseAction(leftEnd, wall, obj, true); // last argument is flag
 				setEndPointMouseAction(rightEnd, wall, obj, false); // for left or right
@@ -257,11 +258,16 @@ public class View extends Application implements Observer {
 			// When the mouse presses the shape
 			shape.setOnMousePressed(pressedEvent -> {
 				// Update UI object's highlight value and circle's appearance
+				if(!KBL.isKeyPressed(KeyCode.CONTROL)) {
+					controller.deselectAll(false);
+					clearSelectionUpdate();
+				}
 				uiObj.setHighlighted(!uiObj.isHighlighted());
+				showSelectionUpdate();
+				
 				shape.setStroke(Color.PINK);
 				shape.setStrokeWidth(shape.getStrokeWidth() + 2);
 				// Update application states
-				showSelectionUpdate();
 				isSelecting = false;
 				isDrawingWall = false;
 				isPlacingChair = false;
@@ -283,6 +289,7 @@ public class View extends Application implements Observer {
 			});
 			// When the mouse releases the press on the shape
 			shape.setOnMouseReleased(releaseEvent -> {
+				controller.updateHighlightIndex();
 				shape.setStrokeWidth(shape.getStrokeWidth() - 2);
 				
 				// check if placed within the draw pane
@@ -315,12 +322,9 @@ public class View extends Application implements Observer {
 					spot.setSafety(false);
 					System.out.println("freed");
 				}
-				String str1 = String.valueOf(controller.countSpotType("total"));
-				String str2 = String.valueOf(controller.countSpotType("unavailable"));
-				String str3= String.valueOf(controller.countSpotType("free"));
-				HostView.info1Value.setText(str1);
-				HostView.info2Value.setText(str2);
-				HostView.info3Value.setText(str3);
+				HostView.info1Value.setText(String.valueOf(controller.countSpotType("total")));
+				HostView.info2Value.setText(String.valueOf(controller.countSpotType("unavailable")));
+				HostView.info3Value.setText(String.valueOf(controller.countSpotType("free")));
 				controller.displayModel();
 			});
 		}
@@ -336,7 +340,7 @@ public class View extends Application implements Observer {
 		topPane.setStyle(topPaneStyle);
 		// Event handling for the top panel
 		topPane.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+			controller.deselectAll(true);
 			clearSelectionUpdate();
 		});
 		
@@ -450,7 +454,7 @@ public class View extends Application implements Observer {
 		
 		// Event handling for the left panel
 		leftPane.setOnMouseClicked(mouseEvent -> {
-			controller.deselectAll();
+			controller.deselectAll(true);
 			clearSelectionUpdate();
 		});
 		
@@ -458,11 +462,13 @@ public class View extends Application implements Observer {
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
 		Button placeObject = new Button("Place Table");
+		ToggleButton distanceToggle = new ToggleButton("6 Foot Radius");
 		selection.setStyle(buttonStyle);
 		placeWall.setStyle(buttonStyle);
 		placeChair.setStyle(buttonStyle);
 		placeObject.setStyle(buttonStyle);
-		
+		distanceToggle.setStyle(buttonStyle);
+		distanceToggle.setSelected(false);
 		
 		// Event handling for "Select" button
 		selection.setOnMouseClicked(event -> {
@@ -492,8 +498,40 @@ public class View extends Application implements Observer {
 			isPlacingChair = false;
 			isPlacingObject = true;
 		});
-		
-		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject);
+		// Event handling for "6 Foot Radius" button
+		distanceToggle.setOnAction(clickEvent -> {
+			System.out.println("Distance toggle pressed");
+			
+			List<Circle> rings = new ArrayList<>();
+			
+			
+			if(distanceToggle.isSelected()) {
+				for(Node child : drawPane.getChildren()) {
+					if(child instanceof Circle) {
+						Circle circle = (Circle) child;
+						
+						// Distinguish from the circles used for handling the walls
+						if(circle.getFill() != Color.TRANSPARENT) {
+							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
+							ring.setStroke(Color.rgb(130,132,161,0.5));
+							ring.setStrokeWidth(4);
+							ring.getStrokeDashArray().addAll(15d, 25d);
+							ring.setFill(Color.rgb(0,0,0,0));
+							rings.add(ring);
+						}
+					}
+				}
+				// Add the rings to the canvas
+				for(Circle ring : rings) {
+					drawPane.getChildren().add(ring);
+				}
+			} else {
+				// Remove the rings
+				drawPane.getChildren().removeIf(child -> child instanceof Circle &&
+						((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
+			}
+		});
+		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject, distanceToggle);
 		leftControlBox.getChildren().addAll(leftPanelHeader, buttonBox);
 		leftPane.getChildren().add(leftControlBox);
 		return leftPane;
@@ -517,6 +555,7 @@ public class View extends Application implements Observer {
 		Pane centerOuter = new Pane();
 		Pane centerInner = initCenterInnerPanel(); // Draw panel
 		
+		
 		centerOuter.setId("Center Outer");
 		centerInner.setId("Stack pane");
 		centerOuter.setStyle(centerOuterStyle);
@@ -528,7 +567,7 @@ public class View extends Application implements Observer {
 		
 		centerOuter.getChildren().add(centerInner);
 		centerOuter.setOnMouseClicked(pressEvent -> {
-			controller.deselectAll();
+			controller.deselectAll(true);
 			clearSelectionUpdate();
 		});
 		
@@ -544,9 +583,16 @@ public class View extends Application implements Observer {
 		Pane centerInner = new Pane();
 		drawPane = centerInner;
 		centerInner.setStyle(centerInnerStyle);
-		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
-		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+//		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
+//		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+//		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		
+		double INNER_WIDTH = 2100;
+		double INNER_HEIGHT = 2100;
+		centerInner.setPrefSize(INNER_WIDTH, INNER_HEIGHT);
+		centerInner.setTranslateX(-((INNER_WIDTH / 2.0) - (CENTER_WIDTH / 2.0)));
+		centerInner.setTranslateY(-((INNER_HEIGHT / 2.0) - (CENTER_HEIGHT / 2.0)));
+		
 		centerInner.setClip(new Rectangle(centerInner.getPrefWidth(), centerInner.getPrefHeight()));
 		grid = initializeGrid();
 		centerInner.getChildren().add(grid);
@@ -558,51 +604,55 @@ public class View extends Application implements Observer {
 					pressEvent.getSceneY() - TOP_HEIGHT, 1, 1);
 			
 			if(pressEvent.getButton() == MouseButton.PRIMARY && inDrawPane && !isHosting) {
+				
 				if(isDrawingWall) {
 					Line wallBound = setLineBounds(pressEvent);
 					Label measurement = new Label("0");
-					StackPane sp = new StackPane();
+					StackPane stackpane = new StackPane();
 					
 					measurement.setMinSize(100, 100);
 					measurement.setAlignment(Pos.CENTER);
 					measurement.setTextFill(Color.RED);
 					
-					sp.setTranslateX(pressEvent.getSceneX());
-					sp.setTranslateY(pressEvent.getSceneY());
-					sp.getChildren().add(wallBound);
-					sp.getChildren().add(measurement);
-					sp.setMaxSize(APP_WIDTH, APP_HEIGHT);
-					root.getChildren().add(sp);
+					stackpane.setTranslateX(pressEvent.getSceneX());
+					stackpane.setTranslateY(pressEvent.getSceneY());
+					stackpane.getChildren().add(wallBound);
+					stackpane.getChildren().add(measurement);
+					stackpane.setMaxSize(APP_WIDTH, APP_HEIGHT);
+					root.getChildren().add(stackpane);
 					
 					// Dragging wall on creation
 					centerInner.setOnMouseDragged(dragEvent -> {
 						wallBound.setEndX(dragEvent.getSceneX());
 						wallBound.setEndY(dragEvent.getSceneY());
-						sp.setTranslateX((dragEvent.getSceneX() - pressEvent.getSceneX()) /
+						
+						stackpane.setTranslateX((dragEvent.getSceneX() - pressEvent.getSceneX()) /
 								2 + pressEvent.getSceneX());
-						sp.setTranslateY((dragEvent.getSceneY() - pressEvent.getSceneY()) /
+						stackpane.setTranslateY((dragEvent.getSceneY() - pressEvent.getSceneY()) /
 								2 + pressEvent.getSceneY());
+						
 						String length = String.format("%.1f", lineLength(wallBound) / 15);
 						measurement.setText(length);
 						
-						// Releasing wall on creation
-						centerInner.setOnMouseReleased(releaseEvent -> {
-							boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
-									releaseEvent.getSceneX() - LEFT_WIDTH,
-									releaseEvent.getSceneY() - TOP_HEIGHT,
-									1, 1);
-							
-							if(!inDrawPaneEnd) {
-								System.out.println("Outside of central panel (drawing wall)");
-							} else if(releaseEvent.getButton() == MouseButton.PRIMARY && isDrawingWall) {
-								controller.createNewObject("wall",
-										pressEvent.getX(),
-										pressEvent.getY(),
-										releaseEvent.getX(),
-										releaseEvent.getY());
-							}
-							root.getChildren().remove(sp);
-						});
+						
+					});
+					// Releasing wall on creation
+					centerInner.setOnMouseReleased(releaseEvent -> {
+						boolean inDrawPaneEnd = drawPane.getBoundsInParent().intersects(
+								releaseEvent.getSceneX() - LEFT_WIDTH,
+								releaseEvent.getSceneY() - TOP_HEIGHT,
+								1, 1);
+						
+						if(!inDrawPaneEnd) {
+							System.out.println("Outside of central panel (drawing wall)");
+						} else if(releaseEvent.getButton() == MouseButton.PRIMARY && isDrawingWall) {
+							controller.createNewObject("wall",
+									pressEvent.getX(),
+									pressEvent.getY(),
+									releaseEvent.getX(),
+									releaseEvent.getY());
+						}
+						root.getChildren().remove(stackpane);
 					});
 				}
 				if(isPlacingChair) {
@@ -725,6 +775,8 @@ public class View extends Application implements Observer {
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
 							drawPane.getChildren().remove(rectBound);
+							isSelecting = false;
+							root.requestFocus();
 						}
 					});
 				});
@@ -743,7 +795,7 @@ public class View extends Application implements Observer {
 		Pane bottomPane = new Pane();
 		bottomPane.setStyle(bottomPaneStyle);
 		bottomPane.setOnMousePressed(pressEvent -> {
-			controller.deselectAll();
+			controller.deselectAll(true);
 			clearSelectionUpdate();
 		});
 		bottomPane.getChildren().add(initBottomControls(stage));
@@ -793,7 +845,7 @@ public class View extends Application implements Observer {
 			isAssigningSeat = false;
 			isRemovingSeat = false;
 			updatingSelection = false;
-			controller.deselectAll();
+			controller.deselectAll(true);
 			HostView hostRoot = new HostView(this, stage, root, model, controller, drawPane);
 			root.setBottom(initBottomPanel(stage));
 		});
@@ -821,7 +873,7 @@ public class View extends Application implements Observer {
 		Canvas grid = new Canvas(width, height);
 		grid.setMouseTransparent(true);
 		GraphicsContext gc = grid.getGraphicsContext2D();
-		gc.setStroke(Color.GRAY);
+		gc.setStroke(Color.rgb(100,100,100,0.1));
 		gc.setLineWidth(1);
 		double offset = 30;
 		for(double i = offset; i < width; i += offset) {
@@ -1020,7 +1072,7 @@ public class View extends Application implements Observer {
 		if(updatingSelection)
 			return;
 		
-		ArrayList<UIObjects> objs = controller.getHighlightedObjects();
+		List<UIObjects> objs = controller.getHighlightedObjects();
 		
 		// Do nothing if the list is empty
 		if(objs.isEmpty())
@@ -1035,6 +1087,13 @@ public class View extends Application implements Observer {
 		
 		tableBtn.setToggleGroup(group);
 		chairBtn.setToggleGroup(group);
+		
+		UIObjects first = objs.get(0);
+		if(first instanceof Tables) {
+			tableBtn.setSelected(true);
+		} else if(first instanceof Spots){
+			chairBtn.setSelected(true);
+		}
 		
 		// setup text fields
 		TextField width = createTextField(String.format("%.2f", objs.get(0).getWidth() / 15));
@@ -1191,6 +1250,7 @@ public class View extends Application implements Observer {
 			Bounds bounds = innerCenter.localToScene(innerCenter.getBoundsInLocal());
 			double changeX = event.getSceneX() - (bounds.getWidth() / 2 + bounds.getMinX());
 			double changeY = event.getSceneY() - (bounds.getHeight() / 2 + bounds.getMinY());
+			
 			if(event.getDeltaY() < 0 && innerCenter.getScaleX() > 0.1) {
 				changeScale = -0.1;
 				innerCenter.setScaleX(innerCenter.getScaleX() * (1 + changeScale));
@@ -1200,6 +1260,7 @@ public class View extends Application implements Observer {
 				innerCenter.setScaleX(innerCenter.getScaleX() * (1 + changeScale));
 				innerCenter.setScaleY(innerCenter.getScaleY() * (1 + changeScale));
 			}
+			
 			innerCenter.setTranslateX(innerCenter.getTranslateX() - changeScale * changeX);
 			innerCenter.setTranslateY(innerCenter.getTranslateY() - changeScale * changeY);
 		});
@@ -1218,15 +1279,24 @@ public class View extends Application implements Observer {
 		resetZoomButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-reset_24px.png")));
 		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
 		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
-//		zoomBox.setSpacing(2);
 		zoomBox.setStyle(buttonBoxStyle);
+		
+//		// Reset zoom
+//		resetZoomButton.setOnMouseClicked(e -> {
+//			System.out.println("\"Reset Zoom\" button clicked");
+//			drawPane.setScaleX(1);
+//			drawPane.setScaleY(1);
+//			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+//			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+//		});
+		
 		// Reset zoom
 		resetZoomButton.setOnMouseClicked(e -> {
 			System.out.println("\"Reset Zoom\" button clicked");
-			drawPane.setScaleX(1);
-			drawPane.setScaleY(1);
-			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+			drawPane.setScaleX(0.3);
+			drawPane.setScaleY(0.3);
+			drawPane.setTranslateX(-((2100/2.0)-(CENTER_WIDTH/2.0)));
+			drawPane.setTranslateY(-((2100/2.0)-(CENTER_HEIGHT/2.0)));
 		});
 		// Zoom in
 		zoomInButton.setOnMouseClicked(e -> {

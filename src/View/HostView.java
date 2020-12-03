@@ -3,8 +3,7 @@ package View;
 import Controller.Controller;
 import Model.Model;
 import Model.Spots;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -31,12 +30,12 @@ public class HostView {
 			"-fx-background-color: #7B83A0;-fx-pref-width: 150px;-fx-pref-height: 300px;";
 	static String infoStyle = "-fx-background-color: #434B64;-fx-alignment: top-center;" +
 			"-fx-pref-width: 120px;-fx-pref-height: 120px;";
-	static String infoLabelStyle = "-fx-font-weight: normal;-fx-font-style: regular;" +
-			"-fx-font: 18px Arial;-fx-text-fill: white;-fx-pref-width: 120px;" +
-			"-fx-pref-height: 30px;-fx-alignment: center;";
-	static String infoValueStyle = "-fx-font-weight: bold;-fx-font-style: regular;" +
-			"-fx-font: 30px Arial;-fx-text-fill: white;-fx-pref-width: 120px;" +
-			"-fx-pref-height: 90px;-fx-alignment: center;";
+	static String infoLabelStyle = "-fx-font-weight: normal;-fx-font: 18px Arial;" +
+			"-fx-text-fill: white;-fx-pref-width: 120px;-fx-pref-height: 30px;" +
+			"-fx-alignment: center;";
+	static String infoValueStyle = "-fx-font-weight: bold;-fx-font: 30px Arial;" +
+			"-fx-text-fill: white;-fx-pref-width: 120px;-fx-pref-height: 90px;" +
+			"-fx-alignment: center;";
 	
 	// The dimensions of the entire application
 	final static int APP_WIDTH = 1200;
@@ -140,10 +139,22 @@ public class HostView {
 	private Pane initCenterPanel() {
 		Pane centerOuter = new Pane();
 		Pane centerInner = drawPane; // Draw panel
+		centerInner.setOnMouseClicked(pressEvent -> {
+			Point2D innerPoint = drawPane.sceneToLocal(pressEvent.getSceneX(), pressEvent.getSceneY());
+			System.out.printf("(%.0f, %.0f) inner center\n", innerPoint.getX(), innerPoint.getY());
+			
+		});
 		centerInner.setStyle(View.centerInnerStyle);
-		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
-		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		
+//		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
+//		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
+//		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
+		double INNER_WIDTH = 2100;
+		double INNER_HEIGHT = 2100;
+		centerInner.setPrefSize(INNER_WIDTH, INNER_HEIGHT);
+		centerInner.setTranslateX(-((INNER_WIDTH / 2.0) - (CENTER_WIDTH / 2.0)));
+		centerInner.setTranslateY(-((INNER_HEIGHT / 2.0) - (CENTER_HEIGHT / 2.0)));
+		
 		centerInner.setClip(new Rectangle(centerInner.getPrefWidth(), centerInner.getPrefHeight()));
 //		grid = initializeGrid();
 //		centerInner.getChildren().add(grid);
@@ -220,6 +231,7 @@ public class HostView {
 							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
 							ring.setStroke(Color.rgb(130,132,161,0.5));
 							ring.setStrokeWidth(4);
+							ring.getStrokeDashArray().addAll(15d, 25d);
 							ring.setFill(Color.rgb(0,0,0,0));
 							rings.add(ring);
 						}

@@ -82,7 +82,7 @@ public class Controller {
 	/**
 	 * Deselect all the objects that are currently highlighted
 	 */
-	public void deselectAll() {
+	public void deselectAll(boolean displayNow) {
 //		System.out.println("Controller.deselectAll");
 		boolean highlightedPresent = false;
 		for(UIObjects object : model.getObjects()) {
@@ -90,7 +90,7 @@ public class Controller {
 				object.setHighlighted(false);
 				highlightedPresent = true;
 		}
-		if(highlightedPresent) {
+		if(displayNow) {
 			displayModel();
 		}
 	}
@@ -235,7 +235,22 @@ public class Controller {
 		model.updateIndices();
 		model.display();
 	}
-
+	/**
+	 * Updates the indices of the highlighted objects
+	 */
+	public void updateHighlightIndex() {
+		ArrayList<UIObjects> unHighlighted = new ArrayList<>(); // list to remove
+		ArrayList<UIObjects> highlighted = getHighlightedObjects();
+		for(UIObjects object : model.getObjects()){
+			if(!object.isHighlighted()){
+				unHighlighted.add(object);
+			}
+		}
+		unHighlighted.addAll(highlighted);
+		model.itemList = unHighlighted;
+		model.updateIndices();
+		model.display();
+	}
 	/**
 	 * gets a list of the model's highlighted objects
 	 *
