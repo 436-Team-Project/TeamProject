@@ -267,10 +267,10 @@ public class Model extends Observable {
 		Spots nSpot = (Spots) itemList.get(ID);
 		//default to true since we are changing if false
 		boolean avail = true;
-		System.out.println(element+"=="+itemList.size());
+//		System.out.println(element+"=="+itemList.size());
 		//base case on the last element of the list.
 		if(element == itemList.size()) {
-			System.out.println("finished");
+//			System.out.println("finished");
 			return true;
 		}
 		
@@ -282,7 +282,7 @@ public class Model extends Observable {
 			//if one is but not the other. prevents possible case for cluster
 			//or group sitting at the same table
 			if(spot.occupied) {
-				System.out.println("checking pair "+element +" = " + (distance <= BUFFER));
+//				System.out.println("checking pair "+element +" = " + (distance <= BUFFER));
 				return (!(distance <= BUFFER) && giveCalculator(ID, element+1));
 			}
 		}
@@ -319,6 +319,7 @@ public class Model extends Observable {
 						if(update) {
 							Spots uSpot = (Spots) itemList.get(i);
 							uSpot.makeAvailable();
+							uSpot.setSafety(false);
 							itemList.set(i, uSpot);
 						}
 					}
@@ -452,9 +453,9 @@ public class Model extends Observable {
 		cur = numSpotsNear(checker, i);
 		int[] next = bestSpot(i + 1);
 		
-		System.out.println("checking spot "+ i +" cur = "+
+		System.out.print("checking spot "+ i +" cur = "+
 				Arrays.toString(cur) + " next = " + Arrays.toString(next));
-		System.out.println("returning " + ((cur[1] <= next[1]) ? i : i + 1));
+		System.out.println(" - returning " + ((cur[1] <= next[1]) ? i : i + 1));
 		//return either the next or the current based on what is larger
 		return (cur[1] <= next[1]) ? cur : next;
 	}
@@ -488,14 +489,14 @@ public class Model extends Observable {
 		}
 		
 		for(int i = 0; i < checker.size(); i++) {
-			System.out.println(i);
+//			System.out.println(i);
 			//make sure it is comparing spots to spots
 			if((checker.get(i) instanceof Spots)) {
 				//System.out.println("spot");
 				Spots temp2 = (Spots) checker.get(i);
-				if(i == ID || !temp2.available || temp2.occupied)
-					System.out.println("self");//skip this iteration
-				else {
+				if(i == ID || !temp2.available || temp2.occupied){
+//					System.out.println("self");//skip this iteration
+				} else {
 					//distance equation
 					double distance = Math.sqrt(
 							Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)

@@ -146,9 +146,6 @@ public class HostView {
 		});
 		centerInner.setStyle(View.centerInnerStyle);
 		
-//		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
-//		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-//		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		double INNER_WIDTH = 2100;
 		double INNER_HEIGHT = 2100;
 		centerInner.setPrefSize(INNER_WIDTH, INNER_HEIGHT);
@@ -189,19 +186,17 @@ public class HostView {
 		Button getSafePosButton = new Button("Get Safe Position");
 		Button assignGuestButton = new Button("Assign Guest");
 		Button removeGuestButton = new Button("Remove Guest");
-//		ToggleButton distanceToggle = new ToggleButton("6 Foot Radius");
 		getSafePosButton.setStyle(View.buttonStyle);
 		assignGuestButton.setStyle(View.buttonStyle);
 		removeGuestButton.setStyle(View.buttonStyle);
-//		distanceToggle.setStyle(View.buttonStyle);
 		
-//		distanceToggle.setSelected(false);
 		// Event handling for "Get Safe Position" button
 		getSafePosButton.setOnAction(e -> {
 			System.out.println("\"Get Safe Position\" button clicked");
 			Spots spot = controller.getBestSpot();
 			controller.getBestSpot();
 			controller.displayModel();
+			root.requestFocus();
 		});
 		// Event handling for "Assign Guest" button
 		assignGuestButton.setOnAction(e -> {
@@ -215,39 +210,6 @@ public class HostView {
 			view.isAssigningSeat = false;
 			view.isRemovingSeat = true;
 		});
-		// Event handling for "6 Foot Radius" button
-//		distanceToggle.setOnAction(clickEvent -> {
-//			System.out.println("Distance toggle pressed");
-//
-//			List<Circle> rings = new ArrayList<>();
-//
-//			if(distanceToggle.isSelected()) {
-//				for(Node child : drawPane.getChildren()) {
-//					if(child instanceof Circle) {
-//						Circle circle = (Circle) child;
-//
-//						// Distinguish from the circles used for handling the walls
-//						if(circle.getFill() != Color.TRANSPARENT) {
-//							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
-//							ring.setStroke(Color.rgb(130,132,161,0.5));
-//							ring.setStrokeWidth(4);
-//							ring.getStrokeDashArray().addAll(15d, 25d);
-//							ring.setFill(Color.rgb(0,0,0,0));
-//							rings.add(ring);
-//						}
-//					}
-//				}
-//				// Add the rings to the canvas
-//				for(Circle ring : rings) {
-//					drawPane.getChildren().add(ring);
-//				}
-//			} else {
-//				// Remove the rings
-//				drawPane.getChildren().removeIf(child -> child instanceof Circle &&
-//						((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
-//			}
-//		});
-		
 		buttonBox.getChildren().addAll(getSafePosButton, assignGuestButton,
 				removeGuestButton);
 		leftControlBox.getChildren().addAll(leftPanelHeader, buttonBox);

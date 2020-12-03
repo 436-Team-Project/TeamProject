@@ -169,7 +169,8 @@ public class View extends Application implements Observer {
 				Circle chair = setChair((Spots) obj);
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
-				toggleRings(toggleSelected);
+				distanceToggle.setSelected(false);
+			
 			} else {
 //				System.out.println("Drawing object");
 				Rectangle rectangle = setObject(obj);
@@ -177,7 +178,6 @@ public class View extends Application implements Observer {
 				drawPane.getChildren().add(rectangle);
 			}
 		}
-		
 		// Bring the labels to the front
 		for(Label label : labels) {
 			label.toFront();
@@ -203,19 +203,18 @@ public class View extends Application implements Observer {
 				isPlacingChair = false;
 				isPlacingObject = false;
 				
-				endPoint.setOnMouseDragged(releaseEvent -> {
+				endPoint.setOnMouseDragged(dragEvent -> {
 					if(isLeft) {
-						wall.setStartX(releaseEvent.getX());
-						wall.setStartY(releaseEvent.getY());
+						wall.setStartX(dragEvent.getX());
+						wall.setStartY(dragEvent.getY());
 					} else {
-						wall.setEndX(releaseEvent.getX());
-						wall.setEndY(releaseEvent.getY());
+						wall.setEndX(dragEvent.getX());
+						wall.setEndY(dragEvent.getY());
 					}
-					endPoint.setCenterX(releaseEvent.getX());
-					endPoint.setCenterY(releaseEvent.getY());
+					endPoint.setCenterX(dragEvent.getX());
+					endPoint.setCenterY(dragEvent.getY());
 				});
 			});
-			
 			// When the mouse releases from end point circle
 			endPoint.setOnMouseReleased(releaseEvent -> {
 				boolean inDrawPane = (endPoint.getCenterX() > 0
@@ -227,10 +226,12 @@ public class View extends Application implements Observer {
 					controller.displayModel();
 				} else {
 					if(isLeft) {
-						controller.updateCurrentObject(releaseEvent.getX(), releaseEvent.getY(),
+						controller.updateCurrentObject(
+								releaseEvent.getX(), releaseEvent.getY(),
 								uiObj.getX2(), uiObj.getY2(), uiObj.getId());
 					} else {
-						controller.updateCurrentObject(uiObj.getX(), uiObj.getY(),
+						controller.updateCurrentObject(
+								uiObj.getX(), uiObj.getY(),
 								releaseEvent.getX(), releaseEvent.getY(), uiObj.getId());
 					}
 				}
@@ -296,7 +297,8 @@ public class View extends Application implements Observer {
 				Circle finalRing = ring;
 				shape.setOnMouseDragged(dragEvent -> {
 					Point2D p2 = drawPane.sceneToLocal(dragEvent.getSceneX(), dragEvent.getSceneY());
-					if(shape instanceof Circle) {
+					
+					if(shape instanceof Circle && toggleSelected&&shape.getFill() != Color.TRANSPARENT) {
 						finalRing.setTranslateX(objTransX + (p2.getX() - mouseX));
 						finalRing.setTranslateY(objTransY + (p2.getY() - mouseY));
 					}
@@ -319,6 +321,7 @@ public class View extends Application implements Observer {
 					System.out.println("Outside of central panel (setMouseAction)");
 					controller.displayModel();
 				} else {
+					
 					double transX = shape.getTranslateX();
 					double transY = shape.getTranslateY();
 					controller.updateCurrentObject(uiObj.getX() + transX, uiObj.getY() + transY,
@@ -336,7 +339,8 @@ public class View extends Application implements Observer {
 					controller.occupySpot(circle);
 					System.out.println("occupied");
 				} else if (isRemovingSeat) {
-					spot.setSafety(false);
+					controller.occupySpot(circle);
+//					spot.setSafety(false);
 					System.out.println("freed");
 				}
 				HostView.info1Value.setText(String.valueOf(controller.countSpotType("total")));
@@ -448,7 +452,7 @@ public class View extends Application implements Observer {
 		topControlBox.getChildren().addAll(menuBar, undoRedoBox, zoomBox, manipulateBox, topHeader);
 		return topControlBox;
 	}
-	
+	ToggleButton distanceToggle;
 	/**
 	 * Initializes the left panel in the root border pane
 	 * <p>
@@ -479,7 +483,7 @@ public class View extends Application implements Observer {
 		Button placeWall = new Button("Place Wall");
 		Button placeChair = new Button("Place Chair");
 		Button placeObject = new Button("Place Table");
-		ToggleButton distanceToggle = new ToggleButton("6 Foot Radius");
+		distanceToggle = new ToggleButton("6 Foot Radius");
 		selection.setStyle(buttonStyle);
 		placeWall.setStyle(buttonStyle);
 		placeChair.setStyle(buttonStyle);
@@ -648,12 +652,12 @@ public class View extends Application implements Observer {
 				}
 				if(isPlacingChair) {
 					Rectangle chairBounds = setObjectBounds(CHAIR_SIZE, CHAIR_SIZE);
-					updateBound(pressEvent, chairBounds);
+					updateBound(pressEvent, chairBounds, (CHAIR_SIZE / 2));
 					root.getChildren().add(chairBounds);
 					
 					// Dragging chair on creation
 					centerInner.setOnMouseDragged(dragEvent -> {
-						updateBound(dragEvent, chairBounds);
+						updateBound(dragEvent, chairBounds, (CHAIR_SIZE / 2));
 					});
 					// Releasing chair on creation
 					centerInner.setOnMouseReleased(releaseEvent -> {
@@ -676,7 +680,12 @@ public class View extends Application implements Observer {
 							double x2 = p.getX() + CHAIR_SIZE;
 							double y2 = p.getY() + CHAIR_SIZE;
 							
-							controller.createNewObject("chair", p.getX(), p.getY(), x2, y2);
+							controller.createNewObject(
+									"chair",
+									p.getX() - (CHAIR_SIZE / 2),
+									p.getY() - (CHAIR_SIZE / 2),
+									x2 - (CHAIR_SIZE / 2),
+									y2 - (CHAIR_SIZE / 2));
 							root.getChildren().remove(chairBounds);
 						}
 					});
@@ -686,12 +695,12 @@ public class View extends Application implements Observer {
 					isDrawingWall = false;
 					isPlacingChair = false;
 					isPlacingObject = true;
-					updateBound(pressEvent, objectBounds);
+					updateBound(pressEvent, objectBounds, (TABLE_SIZE / 2));
 					root.getChildren().add(objectBounds);
 					
 					// Dragging object on creation
 					centerInner.setOnMouseDragged(dragEvent -> {
-						updateBound(dragEvent, objectBounds);
+						updateBound(dragEvent, objectBounds, (TABLE_SIZE / 2));
 					});
 					// Releasing object on creation
 					centerInner.setOnMouseReleased(releaseEvent -> {
@@ -713,7 +722,11 @@ public class View extends Application implements Observer {
 							double x2 = p.getX() + TABLE_SIZE;
 							double y2 = p.getY() + TABLE_SIZE;
 							
-							controller.createNewObject("object", p.getX(), p.getY(), x2, y2);
+							controller.createNewObject("object",
+									p.getX() - (TABLE_SIZE / 2),
+									p.getY() - (TABLE_SIZE / 2),
+									x2 - (TABLE_SIZE / 2),
+									y2 - (TABLE_SIZE / 2));
 							root.getChildren().remove(objectBounds);
 						}
 					});
@@ -753,7 +766,6 @@ public class View extends Application implements Observer {
 					} else {
 						rectBound.setHeight(width);
 					}
-					
 					// Releasing the rectangular selection
 					centerInner.setOnMouseReleased(releaseEvent -> {
 						if(dragEvent.isPrimaryButtonDown() && isSelecting) {
@@ -766,8 +778,8 @@ public class View extends Application implements Observer {
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
 							drawPane.getChildren().remove(rectBound);
-							isSelecting = false;
-							root.requestFocus();
+//							isSelecting = false;
+//							root.requestFocus();
 						}
 					});
 				});
@@ -883,12 +895,10 @@ public class View extends Application implements Observer {
 		List<Circle> rings = new ArrayList<>();
 		if(showRings) {
 			for(Node child : drawPane.getChildren()) {
-				if(child instanceof Circle) {
+				if(child instanceof Circle && ((Circle)child).getFill() != Color.TRANSPARENT) {
 					Circle circle = (Circle) child;
 					// Distinguish from the circles used for handling the walls
-					if(circle.getFill() != Color.TRANSPARENT) {
-						rings.add(setRing(circle));
-					}
+					rings.add(setRing(circle));
 				}
 			}
 			// Add the rings to the canvas
@@ -1042,13 +1052,17 @@ public class View extends Application implements Observer {
 	 * @param event Mouse event
 	 * @param objectBounds Node
 	 */
-	private void updateBound(MouseEvent event, Node objectBounds) {
+	private void updateBound(MouseEvent event, Shape objectBounds, double offset) {
 		objectBounds.setScaleX(drawPane.getScaleX());
 		objectBounds.setScaleY(drawPane.getScaleY());
-		objectBounds.setTranslateX(event.getSceneX() + (objectBounds.getBoundsInLocal().getWidth()
-				/ 2 * (objectBounds.getScaleX() - 1)));
-		objectBounds.setTranslateY(event.getSceneY() + (objectBounds.getBoundsInLocal().getHeight()
-				/ 2 * (objectBounds.getScaleY() - 1)));
+		double translateX = event.getSceneX()
+				+ (objectBounds.getBoundsInLocal().getWidth() / 2 * (objectBounds.getScaleX() - 1))
+				- offset;
+		double translateY = event.getSceneY() +
+				(objectBounds.getBoundsInLocal().getHeight() / 2 * (objectBounds.getScaleY() - 1))
+				- offset;
+		objectBounds.setTranslateX(translateX);
+		objectBounds.setTranslateY(translateY);
 	}
 	
 	/**
@@ -1057,8 +1071,8 @@ public class View extends Application implements Observer {
 	 * @param l length
 	 */
 	private double lineLength(Line l) {
-		return Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2)
-				+ Math.pow(Math.abs(l.getStartY() - l.getEndY()), 2));
+		return Math.sqrt(Math.pow(Math.abs(l.getStartX() - l.getEndX()), 2) + Math.pow(
+				Math.abs(l.getStartY() - l.getEndY()), 2));
 	}
 	
 	
