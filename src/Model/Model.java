@@ -235,7 +235,9 @@ public class Model extends Observable {
 				
 				// distance formula (x2 - x1)^2 + (y2 - y1)^2 = z^2
 				else {
-					double distance = Math.sqrt(Math.pow(nSpot.x - spot.x, 2.0) + Math.pow(nSpot.y - spot.y,2));
+					double distance = Math.sqrt(
+							Math.pow((nSpot.x+nSpot.x2)/2 - (spot.x+spot.x2)/2, 2) 
+							+ Math.pow((nSpot.y+nSpot.y2)/2 - (spot.y+spot.y2)/2, 2))-10;
 					//if one is but not the other. prevents possible case for cluster
 					//or group sitting at the same table
 					if(!spot.occupied) {
@@ -278,7 +280,8 @@ public class Model extends Observable {
 		else if(itemList.get(element) instanceof Spots) {
 			Spots spot = (Spots) itemList.get(element);
 			double distance = Math.sqrt(
-					Math.pow(nSpot.x - spot.x, 2) + Math.pow(nSpot.y - spot.y, 2));
+					Math.pow((nSpot.x+nSpot.x2)/2 - (spot.x+spot.x2)/2, 2) 
+					+ Math.pow((nSpot.y+nSpot.y2)/2 - (spot.y+spot.y2)/2, 2))-10;
 			//if one is but not the other. prevents possible case for cluster
 			//or group sitting at the same table
 			if(spot.occupied) {
@@ -499,8 +502,8 @@ public class Model extends Observable {
 				} else {
 					//distance equation
 					double distance = Math.sqrt(
-							Math.pow(checker.get(i).x - checker.get(ID).x, 2.0)
-							+ Math.pow(checker.get(i).y - checker.get(ID).y, 2.0));
+							Math.pow((checker.get(i).x+checker.get(i).x2)/2 - (checker.get(ID).x+checker.get(ID).x)/2, 2.0)
+							+ Math.pow((checker.get(i).y+checker.get(i).y2)/2 - (checker.get(ID).y+checker.get(ID).y2)/2, 2.0))-10;
 					if(distance <= BUFFER) {
 						spots++;
 					}
