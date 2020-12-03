@@ -116,6 +116,8 @@ public class HostView {
 		menuNew.setOnAction(menuEvent -> {
 			// TODO: Implement "New" menu button for the host view
 			System.out.println("Menu item \"New\" selected in Host View");
+			controller.resetFromHosting();
+			controller.displayModel();
 		});
 		
 		View.setupMenuBar(menuBar, stage, menuNew, controller, false);

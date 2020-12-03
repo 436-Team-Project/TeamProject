@@ -778,8 +778,6 @@ public class View extends Application implements Observer {
 							controller.highlightSelected(x1, y1, x2, y2);
 							showSelectionUpdate();
 							drawPane.getChildren().remove(rectBound);
-//							isSelecting = false;
-//							root.requestFocus();
 						}
 					});
 				});
@@ -834,7 +832,6 @@ public class View extends Application implements Observer {
 			root.setTop(initTopPanel(stage));
 			root.setLeft(initLeftPanel());
 			root.setRight(initRightPanel());
-			controller.resetFromHosting();
 			controller.displayModel();
 			root.setBottom(initBottomPanel(stage));
 		});
