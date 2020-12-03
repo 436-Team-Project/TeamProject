@@ -629,7 +629,7 @@ public class View extends Application implements Observer {
 						stackpane.setTranslateY((dragEvent.getSceneY() - pressEvent.getSceneY()) /
 								2 + pressEvent.getSceneY());
 						
-						String length = String.format("%.1f", lineLength(wallBound) / 15);
+						String length = String.format("%.1f", lineLength(wallBound) / drawPane.getScaleX() / 15);
 						measurement.setText(length);
 					});
 					// Releasing wall on creation
