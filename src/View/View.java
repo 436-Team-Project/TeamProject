@@ -81,6 +81,7 @@ public class View extends Application implements Observer {
 	boolean isAssigningSeat = false;
 	boolean isRemovingSeat = false;
 	boolean updatingSelection = false;
+	boolean toggleSelected = false;
 	
 	// JavaFx Objects
 	Scene scene;
@@ -147,8 +148,6 @@ public class View extends Application implements Observer {
 				
 				leftEnd.setFill(Color.TRANSPARENT);
 				rightEnd.setFill(Color.TRANSPARENT);
-//				leftEnd.setFill(Color.ORANGE);
-//				rightEnd.setFill(Color.ORANGE);
 				
 				setEndPointMouseAction(leftEnd, wall, obj, true); // last argument is flag
 				setEndPointMouseAction(rightEnd, wall, obj, false); // for left or right
@@ -170,6 +169,7 @@ public class View extends Application implements Observer {
 				Circle chair = setChair((Spots) obj);
 				setMouseAction(chair, obj);
 				drawPane.getChildren().add(chair);
+				toggleRings(toggleSelected);
 			} else {
 //				System.out.println("Drawing object");
 				Rectangle rectangle = setObject(obj);
@@ -280,9 +280,26 @@ public class View extends Application implements Observer {
 				double mouseY = p.getY();
 				double objTransX = shape.getTranslateX();
 				double objTransY = shape.getTranslateY();
+				Circle ring = null;
+				
+				if(shape instanceof Circle && toggleSelected) {
+					drawPane.getChildren().removeIf(child -> child instanceof Circle &&
+							((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)) &&
+							((Circle) child).getCenterX() == ((Circle)shape).getCenterX() &&
+							((Circle) child).getCenterY() == ((Circle)shape).getCenterY()
+					);
+					ring = setRing((Circle) shape);
+					drawPane.getChildren().add(ring);
+				}
+				
 				// When the mouse releases from a press on the shape
+				Circle finalRing = ring;
 				shape.setOnMouseDragged(dragEvent -> {
 					Point2D p2 = drawPane.sceneToLocal(dragEvent.getSceneX(), dragEvent.getSceneY());
+					if(shape instanceof Circle) {
+						finalRing.setTranslateX(objTransX + (p2.getX() - mouseX));
+						finalRing.setTranslateY(objTransY + (p2.getY() - mouseY));
+					}
 					shape.setTranslateX(objTransX + (p2.getX() - mouseX));
 					shape.setTranslateY(objTransY + (p2.getY() - mouseY));
 				});
@@ -501,41 +518,20 @@ public class View extends Application implements Observer {
 		// Event handling for "6 Foot Radius" button
 		distanceToggle.setOnAction(clickEvent -> {
 			System.out.println("Distance toggle pressed");
-			
-			List<Circle> rings = new ArrayList<>();
-			
-			
 			if(distanceToggle.isSelected()) {
-				for(Node child : drawPane.getChildren()) {
-					if(child instanceof Circle) {
-						Circle circle = (Circle) child;
-						
-						// Distinguish from the circles used for handling the walls
-						if(circle.getFill() != Color.TRANSPARENT) {
-							Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
-							ring.setStroke(Color.rgb(130,132,161,0.5));
-							ring.setStrokeWidth(4);
-							ring.getStrokeDashArray().addAll(15d, 25d);
-							ring.setFill(Color.rgb(0,0,0,0));
-							rings.add(ring);
-						}
-					}
-				}
-				// Add the rings to the canvas
-				for(Circle ring : rings) {
-					drawPane.getChildren().add(ring);
-				}
+				toggleSelected = true;
 			} else {
-				// Remove the rings
-				drawPane.getChildren().removeIf(child -> child instanceof Circle &&
-						((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
+				toggleSelected = false;
 			}
+			toggleRings(toggleSelected);
 		});
 		buttonBox.getChildren().addAll(selection, placeWall, placeChair, placeObject, distanceToggle);
 		leftControlBox.getChildren().addAll(leftPanelHeader, buttonBox);
 		leftPane.getChildren().add(leftControlBox);
 		return leftPane;
 	}
+	
+
 	
 	/**
 	 * Just returns null, could be used to add more features in the future
@@ -583,9 +579,6 @@ public class View extends Application implements Observer {
 		Pane centerInner = new Pane();
 		drawPane = centerInner;
 		centerInner.setStyle(centerInnerStyle);
-//		centerInner.setPrefSize(CENTER_WIDTH * 3.0 / 4.0, CENTER_HEIGHT * 3.0 / 4.0);
-//		centerInner.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-//		centerInner.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
 		
 		double INNER_WIDTH = 2100;
 		double INNER_HEIGHT = 2100;
@@ -633,8 +626,6 @@ public class View extends Application implements Observer {
 						
 						String length = String.format("%.1f", lineLength(wallBound) / 15);
 						measurement.setText(length);
-						
-						
 					});
 					// Releasing wall on creation
 					centerInner.setOnMouseReleased(releaseEvent -> {
@@ -884,6 +875,50 @@ public class View extends Application implements Observer {
 	}
 	
 	/**
+	 * Show the rings
+	 *
+	 * @param showRings boolean
+	 */
+	private void toggleRings(boolean showRings) {
+		List<Circle> rings = new ArrayList<>();
+		if(showRings) {
+			for(Node child : drawPane.getChildren()) {
+				if(child instanceof Circle) {
+					Circle circle = (Circle) child;
+					// Distinguish from the circles used for handling the walls
+					if(circle.getFill() != Color.TRANSPARENT) {
+						rings.add(setRing(circle));
+					}
+				}
+			}
+			// Add the rings to the canvas
+			for(Circle ring : rings) {
+				drawPane.getChildren().add(ring);
+			}
+		} else {
+			// Remove the rings
+			drawPane.getChildren().removeIf(child -> child instanceof Circle &&
+					((Circle) child).getFill().equals(Color.rgb(0, 0, 0, 0)));
+		}
+	}
+	
+	/**
+	 * Sets ring
+	 *
+	 * @param circle circle
+	 * @return Circle
+	 */
+	private Circle setRing(Circle circle) {
+		Circle ring = new Circle(circle.getCenterX(), circle.getCenterY(), 90);
+		ring.setStroke(Color.rgb(130,132,161,0.5));
+		ring.setStrokeWidth(4);
+		ring.getStrokeDashArray().addAll(15d, 25d);
+		ring.setFill(Color.rgb(0,0,0,0));
+		ring.setMouseTransparent(true);
+		return ring;
+	}
+	
+	/**
 	 * Creates the rectangle when the user drags the mouse to select multiple objects
 	 *
 	 * @param point The position in the canvas
@@ -1107,16 +1142,21 @@ public class View extends Application implements Observer {
 			if(key.getCode() == KeyCode.ENTER) {
 				ArrayList<UIObjects> toUpdate = controller.getHighlightedObjects();
 				String selected = ((RadioButton)group.getSelectedToggle()).getText();
+				double newWidth;
+				double newHeight;
+				
 				// Determine which type of object is selected
 				if(selected.equals("Tables")) {
 					toUpdate = filterObjs(toUpdate, Tables.class);
+					newHeight = Double.parseDouble(height.getText()) * 15;
 				} else if(selected.equals("Chairs")) {
 					toUpdate = filterObjs(toUpdate, Spots.class);
+					newHeight = Double.parseDouble(width.getText()) * 15;
 				} else {
 					return;
 				}
-				double newWidth  = Double.parseDouble(width.getText()) * 15;
-				double newHeight = Double.parseDouble(height.getText()) * 15;
+				newWidth  = Double.parseDouble(width.getText()) * 15;
+				
 				controller.resizeAll(toUpdate, newWidth, newHeight);
 			}
 		});
@@ -1280,15 +1320,6 @@ public class View extends Application implements Observer {
 		zoomInButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-in_24px.png")));
 		zoomOutButton.setGraphic(new ImageView(ImageLoader.getImage("zoom-out_24px.png")));
 		zoomBox.setStyle(buttonBoxStyle);
-		
-//		// Reset zoom
-//		resetZoomButton.setOnMouseClicked(e -> {
-//			System.out.println("\"Reset Zoom\" button clicked");
-//			drawPane.setScaleX(1);
-//			drawPane.setScaleY(1);
-//			drawPane.setTranslateX((CENTER_WIDTH / 4.0) / 2);
-//			drawPane.setTranslateY((CENTER_HEIGHT / 4.0) / 2);
-//		});
 		
 		// Reset zoom
 		resetZoomButton.setOnMouseClicked(e -> {
